@@ -1,16 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import type { FeedItem } from "@/lib/types";
 
-const { useWalletStoreMock } = vi.hoisted(() => ({ useWalletStoreMock: vi.fn() }));
+const { useWalletStoreMock, useMyIntentsMock } = vi.hoisted(() => ({
+  useWalletStoreMock: vi.fn(),
+  useMyIntentsMock: vi.fn(),
+}));
 
 vi.mock("@/store/wallet", () => ({ useWalletStore: useWalletStoreMock }));
-vi.mock("@/store/toast", () => ({
-  useToastStore: vi.fn(() => ({ addToast: vi.fn() })),
-}));
+vi.mock("@/store/toast", () => ({ useToastStore: vi.fn(() => ({ addToast: vi.fn() })) }));
+vi.mock("@/hooks/useMyIntents", () => ({ useMyIntents: useMyIntentsMock }));
 
 import MyIntentsPage from "./page";
 
-type WalletState = { address: string | null; isConnected: boolean; isConnecting: boolean; error: string | null; connect: () => void; disconnect: () => void };
+type WalletState = {
+  address: string | null;
+  isConnected: boolean;
+  isConnecting: boolean;
+  error: string | null;
+  connect: () => void;
+  disconnect: () => void;
+};
 
 function mockWallet(partial: Partial<WalletState> = {}) {
   const state: WalletState = {
@@ -22,37 +33,126 @@ function mockWallet(partial: Partial<WalletState> = {}) {
     disconnect: vi.fn(),
     ...partial,
   };
-  // handle both selector calls (page) and no-selector calls (ConnectWalletButton)
   useWalletStoreMock.mockImplementation((sel?: (s: WalletState) => unknown) =>
     typeof sel === "function" ? sel(state) : state
   );
 }
 
+const intents: FeedItem[] = [
+  {
+    id: "1",
+    srcChain: "ethereum",
+    srcToken: "USDC",
+    srcAmount: "500",
+    dstToken: "USDC",
+    solver: "Alpha",
+    status: "filled",
+    createdAt: "2026-07-14T00:00:00Z",
+  },
+  {
+    id: "2",
+    srcChain: "base",
+    srcToken: "WETH",
+    srcAmount: "0.14",
+    dstToken: "USDC",
+    solver: "Beta",
+    status: "pending",
+    createdAt: "2026-07-14T00:05:00Z",
+  },
+];
+
 describe("MyIntentsPage", () => {
   it("renders the main landmark with the correct id", () => {
     mockWallet();
+    useMyIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: undefined });
     render(<MyIntentsPage />);
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
   });
 
   it("shows a connect prompt when wallet is not connected", () => {
     mockWallet({ address: null, isConnected: false });
+    useMyIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: undefined });
     render(<MyIntentsPage />);
     expect(screen.getByText(/Connect your wallet/i)).toBeInTheDocument();
     expect(screen.queryByTestId("intents-list")).not.toBeInTheDocument();
   });
 
-  it("renders the intents list container when wallet is connected", () => {
-    mockWallet({ address: "GABC123", isConnected: true });
-    render(<MyIntentsPage />);
-    const list = screen.getByTestId("intents-list");
-    expect(list).toBeInTheDocument();
-    expect(list).toHaveAttribute("data-address", "GABC123");
-  });
-
   it("renders the page heading", () => {
     mockWallet();
+    useMyIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: undefined });
     render(<MyIntentsPage />);
     expect(screen.getByRole("heading", { name: "My Intents" })).toBeInTheDocument();
+  });
+
+  it("renders the intents list container when wallet is connected", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    render(<MyIntentsPage />);
+    expect(screen.getByTestId("intents-list")).toBeInTheDocument();
+  });
+
+  it("shows filter controls when connected", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    render(<MyIntentsPage />);
+    expect(screen.getByLabelText("Filter by status")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter by chain")).toBeInTheDocument();
+  });
+
+  it("filters by status via its accessible label", async () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    const user = userEvent.setup();
+    render(<MyIntentsPage />);
+
+    await user.selectOptions(screen.getByLabelText("Filter by status"), "pending");
+
+    expect(screen.getByText("0.14 WETH → USDC")).toBeInTheDocument();
+    expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
+    expect(screen.getByText("1 intent")).toBeInTheDocument();
+  });
+
+  it("filters by chain via its accessible label", async () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    const user = userEvent.setup();
+    render(<MyIntentsPage />);
+
+    await user.selectOptions(screen.getByLabelText("Filter by chain"), "base");
+
+    expect(screen.getByText("0.14 WETH → USDC")).toBeInTheDocument();
+    expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
+  });
+
+  it("shows empty state when no intents match the filter", async () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    const user = userEvent.setup();
+    render(<MyIntentsPage />);
+
+    await user.selectOptions(screen.getByLabelText("Filter by status"), "accepted");
+
+    expect(screen.getByText("No intents match your filters.")).toBeInTheDocument();
+  });
+
+  it("shows loading skeleton when fetching", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents: [], isLoading: true, error: undefined });
+    const { container } = render(<MyIntentsPage />);
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+  });
+
+  it("shows error state when the fetch fails", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: new Error("boom") });
+    render(<MyIntentsPage />);
+    expect(screen.getByText(/Couldn't load intents/)).toBeInTheDocument();
+  });
+
+  it("shows intent count", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    render(<MyIntentsPage />);
+    expect(screen.getByText("2 intents")).toBeInTheDocument();
   });
 });
