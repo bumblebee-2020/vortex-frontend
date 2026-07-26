@@ -16,7 +16,7 @@ const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
 };
 
 export function SwapCard() {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
 
   const [srcChain, setSrcChain] = useState("ethereum");
   const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
@@ -151,7 +151,7 @@ export function SwapCard() {
                     ${token.symbol === srcToken.symbol ? "bg-vx-lav-bg text-vx-lav" : "hover:bg-vx-surface text-vx-muted hover:text-vx-text"}`}
                 >
                   <span className="font-medium">{token.symbol}</span>
-                  <span className="num text-xs">${token.priceUSD.toLocaleString(locale)}</span>
+                  <span className="num text-xs">${token.priceUSD.toLocaleString()}</span>
                 </button>
               ))}
             </div>
@@ -159,8 +159,9 @@ export function SwapCard() {
 
           {srcValueUSD > 0 && (
             <div className="num text-xs text-vx-muted">
+              {/* Number formatting stays locale-hardcoded here; issue #63 owns making it locale-aware. */}
               {t("swap.from.approxValue", {
-                value: srcValueUSD.toLocaleString(locale, { maximumFractionDigits: 2 }),
+                value: srcValueUSD.toLocaleString("en-US", { maximumFractionDigits: 2 }),
               })}
             </div>
           )}
