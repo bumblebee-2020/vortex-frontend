@@ -60,18 +60,18 @@ export default function SolvePage() {
       {/* Nav */}
       <Nav variant="breadcrumb" label="Solver Portal" />
 
-      <main id="main-content" className="max-w-5xl mx-auto px-5 py-12">
-        <div className="mb-10">
-          <div className="eyebrow mb-3">Solver Network</div>
-          <h1 className="text-3xl font-bold text-vx-text mb-3">Become a Vortex Solver</h1>
-          <p className="text-vx-muted text-sm max-w-lg leading-relaxed">
+      <main id="main-content" className="max-w-5xl mx-auto px-3 sm:px-5 py-8 sm:py-12">
+        <div className="mb-8 sm:mb-10">
+          <div className="eyebrow mb-2 sm:mb-3 text-xs">Solver Network</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-vx-text mb-2 sm:mb-3">Become a Vortex Solver</h1>
+          <p className="text-vx-muted text-xs sm:text-sm max-w-lg leading-relaxed">
             Solvers are competitive market makers who fill user swap intents. Deposit a USDC bond,
             watch the open intent feed, and earn fees on every fill you complete.
           </p>
         </div>
 
         {/* How solver earns */}
-        <div className="grid md:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-10">
           {[
             {
               n: "01",
@@ -89,16 +89,16 @@ export default function SolvePage() {
               body: "Execute the source-chain leg, relay to Stellar, transfer dst tokens to the user. Earn the spread between your fill cost and the user's minimum.",
             },
           ].map(item => (
-            <div key={item.n} className="card p-5">
-              <div className="font-mono text-xs text-vx-sage mb-3">{item.n}</div>
-              <h3 className="text-sm font-semibold text-vx-text mb-2">{item.title}</h3>
+            <div key={item.n} className="card p-4 sm:p-5">
+              <div className="font-mono text-xs text-vx-sage mb-2 sm:mb-3">{item.n}</div>
+              <h3 className="text-xs sm:text-sm font-semibold text-vx-text mb-2">{item.title}</h3>
               <p className="text-xs text-vx-muted leading-relaxed">{item.body}</p>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Solver portal sections" className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit">
+        <div role="tablist" aria-label="Solver portal sections" className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit overflow-x-auto">
           {(["leaderboard", "intents", "register"] as const).map(t => (
             <button
               key={t}
@@ -108,7 +108,7 @@ export default function SolvePage() {
               aria-selected={tab === t}
               aria-controls={`panel-${t}`}
               onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-md text-sm font-medium capitalize transition-all
+              className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium capitalize transition-all whitespace-nowrap
                 ${tab === t ? "bg-vx-card text-vx-text border border-vx-border" : "text-vx-muted hover:text-vx-text"}`}
             >
               {t}
@@ -139,15 +139,15 @@ export default function SolvePage() {
             ) : (
               <div className="divide-y divide-vx-line">
                 {solvers.map((s, i) => (
-                  <div key={s.address} className="px-5 py-4 hover:bg-vx-surface/30 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <span className="num text-lg font-bold text-vx-dim w-6 flex-shrink-0">
+                  <div key={s.address} className="px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span className="num text-base sm:text-lg font-bold text-vx-dim flex-shrink-0">
                           {String(i + 1).padStart(2, "0")}
                         </span>
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold text-vx-text">{s.name}</div>
-                          <div className="num text-xs text-vx-muted">{s.address}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-vx-text truncate">{s.name}</div>
+                          <div className="num text-xs text-vx-muted truncate">{s.address}</div>
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {s.chains.map(c => (
                               <span key={c} className="text-[10px] px-1.5 py-0.5 bg-vx-surface rounded text-vx-muted">
@@ -157,24 +157,24 @@ export default function SolvePage() {
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-4 gap-6 flex-shrink-0 text-right">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-6">
                         <div>
-                          <div className="num text-sm font-semibold text-vx-text">{s.fills}</div>
-                          <div className="eyebrow">Fills</div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{s.fills}</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">Fills</div>
                         </div>
                         <div>
-                          <div className="num text-sm font-semibold text-vx-text">{usdCompact.format(s.volumeUsd)}</div>
-                          <div className="eyebrow">Volume</div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{usdCompact.format(s.volumeUsd)}</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">Volume</div>
                         </div>
                         <div>
-                          <div className="num text-sm font-semibold text-vx-text">{s.avgFillTimeSeconds}s</div>
-                          <div className="eyebrow">Avg Time</div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{s.avgFillTimeSeconds}s</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">Avg Time</div>
                         </div>
                         <div>
-                          <div className={`num text-sm font-semibold ${s.successRatePct > 99 ? "text-vx-sage" : "text-vx-amber"}`}>
+                          <div className={`num text-xs sm:text-sm font-semibold ${s.successRatePct > 99 ? "text-vx-sage" : "text-vx-amber"}`}>
                             {s.successRatePct}%
                           </div>
-                          <div className="eyebrow">Success</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">Success</div>
                         </div>
                       </div>
                     </div>
@@ -217,8 +217,8 @@ export default function SolvePage() {
             ) : (
               <div className="divide-y divide-vx-line">
                 {openIntents.map(intent => (
-                  <div key={intent.id} className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-vx-surface/30">
-                    <div>
+                  <div key={intent.id} className="px-3 sm:px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:bg-vx-surface/30">
+                    <div className="min-w-0 flex-1">
                       <div className="num text-xs text-vx-muted mb-1 capitalize">ID: {intent.id}</div>
                       <div className="text-sm font-medium text-vx-text capitalize">
                         {intent.srcAmount} {intent.srcToken} on {intent.srcChain}
@@ -232,8 +232,8 @@ export default function SolvePage() {
                       onClick={() => accept(intent.id)}
                       disabled={acceptingId === intent.id}
                       aria-busy={acceptingId === intent.id}
-                      className="px-4 py-2 bg-vx-sage-bg text-vx-sage text-xs font-semibold rounded-lg
-                                 border border-vx-sage/30 hover:bg-vx-sage/15 transition-colors flex-shrink-0
+                      className="px-3 sm:px-4 py-2 bg-vx-sage-bg text-vx-sage text-xs font-semibold rounded-lg
+                                 border border-vx-sage/30 hover:bg-vx-sage/15 transition-colors flex-shrink-0 w-full sm:w-auto
                                  disabled:opacity-60 disabled:cursor-wait"
                     >
                       {acceptingId === intent.id ? "Accepting…" : "Accept Intent →"}
@@ -248,14 +248,14 @@ export default function SolvePage() {
         {/* Register form */}
         {tab === "register" && (
           <div id="panel-register" role="tabpanel" aria-labelledby="tab-register" className="max-w-md">
-            <div className="card p-6 space-y-5">
+            <div className="card p-4 sm:p-6 space-y-4 sm:space-y-5">
               <div>
                 <h3 className="text-base font-semibold text-vx-text mb-1">Register as Solver</h3>
                 <p className="text-xs text-vx-muted">Deposit a USDC bond to start filling intents.</p>
               </div>
 
               <div>
-                <label htmlFor="solver-address" className="eyebrow block mb-2">Stellar Address</label>
+                <label htmlFor="solver-address" className="eyebrow block mb-2 text-xs">Stellar Address</label>
                 <input
                   id="solver-address"
                   type="text"
@@ -274,7 +274,7 @@ export default function SolvePage() {
               </div>
 
               <div>
-                <label htmlFor="solver-bond" className="eyebrow block mb-2">Bond Amount (USDC)</label>
+                <label htmlFor="solver-bond" className="eyebrow block mb-2 text-xs">Bond Amount (USDC)</label>
                 <input
                   id="solver-bond"
                   type="number"
