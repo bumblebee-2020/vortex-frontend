@@ -6,6 +6,7 @@ import { useSolvers } from "@/hooks/useSolvers";
 import { useOpenIntents } from "@/hooks/useOpenIntents";
 import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
+import { IntentListSkeleton, SolverListSkeleton } from "@/components/Skeleton";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { getMessage } from "@/i18n/messages";
@@ -130,10 +131,8 @@ export default function SolvePage() {
               <span className="text-sm font-semibold text-vx-text">{getMessage("solve.leaderboard.title")}</span>
             </div>
             {solversLoading && solvers.length === 0 ? (
-              <div className="p-5 space-y-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-16 bg-vx-surface/40 rounded-lg animate-pulse" />
-                ))}
+              <div className="p-5">
+                <SolverListSkeleton count={3} />
               </div>
             ) : solversError ? (
               <div className="p-8 text-center text-sm text-vx-muted">
@@ -221,10 +220,8 @@ export default function SolvePage() {
             )}
 
             {intentsLoading && openIntents.length === 0 ? (
-              <div className="p-5 space-y-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg animate-pulse" />
-                ))}
+              <div className="p-5">
+                <IntentListSkeleton count={3} />
               </div>
             ) : intentsError ? (
               <div className="p-8 text-center text-sm text-vx-muted">

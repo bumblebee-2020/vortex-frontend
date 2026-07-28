@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { IntentListSkeleton } from "@/components/Skeleton";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
@@ -120,11 +121,7 @@ export default function ExplorePage() {
 
         {/* Results */}
         {isLoading && intents.length === 0 ? (
-          <div className="space-y-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-            ))}
-          </div>
+          <IntentListSkeleton count={4} />
         ) : error ? (
           <div className="card p-8 text-center text-sm text-vx-muted">
             Couldn&apos;t load intents right now. Try again shortly.
