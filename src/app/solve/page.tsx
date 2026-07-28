@@ -8,10 +8,9 @@ import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
+import { formatCurrency } from "@/lib/format";
 
-const usdCompact = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const usdCompact = (value: number) => formatCurrency(value, undefined, {
   notation: "compact",
   maximumFractionDigits: 1,
 });
@@ -163,6 +162,8 @@ export default function SolvePage() {
                           <div className="eyebrow text-[10px] sm:text-xs">Fills</div>
                         </div>
                         <div>
+                          <div className="num text-sm font-semibold text-vx-text">{usdCompact(s.volumeUsd)}</div>
+                          <div className="eyebrow">Volume</div>
                           <div className="num text-xs sm:text-sm font-semibold text-vx-text">{usdCompact.format(s.volumeUsd)}</div>
                           <div className="eyebrow text-[10px] sm:text-xs">Volume</div>
                         </div>

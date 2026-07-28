@@ -5,6 +5,7 @@ import { useQuote } from "@/hooks/useQuote";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useSwapSubmission } from "@/hooks/useSwapSubmission";
 import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
+import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { MessageKey } from "@/lib/i18n";
 
@@ -150,6 +151,8 @@ export function SwapCard() {
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
                     ${token.symbol === srcToken.symbol ? "bg-vx-lav-bg text-vx-lav" : "hover:bg-vx-surface text-vx-muted hover:text-vx-text"}`}
                 >
+                  <span className="font-medium">{t.symbol}</span>
+                  <span className="num text-xs">{formatCurrency(t.priceUSD)}</span>
                   <span className="font-medium">{token.symbol}</span>
                   <span className="num text-xs">${token.priceUSD.toLocaleString()}</span>
                 </button>
@@ -159,6 +162,7 @@ export function SwapCard() {
 
           {srcValueUSD > 0 && (
             <div className="num text-xs text-vx-muted">
+              ≈ {formatCurrency(srcValueUSD, undefined, { maximumFractionDigits: 2 })}
               {/* Number formatting stays locale-hardcoded here; issue #63 owns making it locale-aware. */}
               {t("swap.from.approxValue", {
                 value: srcValueUSD.toLocaleString("en-US", { maximumFractionDigits: 2 }),
@@ -197,7 +201,11 @@ export function SwapCard() {
                 </div>
               ) : (
                 <div className="text-3xl font-light text-vx-text num">
-                  {dstAmount > 0 ? dstAmount.toFixed(dstToken.symbol === "XLM" ? 2 : 4) : "0"}
+                  {dstAmount > 0
+                    ? formatTokenAmount(dstAmount, undefined, {
+                        maximumFractionDigits: dstToken.symbol === "XLM" ? 2 : 4,
+                      })
+                    : "0"}
                 </div>
               )}
             </div>
