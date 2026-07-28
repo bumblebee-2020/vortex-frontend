@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { VortexLogo } from "./VortexLogo";
 import { ConnectWalletButton } from "./ConnectWalletButton";
-import { getMessage } from "@/lib/i18n";
+import { getMessage } from "@/lib/i18n-legacy";
 
 type NavProps = { variant: "home" } | { variant: "breadcrumb"; label: string };
 
