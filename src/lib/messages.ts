@@ -6,6 +6,14 @@ export const messages = {
     github: "GitHub",
     discord: "Discord",
   },
+  nav: {
+    branding: "Vortex",
+    explore: "Explore",
+    becomeSolver: "Become a Solver",
+    docs: "Docs",
+    openMenu: "Open menu",
+    closeMenu: "Close menu",
+  },
 } as const;
 
 export type MessageKey = keyof typeof messages;
