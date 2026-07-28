@@ -6,32 +6,36 @@ import { Footer } from "@/components/Footer";
 import { SwapCard } from "@/components/SwapCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { CHAINS } from "@/lib/marketData";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
+import type { MessageKey } from "@/lib/i18n";
 
 // ─── Intent Pipeline Visualization ────────────────────────────────────────────
 
+const STAGES: { labelKey: MessageKey; subKey: MessageKey; color: string }[] = [
+  { labelKey: "home.pipeline.intent.label",  subKey: "home.pipeline.intent.sub",  color: "#A78BFA" },
+  { labelKey: "home.pipeline.auction.label", subKey: "home.pipeline.auction.sub", color: "#60A5FA" },
+  { labelKey: "home.pipeline.relay.label",   subKey: "home.pipeline.relay.sub",   color: "#4CEBA8" },
+  { labelKey: "home.pipeline.settle.label",  subKey: "home.pipeline.settle.sub",  color: "#4CEBA8" },
+];
+
 function IntentPipeline() {
-  const stages = [
-    { label: "Intent", sub: "You submit",  color: "#A78BFA" },
-    { label: "Auction", sub: "Solvers bid", color: "#60A5FA" },
-    { label: "Relay",  sub: "Best fills",  color: "#4CEBA8" },
-    { label: "Settle", sub: "On Stellar",  color: "#4CEBA8" },
-  ];
+  const { t } = useTranslation();
 
   return (
     <div className="flex items-center gap-0">
-      {stages.map((s, i) => (
-        <div key={s.label} className="flex items-center">
+      {STAGES.map((s, i) => (
+        <div key={s.labelKey} className="flex items-center">
           <div className="flex flex-col items-center gap-1.5">
             <div aria-hidden="true" className="w-8 h-8 rounded-full flex items-center justify-center border-2"
                  style={{ borderColor: s.color, background: `${s.color}15` }}>
               <div className="w-2 h-2 rounded-full" style={{ background: s.color }} />
             </div>
             <div className="text-center">
-              <div className="text-[11px] font-semibold text-vx-text">{s.label}</div>
-              <div className="text-[10px] text-vx-muted">{s.sub}</div>
+              <div className="text-[11px] font-semibold text-vx-text">{t(s.labelKey)}</div>
+              <div className="text-[10px] text-vx-muted">{t(s.subKey)}</div>
             </div>
           </div>
-          {i < stages.length - 1 && (
+          {i < STAGES.length - 1 && (
             <div className="w-12 mb-5 mx-1">
               <svg viewBox="0 0 48 4" className="w-full">
                 <line x1="0" y1="2" x2="48" y2="2"
@@ -51,11 +55,14 @@ function IntentPipeline() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function HomePage() {
-  const stats = [
-    { label: "Total Volume", value: "$4.2M" },
-    { label: "Intents Filled", value: "2,270" },
-    { label: "Active Solvers", value: "3" },
-    { label: "Avg Fill Time", value: "42s" },
+  const { t } = useTranslation();
+
+  // Values stay literal here: locale-aware number formatting is tracked separately.
+  const stats: { labelKey: MessageKey; value: string }[] = [
+    { labelKey: "home.stats.totalVolume", value: "$4.2M" },
+    { labelKey: "home.stats.intentsFilled", value: "2,270" },
+    { labelKey: "home.stats.activeSolvers", value: "3" },
+    { labelKey: "home.stats.avgFillTime", value: "42s" },
   ];
 
   return (
@@ -71,40 +78,38 @@ export default function HomePage() {
           <div className="space-y-10">
             {/* Hero text */}
             <div>
-              <div className="eyebrow mb-4">Stellar Agentic Hackathon 2025</div>
+              <div className="eyebrow mb-4">{t("home.hero.eyebrow")}</div>
               <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-vx-text mb-4">
-                Swap from any chain<br />
-                <span className="text-vx-sage">directly to Stellar.</span>
+                {t("home.hero.titleLine1")}<br />
+                <span className="text-vx-sage">{t("home.hero.titleLine2")}</span>
               </h1>
               <p className="text-base text-vx-muted leading-relaxed max-w-md">
-                Vortex is an intent-based cross-chain protocol. Express what you want,
-                and competing solvers race to fill it — no bridges, no wrapped assets, no
-                trust assumptions beyond the solver bond.
+                {t("home.hero.body")}
               </p>
             </div>
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-3">
               {stats.map(s => (
-                <div key={s.label} className="card-sm px-4 py-3">
+                <div key={s.labelKey} className="card-sm px-4 py-3">
                   <div className="num text-xl font-semibold text-vx-text">{s.value}</div>
-                  <div className="eyebrow mt-0.5">{s.label}</div>
+                  <div className="eyebrow mt-0.5">{t(s.labelKey)}</div>
                 </div>
               ))}
             </div>
 
             {/* Intent pipeline */}
             <div className="space-y-4">
-              <div className="eyebrow">How it works</div>
+              <div className="eyebrow">{t("home.pipeline.title")}</div>
               <IntentPipeline />
             </div>
 
             {/* Live feed */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <div className="eyebrow">Live Fills</div>
+                <div className="eyebrow">{t("home.feed.title")}</div>
                 <Link href="/explore" className="text-xs text-vx-sage hover:underline">
-                  View all →
+                  {t("home.feed.viewAll")}
                 </Link>
               </div>
               <ActivityFeed />
@@ -117,7 +122,7 @@ export default function HomePage() {
 
             {/* Supported chains */}
             <div className="mt-5">
-              <div className="eyebrow mb-3">Supported chains</div>
+              <div className="eyebrow mb-3">{t("home.chains.title")}</div>
               <div className="flex flex-wrap gap-2">
                 {CHAINS.map(c => (
                   <div key={c.id}
@@ -128,7 +133,9 @@ export default function HomePage() {
                 ))}
                 <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-vx-sage-bg rounded-lg border border-vx-sage/20">
                   <span aria-hidden="true" className="w-2 h-2 rounded-full bg-vx-sage" />
-                  <span className="text-xs text-vx-sage font-medium">Stellar (dest.)</span>
+                  <span className="text-xs text-vx-sage font-medium">
+                    {t("home.chains.stellarDestination")}
+                  </span>
                 </div>
               </div>
             </div>
