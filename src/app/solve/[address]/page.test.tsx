@@ -1,27 +1,25 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import SolverDetailPage from "./page";
 
-// Mock the hooks
-vi.mock("@/hooks/useSolvers", () => ({
-  useSolvers: vi.fn(() => ({
-    solvers: [
-      {
-        name: "AlphaMax",
-        address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING",
-        bondUsd: 500,
-        fills: 42,
-        failed: 1,
-        volumeUsd: 125000,
-        avgFillTimeSeconds: 12,
-        successRatePct: 97.67,
-        chains: ["ethereum", "polygon"],
-        status: "active",
-      },
-    ],
-    isLoading: false,
-    error: undefined,
-  })),
+const solverData = {
+  name: "AlphaMax",
+  address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING",
+  bondUsd: 500,
+  fills: 42,
+  failed: 1,
+  volumeUsd: 125000,
+  avgFillTimeSeconds: 12,
+  successRatePct: 97.67,
+  chains: ["ethereum", "polygon"],
+};
+
+const { useSolverMock } = vi.hoisted(() => ({
+  useSolverMock: vi.fn(),
+}));
+
+vi.mock("@/hooks/useSolver", () => ({
+  useSolver: useSolverMock,
 }));
 
 vi.mock("@/hooks/useIntentFeed", () => ({
@@ -59,7 +57,58 @@ vi.mock("@/components/IntentStatusBadge", () => ({
 }));
 
 describe("SolverDetailPage", () => {
-  it("renders solver information with proper headings", () => {
+  it("rejects an invalid address format", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: false, error: undefined });
+    render(<SolverDetailPage params={{ address: "INVALID_ADDRESS" }} />);
+
+    expect(screen.getByText("Invalid solver address format.")).toBeInTheDocument();
+  });
+
+  it("does not fetch when address is invalid", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: false, error: undefined });
+    render(<SolverDetailPage params={{ address: "INVALID" }} />);
+
+    expect(useSolverMock).toHaveBeenCalledWith(null);
+  });
+
+  it("fetches solver when address is valid", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    expect(useSolverMock).toHaveBeenCalledWith("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING");
+  });
+
+  it("renders loading state", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: true, error: undefined });
+    const { container } = render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+  });
+
+  it("renders error state when fetch fails", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: false, error: new Error("Network error") });
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    expect(screen.getByRole("alert", { name: /Couldn't load solver/ })).toBeInTheDocument();
+  });
+
+  it("renders not found state when solver is null", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: false, error: undefined });
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    expect(screen.getByRole("alert", { name: /No solver found/ })).toBeInTheDocument();
+  });
+
+  it("renders solver information when found", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
@@ -68,16 +117,8 @@ describe("SolverDetailPage", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("AlphaMax");
   });
 
-  it("displays solver status with proper ARIA label", () => {
-    render(
-      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
-    );
-
-    const statusBadge = screen.getByLabelText(/Solver status:/);
-    expect(statusBadge).toBeInTheDocument();
-  });
-
   it("displays solver metrics in proper structure", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
@@ -87,7 +128,8 @@ describe("SolverDetailPage", () => {
     expect(screen.getByText("Success Rate")).toBeInTheDocument();
   });
 
-  it("displays chain coverage with heading", () => {
+  it("displays chain coverage", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
@@ -97,7 +139,8 @@ describe("SolverDetailPage", () => {
     expect(screen.getByText("polygon")).toBeInTheDocument();
   });
 
-  it("displays fill history with proper section heading", () => {
+  it("displays fill history heading", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
@@ -105,24 +148,13 @@ describe("SolverDetailPage", () => {
     expect(screen.getByText("Recent Fills by Solver")).toBeInTheDocument();
   });
 
-  it("has back link with proper styling for focus", () => {
+  it("has back link to solvers list", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
 
     const backLink = screen.getByText("← Back to solvers");
-    expect(backLink).toBeInTheDocument();
-    expect(backLink.closest("a")).toHaveClass("focus:outline-none");
-  });
-
-  it("uses alert role for error messages", () => {
-    const { rerender } = render(
-      <SolverDetailPage params={{ address: "INVALID" }} />
-    );
-
-    const alert = screen.getByRole("alert", {
-      name: /No solver found/,
-    });
-    expect(alert).toBeInTheDocument();
+    expect(backLink).toHaveAttribute("href", "/solve");
   });
 });
