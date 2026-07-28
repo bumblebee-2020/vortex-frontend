@@ -2,12 +2,23 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import freighterApi from "@stellar/freighter-api";
 
+/** The network name the app expects, normalised to upper-case for comparison. */
+const EXPECTED_NETWORK = (process.env.NEXT_PUBLIC_NETWORK ?? "testnet").toUpperCase();
+
 export type WalletState = {
   address: string | null;
   network: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  /** Generic connection error message (e.g. user declined access). */
   error: string | null;
+  /**
+   * `true` when the wallet is connected but on a different network than the
+   * one configured via NEXT_PUBLIC_NETWORK. The wallet is still treated as
+   * connected so the address remains accessible, but the UI should surface a
+   * clear warning.
+   */
+  networkMismatch: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
   hydrate: () => Promise<void>;
@@ -21,9 +32,10 @@ export const useWalletStore = create<WalletState>()(
       isConnected: false,
       isConnecting: false,
       error: null,
+      networkMismatch: false,
 
       connect: async () => {
-        set({ isConnecting: true, error: null });
+        set({ isConnecting: true, error: null, networkMismatch: false });
         try {
           const isAppConnected = await freighterApi.isConnected();
           if (!isAppConnected) {
@@ -32,6 +44,7 @@ export const useWalletStore = create<WalletState>()(
 
           const address = await freighterApi.requestAccess();
           const network = await freighterApi.getNetwork();
+          const mismatch = network.toUpperCase() !== EXPECTED_NETWORK;
 
           set({
             address,
@@ -39,6 +52,7 @@ export const useWalletStore = create<WalletState>()(
             isConnected: true,
             isConnecting: false,
             error: null,
+            networkMismatch: mismatch,
           });
         } catch (err) {
           set({
@@ -47,6 +61,7 @@ export const useWalletStore = create<WalletState>()(
             isConnected: false,
             isConnecting: false,
             error: err instanceof Error ? err.message : "Failed to connect wallet.",
+            networkMismatch: false,
           });
         }
       },
@@ -58,6 +73,7 @@ export const useWalletStore = create<WalletState>()(
           isConnected: false,
           isConnecting: false,
           error: null,
+          networkMismatch: false,
         });
       },
 
@@ -71,15 +87,17 @@ export const useWalletStore = create<WalletState>()(
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());
           if (!allowed) {
-            set({ address: null, network: null, isConnected: false, error: null });
+            set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false });
             return;
           }
 
           const address = await freighterApi.getPublicKey();
           const network = await freighterApi.getNetwork();
-          set({ address, network, isConnected: true, error: null });
+          const mismatch = network.toUpperCase() !== EXPECTED_NETWORK;
+
+          set({ address, network, isConnected: true, error: null, networkMismatch: mismatch });
         } catch {
-          set({ address: null, network: null, isConnected: false, error: null });
+          set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false });
         }
       },
     }),

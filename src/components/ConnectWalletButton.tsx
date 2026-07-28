@@ -8,7 +8,8 @@ function truncateAddress(address: string) {
 }
 
 export function ConnectWalletButton({ compact = false }: { compact?: boolean }) {
-  const { address, isConnected, isConnecting, error, connect, disconnect } = useWalletStore();
+  const { address, isConnected, isConnecting, error, networkMismatch, connect, disconnect } =
+    useWalletStore();
 
   const handleConnect = async () => {
     await connect();
@@ -24,16 +25,28 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
 
   if (isConnected && address) {
     return (
-      <button
-        type="button"
-        onClick={disconnect}
-        aria-label={`Disconnect wallet ${truncateAddress(address)}`}
-        className={`${baseClass} border-vx-sage/40 text-vx-text hover:border-vx-sage/70 hover:text-red-300 focus-visible:text-red-300 group`}
-      >
-        <span aria-hidden="true" className="inline-block w-1.5 h-1.5 rounded-full bg-vx-sage mr-1.5 align-middle" />
-        <span aria-hidden="true" className="group-hover:hidden group-focus-visible:hidden">{truncateAddress(address)}</span>
-        <span aria-hidden="true" className="hidden group-hover:inline group-focus-visible:inline">Disconnect</span>
-      </button>
+      <div className="flex flex-col items-end gap-1">
+        <button
+          type="button"
+          onClick={disconnect}
+          aria-label={`Disconnect wallet ${truncateAddress(address)}`}
+          className={`${baseClass} border-vx-sage/40 text-vx-text hover:border-vx-sage/70 hover:text-red-300 focus-visible:text-red-300 group`}
+        >
+          <span aria-hidden="true" className="inline-block w-1.5 h-1.5 rounded-full bg-vx-sage mr-1.5 align-middle" />
+          <span aria-hidden="true" className="group-hover:hidden group-focus-visible:hidden">{truncateAddress(address)}</span>
+          <span aria-hidden="true" className="hidden group-hover:inline group-focus-visible:inline">Disconnect</span>
+        </button>
+
+        {networkMismatch && (
+          <p
+            role="alert"
+            className="text-xs text-yellow-400"
+          >
+            ⚠ Wrong network. Switch Freighter to{" "}
+            <span className="font-semibold">{process.env.NEXT_PUBLIC_NETWORK ?? "testnet"}</span>.
+          </p>
+        )}
+      </div>
     );
   }
 

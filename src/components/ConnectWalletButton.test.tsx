@@ -30,10 +30,12 @@ describe("ConnectWalletButton", () => {
   beforeEach(() => {
     useWalletStore.setState(initialState, true);
     vi.clearAllMocks();
+    vi.stubEnv("NEXT_PUBLIC_NETWORK", "testnet");
   });
 
   afterEach(() => {
     useWalletStore.setState(initialState, true);
+    vi.unstubAllEnvs();
   });
 
   it("shows a Connect Freighter prompt when disconnected", () => {
@@ -84,5 +86,39 @@ describe("ConnectWalletButton", () => {
         "error"
       );
     });
+  });
+
+  // ── Issue #1: network-mismatch warning ───────────────────────────────────
+
+  it("shows a network-mismatch warning when connected to the wrong network", async () => {
+    vi.stubEnv("NEXT_PUBLIC_NETWORK", "testnet");
+    isConnectedMock.mockResolvedValue(true);
+    requestAccessMock.mockResolvedValue("GABCDEFGHIJKLMNOPQRSTUVWXYZ23456");
+    // Freighter is on mainnet but the app expects testnet
+    getNetworkMock.mockResolvedValue("MAINNET");
+
+    const user = userEvent.setup();
+    render(<ConnectWalletButton />);
+    await user.click(screen.getByText("Connect Freighter"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(/wrong network/i);
+    });
+  });
+
+  it("does not show a network-mismatch warning when connected to the correct network", async () => {
+    vi.stubEnv("NEXT_PUBLIC_NETWORK", "testnet");
+    isConnectedMock.mockResolvedValue(true);
+    requestAccessMock.mockResolvedValue("GABCDEFGHIJKLMNOPQRSTUVWXYZ23456");
+    getNetworkMock.mockResolvedValue("TESTNET");
+
+    const user = userEvent.setup();
+    render(<ConnectWalletButton />);
+    await user.click(screen.getByText("Connect Freighter"));
+
+    await waitFor(() => {
+      expect(screen.getByText("GABC...3456")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 });
