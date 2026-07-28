@@ -2,15 +2,26 @@
 
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
+import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
   ethereum: "#627EEA", base: "#0052FF", polygon: "#8247E5",
   arbitrum: "#12AAFF", optimism: "#FF0420", avalanche: "#E84142",
 };
 
-export function ActivityFeed() {
-  const { items, isLoading, error, isLive } = useIntentFeed();
+export type ActivityFeedViewProps = {
+  items: FeedItem[];
+  isLoading: boolean;
+  error: unknown;
+  isLive: boolean;
+};
 
+export function ActivityFeedView({
+  items,
+  isLoading,
+  error,
+  isLive,
+}: ActivityFeedViewProps) {
   if (isLoading && items.length === 0) {
     return (
       <div className="space-y-2">
@@ -62,4 +73,8 @@ export function ActivityFeed() {
       })}
     </div>
   );
+}
+
+export function ActivityFeed() {
+  return <ActivityFeedView {...useIntentFeed()} />;
 }
