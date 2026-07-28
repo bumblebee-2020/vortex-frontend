@@ -42,76 +42,84 @@ export default function MyIntentsPage() {
         </div>
 
         {!isConnected ? (
-          <div className="card p-8 text-center text-sm text-vx-muted">
+          <div role="alert" className="card p-8 text-center text-sm text-vx-muted">
             Connect your wallet to view your swap history.
           </div>
         ) : (
           <>
             {/* Filters */}
-            <div className="flex flex-wrap items-center gap-2 mb-6">
-              <label htmlFor="my-status-filter" className="sr-only">Filter by status</label>
-              <select
-                id="my-status-filter"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as IntentStatus | "all")}
-                className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>
-                    {s === "all" ? "All statuses" : s.charAt(0).toUpperCase() + s.slice(1)}
-                  </option>
-                ))}
-              </select>
+            <fieldset className="flex flex-wrap items-center gap-2 mb-6 border-0 p-0">
+              <legend className="sr-only">Filter intents</legend>
+              <label htmlFor="my-status-filter">
+                <span className="sr-only">Filter by status</span>
+                <select
+                  id="my-status-filter"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as IntentStatus | "all")}
+                  className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
+                  aria-label="Filter intents by status"
+                >
+                  {STATUS_OPTIONS.map((s) => (
+                    <option key={s} value={s}>
+                      {s === "all" ? "All statuses" : s.charAt(0).toUpperCase() + s.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-              <label htmlFor="my-chain-filter" className="sr-only">Filter by chain</label>
-              <select
-                id="my-chain-filter"
-                value={chainFilter}
-                onChange={(e) => setChainFilter(e.target.value)}
-                className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
-              >
-                <option value="all">All chains</option>
-                {CHAINS.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              <label htmlFor="my-chain-filter">
+                <span className="sr-only">Filter by chain</span>
+                <select
+                  id="my-chain-filter"
+                  value={chainFilter}
+                  onChange={(e) => setChainFilter(e.target.value)}
+                  className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
+                  aria-label="Filter intents by chain"
+                >
+                  <option value="all">All chains</option>
+                  {CHAINS.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </label>
 
-              <span className="text-xs text-vx-muted ml-auto">
+              <span className="text-xs text-vx-muted ml-auto" aria-live="polite" aria-atomic="true">
                 {filtered.length} intent{filtered.length === 1 ? "" : "s"}
               </span>
-            </div>
+            </fieldset>
 
             {/* List */}
             {isLoading ? (
-              <div className="space-y-2">
+              <div className="space-y-2" role="status" aria-label="Loading intents">
                 {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
                 ))}
               </div>
             ) : error ? (
-              <div className="card p-8 text-center text-sm text-vx-muted">
+              <div role="alert" className="card p-8 text-center text-sm text-vx-muted">
                 Couldn&apos;t load intents right now. Try again shortly.
               </div>
             ) : intents.length === 0 ? (
-              <div className="card p-8 text-center text-sm text-vx-muted">
+              <div role="status" className="card p-8 text-center text-sm text-vx-muted">
                 <p className="mb-4">You haven&apos;t submitted any swaps yet.</p>
                 <Link
                   href="/"
-                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors"
+                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink rounded"
                 >
                   Make your first swap
                 </Link>
               </div>
             ) : filtered.length === 0 ? (
-              <div className="card p-8 text-center text-sm text-vx-muted">
+              <div role="status" className="card p-8 text-center text-sm text-vx-muted">
                 No intents match your filters.
               </div>
             ) : (
-              <div data-address={address} data-testid="intents-list" className="space-y-2">
+              <div data-address={address} data-testid="intents-list" className="space-y-2" role="list">
                 {filtered.map((item) => (
                   <div
                     key={item.id}
-                    className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line"
+                    role="listitem"
+                    className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line focus-within:ring-2 focus-within:ring-vx-sage focus-within:ring-offset-2 focus-within:ring-offset-vx-ink"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-vx-text truncate">

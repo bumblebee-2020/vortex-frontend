@@ -175,4 +175,43 @@ describe("MyIntentsPage", () => {
     expect(screen.getByText("No intents match your filters.")).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /make your first swap/i })).not.toBeInTheDocument();
   });
+
+  it("renders filter controls with proper accessibility attributes", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    render(<MyIntentsPage />);
+
+    const statusSelect = screen.getByLabelText("Filter intents by status");
+    const chainSelect = screen.getByLabelText("Filter intents by chain");
+    expect(statusSelect).toHaveAttribute("aria-label");
+    expect(chainSelect).toHaveAttribute("aria-label");
+  });
+
+  it("renders the intents list with accessible list structure", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    render(<MyIntentsPage />);
+
+    const list = screen.getByTestId("intents-list");
+    expect(list).toHaveAttribute("role", "list");
+  });
+
+  it("renders error state with role alert for screen readers", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: new Error("boom") });
+    render(<MyIntentsPage />);
+
+    const errorMsg = screen.getByText(/Couldn't load intents/);
+    expect(errorMsg.closest("[role='alert']")).toBeInTheDocument();
+  });
+
+  it("displays intent count with live region for dynamic updates", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    render(<MyIntentsPage />);
+
+    const countElement = screen.getByText("2 intents");
+    expect(countElement).toHaveAttribute("aria-live", "polite");
+    expect(countElement).toHaveAttribute("aria-atomic", "true");
+  });
 });
