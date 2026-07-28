@@ -7,7 +7,7 @@ import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { useWalletStore } from "@/store/wallet";
-import { useMyIntents } from "@/hooks/useMyIntents";
+import { useMyLiveIntents } from "@/hooks/useMyLiveIntents";
 import { CHAINS } from "@/lib/marketData";
 import type { IntentStatus } from "@/lib/types";
 
@@ -17,7 +17,7 @@ export default function MyIntentsPage() {
   const address = useWalletStore((s) => s.address);
   const isConnected = useWalletStore((s) => s.isConnected);
 
-  const { intents, isLoading, error } = useMyIntents(address);
+  const { intents, isLoading, error, isLive } = useMyLiveIntents(address);
 
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
@@ -34,12 +34,20 @@ export default function MyIntentsPage() {
       <Nav variant="breadcrumb" label="My Intents" />
 
       <main id="main-content" className="max-w-5xl mx-auto px-5 py-12">
-        <div className="mb-8">
-          <div className="eyebrow mb-3">Swap History</div>
-          <h1 className="text-3xl font-bold text-vx-text mb-3">My Intents</h1>
-          <p className="text-vx-muted text-sm max-w-lg leading-relaxed">
-            All swap intents submitted from your connected wallet.
-          </p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-3">Swap History</div>
+            <h1 className="text-3xl font-bold text-vx-text mb-3">My Intents</h1>
+            <p className="text-vx-muted text-sm max-w-lg leading-relaxed">
+              All swap intents submitted from your connected wallet.
+            </p>
+          </div>
+          {isConnected && (
+            <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1 pt-1 flex-shrink-0">
+              <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
+              {isLive ? "Live" : "Polling"}
+            </div>
+          )}
         </div>
 
         {!isConnected ? (
