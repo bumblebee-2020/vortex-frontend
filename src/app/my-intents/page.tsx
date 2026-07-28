@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { useWalletStore } from "@/store/wallet";
 import { useMyIntents } from "@/hooks/useMyIntents";
 import { CHAINS } from "@/lib/marketData";
@@ -42,8 +43,11 @@ export default function MyIntentsPage() {
         </div>
 
         {!isConnected ? (
-          <div className="card p-8 text-center text-sm text-vx-muted">
-            Connect your wallet to view your swap history.
+          <div className="card p-8 text-center">
+            <p className="text-sm text-vx-muted mb-4">
+              Connect your wallet to view your swap history.
+            </p>
+            <ConnectWalletButton />
           </div>
         ) : (
           <>

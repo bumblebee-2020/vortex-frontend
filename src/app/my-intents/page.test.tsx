@@ -69,11 +69,12 @@ describe("MyIntentsPage", () => {
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
   });
 
-  it("shows a connect prompt when wallet is not connected", () => {
+  it("shows a connect prompt with ConnectWalletButton when wallet is not connected", () => {
     mockWallet({ address: null, isConnected: false });
     useMyIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: undefined });
     render(<MyIntentsPage />);
     expect(screen.getByText(/Connect your wallet/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Connect Freighter/i })).toBeInTheDocument();
     expect(screen.queryByTestId("intents-list")).not.toBeInTheDocument();
   });
 
