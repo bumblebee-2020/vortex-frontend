@@ -6,7 +6,7 @@ import type { FeedItem } from "@/lib/types";
 // fetch all intents and filter client-side. Once the backend exposes
 // GET /intents?address=<addr> this key can be swapped to that URL.
 export function useMyIntents(address: string | null) {
-  const { data, error, isLoading } = useSWR<FeedItem[]>(
+  const { data, error, isLoading, mutate } = useSWR<FeedItem[]>(
     address ? "/intents" : null,
     fetcher,
   );
@@ -18,5 +18,5 @@ export function useMyIntents(address: string | null) {
     return true;
   });
 
-  return { intents, isLoading: address ? isLoading : false, error };
+  return { intents, isLoading: address ? isLoading : false, error, mutate };
 }
