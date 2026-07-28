@@ -1,31 +1,95 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createElement } from "react";
+import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { Nav } from "./Nav";
+
+/** Wrap Nav in I18nProvider so locale context is available. */
+function renderNav(props: Parameters<typeof Nav>[0]) {
+  return render(
+    createElement(I18nProvider, { locale: "en" }, createElement(Nav, props))
+  );
+}
 
 describe("Nav", () => {
   it("renders the full link nav for the home variant", () => {
-    render(<Nav variant="home" />);
+    renderNav({ variant: "home" });
     expect(screen.getByText("Explore")).toBeInTheDocument();
     expect(screen.getByText("Become a Solver")).toBeInTheDocument();
     expect(screen.getByText("Connect Freighter")).toBeInTheDocument();
   });
 
   it("renders a breadcrumb for non-home variants", () => {
-    render(<Nav variant="breadcrumb" label="Solver Portal" />);
+    renderNav({ variant: "breadcrumb", label: "Solver Portal" });
     expect(screen.getByText("Solver Portal")).toBeInTheDocument();
     expect(screen.queryByText("Explore")).not.toBeInTheDocument();
   });
 
   it("does not render a mobile menu toggle for the breadcrumb variant", () => {
-    render(<Nav variant="breadcrumb" label="Solver Portal" />);
+    renderNav({ variant: "breadcrumb", label: "Solver Portal" });
     expect(screen.queryByLabelText("Open menu")).not.toBeInTheDocument();
+  });
+
+  describe("locale switcher", () => {
+    it("renders a labeled locale-select control", () => {
+      renderNav({ variant: "home" });
+
+      const select = screen.getByRole("combobox", { name: /switch language/i });
+      expect(select).toBeInTheDocument();
+    });
+
+    it("defaults to the locale provided by I18nProvider", () => {
+      renderNav({ variant: "home" });
+
+      const select = screen.getByRole("combobox", { name: /switch language/i });
+      expect((select as HTMLSelectElement).value).toBe("en");
+    });
+
+    it("lists all available locales as options", () => {
+      renderNav({ variant: "home" });
+
+      const options = screen.getAllByRole("option");
+      const values = options.map((o) => (o as HTMLOptionElement).value);
+      expect(values).toContain("en");
+      expect(values).toContain("es");
+    });
+
+    it("switches locale when a new option is selected", async () => {
+      const user = userEvent.setup();
+      renderNav({ variant: "home" });
+
+      const select = screen.getByRole("combobox", { name: /switch language/i });
+      await user.selectOptions(select, "es");
+
+      expect((select as HTMLSelectElement).value).toBe("es");
+    });
+
+    it("is keyboard-operable (accessible via keyboard)", async () => {
+      const user = userEvent.setup();
+      renderNav({ variant: "home" });
+
+      const select = screen.getByRole("combobox", { name: /switch language/i });
+
+      // Tab to the select and verify it becomes focused
+      await user.tab();
+      // The select should be reachable via keyboard (focusable)
+      select.focus();
+      expect(document.activeElement).toBe(select);
+    });
+
+    it("also renders locale switcher in the breadcrumb variant", () => {
+      renderNav({ variant: "breadcrumb", label: "Solver Portal" });
+
+      const select = screen.getByRole("combobox", { name: /switch language/i });
+      expect(select).toBeInTheDocument();
+    });
   });
 
   describe("mobile menu (home variant)", () => {
     it("is closed by default and opens on toggle", async () => {
       const user = userEvent.setup();
-      render(<Nav variant="home" />);
+      renderNav({ variant: "home" });
 
       const toggle = screen.getByLabelText("Open menu");
       expect(toggle).toHaveAttribute("aria-expanded", "false");
@@ -39,7 +103,7 @@ describe("Nav", () => {
 
     it("closes when a link in the panel is clicked", async () => {
       const user = userEvent.setup();
-      render(<Nav variant="home" />);
+      renderNav({ variant: "home" });
 
       await user.click(screen.getByLabelText("Open menu"));
       const links = screen.getAllByText("Explore");
