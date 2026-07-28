@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { useWebSocket } from "./useWebSocket";
 
 class MockWebSocket {
@@ -60,6 +60,54 @@ describe("useWebSocket", () => {
       MockWebSocket.instances[0].onmessage?.({ data: "not json" });
     }).not.toThrow();
     expect(result.current.lastMessage).toBeNull();
+  });
+
+  // Drops the newest socket and asserts the reconnect fires only once the
+  // expected backoff delay has fully elapsed.
+  const expectReconnectAfter = (expectedDelayMs: number) => {
+    const before = MockWebSocket.instances.length;
+    act(() => {
+      MockWebSocket.instances[before - 1].onclose?.();
+    });
+    act(() => {
+      vi.advanceTimersByTime(expectedDelayMs - 1);
+    });
+    expect(MockWebSocket.instances).toHaveLength(before);
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(MockWebSocket.instances).toHaveLength(before + 1);
+  };
+
+  it("backs off exponentially across repeated failures, capped at the maximum", () => {
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useWebSocket("ws://localhost:4000/ws"));
+
+      for (const delay of [3000, 6000, 12000, 24000, 48000, 60000, 60000]) {
+        expectReconnectAfter(delay);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("resets the backoff after a successful connection", () => {
+    vi.useFakeTimers();
+    try {
+      renderHook(() => useWebSocket("ws://localhost:4000/ws"));
+
+      expectReconnectAfter(3000);
+      expectReconnectAfter(6000);
+
+      act(() => {
+        MockWebSocket.instances[MockWebSocket.instances.length - 1].onopen?.();
+      });
+
+      expectReconnectAfter(3000);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("closes the socket on unmount", () => {
