@@ -116,7 +116,7 @@ export default function MyIntentsPage() {
                   <Link
                     key={item.id}
                     href={`/explore/${item.id}`}
-                    className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-vx-text truncate">
@@ -126,7 +126,9 @@ export default function MyIntentsPage() {
                         {item.srcChain} · via {item.solver}
                       </div>
                     </div>
-                    <IntentStatusBadge status={item.status} />
+                    <div className="self-start sm:self-center">
+                      <IntentStatusBadge status={item.status} />
+                    </div>
                   </Link>
                 ))}
               </div>

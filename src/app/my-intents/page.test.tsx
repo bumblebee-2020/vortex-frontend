@@ -177,6 +177,16 @@ describe("MyIntentsPage", () => {
     expect(detailLinks[1]).toHaveAttribute("href", "/explore/2");
   });
 
+  it("renders responsive layout with flex-col on mobile", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    const { container } = render(<MyIntentsPage />);
+    const rows = container.querySelectorAll('[data-testid="intents-list"] a');
+    rows.forEach((row) => {
+      expect(row).toHaveClass("flex-col", "sm:flex-row");
+    });
+  });
+
   it("shows filter-empty state (not the no-swaps CTA) when filters exclude all results", async () => {
     mockWallet({ address: "GABC123", isConnected: true });
     useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
