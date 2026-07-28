@@ -8,6 +8,7 @@ import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { useWalletStore } from "@/store/wallet";
 import { useMyIntents } from "@/hooks/useMyIntents";
 import { CHAINS } from "@/lib/marketData";
+import { SkeletonCard } from "@/components/Skeleton";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
@@ -83,11 +84,7 @@ export default function MyIntentsPage() {
 
             {/* List */}
             {isLoading ? (
-              <div className="space-y-2">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-                ))}
-              </div>
+              <SkeletonCard rows={4} rowHeight="h-14" />
             ) : error ? (
               <div className="card p-8 text-center text-sm text-vx-muted">
                 Couldn&apos;t load intents right now. Try again shortly.
