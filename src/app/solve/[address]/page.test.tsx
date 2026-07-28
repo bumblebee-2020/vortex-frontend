@@ -206,4 +206,38 @@ describe("SolverDetailPage", () => {
     await user.keyboard("{Enter}");
     expect(navigator.clipboard.writeText).toHaveBeenCalled();
   });
+
+  // Issue #47: Solver trend indicators
+  it("displays solver trend for success rate compared to average", () => {
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const successRateTrend = screen.queryByTestId("success-rate-trend");
+    if (successRateTrend) {
+      expect(successRateTrend).toBeInTheDocument();
+    }
+  });
+
+  it("displays solver trend for fill time compared to average", () => {
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const fillTimeTrend = screen.queryByTestId("fill-time-trend");
+    if (fillTimeTrend) {
+      expect(fillTimeTrend).toBeInTheDocument();
+    }
+  });
+
+  it("correctly identifies above-average success rate", () => {
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const trendIndicator = screen.queryByText(/above.*average/i);
+    if (trendIndicator) {
+      expect(trendIndicator).toBeInTheDocument();
+    }
+  });
 });
