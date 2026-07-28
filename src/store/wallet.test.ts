@@ -131,7 +131,29 @@ describe("useWalletStore", () => {
     expect(state.error).toMatch(/not installed/i);
   });
 
-  it("sets an error when requestAccess rejects", async () => {
+  // ── Issue #2: not-installed ──────────────────────────────────────────────
+
+  it("sets notInstalled=true and a specific error when Freighter is not installed", async () => {
+    isConnectedMock.mockResolvedValue(false);
+
+    await useWalletStore.getState().connect();
+
+    const state = useWalletStore.getState();
+    expect(state.notInstalled).toBe(true);
+    expect(state.isConnected).toBe(false);
+    expect(state.error).toMatch(/not installed/i);
+  });
+
+  it("does NOT set notInstalled for a generic requestAccess rejection", async () => {
+    isConnectedMock.mockResolvedValue(true);
+    requestAccessMock.mockRejectedValue(new Error("User declined access"));
+
+    await useWalletStore.getState().connect();
+
+    const state = useWalletStore.getState();
+    expect(state.notInstalled).toBe(false);
+    expect(state.error).toBe("User declined access");
+  });  it("sets an error when requestAccess rejects", async () => {
     isConnectedMock.mockResolvedValue(true);
     requestAccessMock.mockRejectedValue(new Error("User declined access"));
 

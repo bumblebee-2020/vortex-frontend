@@ -3,12 +3,14 @@
 import { useWalletStore } from "@/store/wallet";
 import { useToastStore } from "@/store/toast";
 
+const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
+
 function truncateAddress(address: string) {
   return `${address.slice(0, 4)}...${address.slice(-4)}`;
 }
 
 export function ConnectWalletButton({ compact = false }: { compact?: boolean }) {
-  const { address, isConnected, isConnecting, error, networkMismatch, connect, disconnect } =
+  const { address, isConnected, isConnecting, error, networkMismatch, notInstalled, connect, disconnect } =
     useWalletStore();
 
   const handleConnect = async () => {
@@ -47,6 +49,27 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
           </p>
         )}
       </div>
+    );
+  }
+
+  // Not-installed: show an install link instead of a generic retry CTA.
+  if (notInstalled) {
+    return (
+      <a
+        href={FREIGHTER_INSTALL_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Install the Freighter browser extension"
+        className={`${baseClass} border-vx-border text-vx-muted hover:border-vx-sage/30 hover:text-vx-text`}
+      >
+        {!compact && (
+          <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        )}
+        Install Freighter
+      </a>
     );
   }
 

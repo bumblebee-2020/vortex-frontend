@@ -121,4 +121,36 @@ describe("ConnectWalletButton", () => {
     });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
+
+  // ── Issue #2: not-installed CTA ──────────────────────────────────────────
+
+  it("shows an Install Freighter link (not a retry button) when Freighter is not installed", async () => {
+    isConnectedMock.mockResolvedValue(false);
+
+    const user = userEvent.setup();
+    render(<ConnectWalletButton />);
+    await user.click(screen.getByText("Connect Freighter"));
+
+    await waitFor(() => {
+      const link = screen.getByRole("link", { name: /install.*freighter/i });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute("href", "https://www.freighter.app/");
+    });
+    // The generic "Retry Connection" button must NOT be present
+    expect(screen.queryByText("Retry Connection")).not.toBeInTheDocument();
+  });
+
+  it("shows Retry Connection for a generic (non-install) failure", async () => {
+    isConnectedMock.mockResolvedValue(true);
+    requestAccessMock.mockRejectedValue(new Error("User declined access"));
+
+    const user = userEvent.setup();
+    render(<ConnectWalletButton />);
+    await user.click(screen.getByText("Connect Freighter"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Retry Connection")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("link", { name: /install.*freighter/i })).not.toBeInTheDocument();
+  });
 });

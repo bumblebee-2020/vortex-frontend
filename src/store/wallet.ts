@@ -19,6 +19,12 @@ export type WalletState = {
    * clear warning.
    */
   networkMismatch: boolean;
+  /**
+   * `true` when the connect attempt failed specifically because the Freighter
+   * extension is not installed (as opposed to a generic failure). The UI can
+   * use this to show an install link instead of a generic retry CTA.
+   */
+  notInstalled: boolean;
   connect: () => Promise<void>;
   disconnect: () => void;
   hydrate: () => Promise<void>;
@@ -33,13 +39,22 @@ export const useWalletStore = create<WalletState>()(
       isConnecting: false,
       error: null,
       networkMismatch: false,
+      notInstalled: false,
 
       connect: async () => {
-        set({ isConnecting: true, error: null, networkMismatch: false });
+        set({ isConnecting: true, error: null, networkMismatch: false, notInstalled: false });
         try {
           const isAppConnected = await freighterApi.isConnected();
           if (!isAppConnected) {
-            throw new Error("Freighter extension is not installed or enabled.");
+            set({
+              address: null,
+              network: null,
+              isConnected: false,
+              isConnecting: false,
+              error: "Freighter extension is not installed or enabled.",
+              notInstalled: true,
+            });
+            return;
           }
 
           const address = await freighterApi.requestAccess();
@@ -53,6 +68,7 @@ export const useWalletStore = create<WalletState>()(
             isConnecting: false,
             error: null,
             networkMismatch: mismatch,
+            notInstalled: false,
           });
         } catch (err) {
           set({
@@ -62,6 +78,7 @@ export const useWalletStore = create<WalletState>()(
             isConnecting: false,
             error: err instanceof Error ? err.message : "Failed to connect wallet.",
             networkMismatch: false,
+            notInstalled: false,
           });
         }
       },
@@ -87,7 +104,7 @@ export const useWalletStore = create<WalletState>()(
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());
           if (!allowed) {
-            set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false });
+            set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false, notInstalled: false });
             return;
           }
 
@@ -95,9 +112,9 @@ export const useWalletStore = create<WalletState>()(
           const network = await freighterApi.getNetwork();
           const mismatch = network.toUpperCase() !== EXPECTED_NETWORK;
 
-          set({ address, network, isConnected: true, error: null, networkMismatch: mismatch });
+          set({ address, network, isConnected: true, error: null, networkMismatch: mismatch, notInstalled: false });
         } catch {
-          set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false });
+          set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false, notInstalled: false });
         }
       },
     }),
