@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
@@ -11,15 +11,17 @@ import { CHAINS } from "@/lib/marketData";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
+const PAGE_SIZE = 10;
 
 export default function MyIntentsPage() {
   const address = useWalletStore((s) => s.address);
   const isConnected = useWalletStore((s) => s.isConnected);
 
-  const { intents, isLoading, error } = useMyIntents(address);
+  const { intents, isLoading, error, mutate } = useMyIntents(address);
 
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     let result = intents;
@@ -27,6 +29,17 @@ export default function MyIntentsPage() {
     if (chainFilter !== "all") result = result.filter((i) => i.srcChain === chainFilter);
     return result;
   }, [intents, statusFilter, chainFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, chainFilter]);
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
   return (
     <div className="min-h-screen">
@@ -83,14 +96,25 @@ export default function MyIntentsPage() {
 
             {/* List */}
             {isLoading ? (
-              <div className="space-y-2">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-                ))}
-              </div>
+              <>
+                <div aria-hidden="true" className="space-y-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
+                  ))}
+                </div>
+                <div className="sr-only" role="status" aria-live="polite">
+                  Loading your intents...
+                </div>
+              </>
             ) : error ? (
               <div className="card p-8 text-center text-sm text-vx-muted">
-                Couldn&apos;t load intents right now. Try again shortly.
+                <p className="mb-4">Couldn&apos;t load intents right now. Try again shortly.</p>
+                <button
+                  onClick={() => mutate()}
+                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors"
+                >
+                  Retry
+                </button>
               </div>
             ) : intents.length === 0 ? (
               <div className="card p-8 text-center text-sm text-vx-muted">
@@ -107,24 +131,52 @@ export default function MyIntentsPage() {
                 No intents match your filters.
               </div>
             ) : (
-              <div data-address={address} data-testid="intents-list" className="space-y-2">
-                {filtered.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-vx-text truncate">
-                        {item.srcAmount} {item.srcToken} → {item.dstToken}
+              <>
+                <div data-address={address} data-testid="intents-list" className="space-y-2">
+                  {paginated.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-vx-text truncate">
+                          {item.srcAmount} {item.srcToken} → {item.dstToken}
+                        </div>
+                        <div className="text-xs text-vx-muted capitalize">
+                          {item.srcChain} · via {item.solver}
+                        </div>
                       </div>
-                      <div className="text-xs text-vx-muted capitalize">
-                        {item.srcChain} · via {item.solver}
-                      </div>
+                      <IntentStatusBadge status={item.status} />
                     </div>
-                    <IntentStatusBadge status={item.status} />
+                  ))}
+                </div>
+
+                {pageCount > 1 && (
+                  <div className="flex items-center justify-center gap-4 mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-vx-border text-vx-muted
+                                 hover:text-vx-text hover:border-vx-sage/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      Previous
+                    </button>
+                    <span className="text-xs text-vx-muted num">
+                      Page {page} of {pageCount}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                      disabled={page === pageCount}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-vx-border text-vx-muted
+                                 hover:text-vx-text hover:border-vx-sage/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      Next
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+              </>
             )}
           </>
         )}
