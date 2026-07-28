@@ -125,4 +125,71 @@ describe("SolverDetailPage", () => {
     });
     expect(alert).toBeInTheDocument();
   });
+
+  describe("uptime indicator", () => {
+    it("displays active status badge when solver is active", () => {
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const statusBadge = screen.getByLabelText(/Solver status:/);
+      expect(statusBadge).toHaveTextContent("Active");
+      expect(statusBadge).toHaveClass("bg-vx-sage-bg");
+      expect(statusBadge).toHaveClass("text-vx-sage");
+    });
+
+    it("displays inactive status badge when solver is inactive", () => {
+      vi.mocked(vi.mocked(require("@/hooks/useSolvers").useSolvers)).mockReturnValue({
+        solvers: [
+          {
+            name: "Inactive Solver",
+            address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING",
+            bondUsd: 500,
+            fills: 42,
+            failed: 10,
+            volumeUsd: 125000,
+            avgFillTimeSeconds: 12,
+            successRatePct: 80.95,
+            chains: ["ethereum"],
+            status: "inactive",
+          },
+        ],
+        isLoading: false,
+        error: undefined,
+      });
+
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const statusBadge = screen.getByLabelText(/Solver status:/);
+      expect(statusBadge).toHaveTextContent("Inactive");
+      expect(statusBadge).toHaveClass("bg-vx-surface");
+      expect(statusBadge).toHaveClass("text-vx-muted");
+    });
+
+    it("shows status badge in header with proper styling", () => {
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const statusBadge = screen.getByLabelText(/Solver status:/);
+      expect(statusBadge).toHaveClass("font-semibold");
+      expect(statusBadge).toHaveClass("border");
+      expect(statusBadge).toHaveClass("rounded-lg");
+    });
+
+    it("maintains status visibility in responsive layout", () => {
+      const { container } = render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const headerCard = container.querySelector(".card");
+      const statusBadge = screen.getByLabelText(/Solver status:/);
+
+      expect(headerCard).toContainElement(statusBadge);
+      expect(statusBadge).toHaveClass("flex-shrink-0");
+      expect(statusBadge).toHaveClass("whitespace-nowrap");
+    });
+  });
 });
