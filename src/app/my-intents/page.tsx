@@ -113,9 +113,10 @@ export default function MyIntentsPage() {
             ) : (
               <div data-address={address} data-testid="intents-list" className="space-y-2">
                 {filtered.map((item) => (
-                  <div
+                  <Link
                     key={item.id}
-                    className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line"
+                    href={`/explore/${item.id}`}
+                    className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-vx-text truncate">
@@ -126,7 +127,7 @@ export default function MyIntentsPage() {
                       </div>
                     </div>
                     <IntentStatusBadge status={item.status} />
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

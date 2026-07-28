@@ -165,6 +165,18 @@ describe("MyIntentsPage", () => {
     expect(screen.getByRole("link", { name: /make your first swap/i })).toHaveAttribute("href", "/");
   });
 
+  it("links each intent row to the intent detail page", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    render(<MyIntentsPage />);
+    const detailLinks = screen.getAllByRole("link").filter((link) =>
+      link.getAttribute("href")?.startsWith("/explore/")
+    );
+    expect(detailLinks).toHaveLength(2);
+    expect(detailLinks[0]).toHaveAttribute("href", "/explore/1");
+    expect(detailLinks[1]).toHaveAttribute("href", "/explore/2");
+  });
+
   it("shows filter-empty state (not the no-swaps CTA) when filters exclude all results", async () => {
     mockWallet({ address: "GABC123", isConnected: true });
     useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
