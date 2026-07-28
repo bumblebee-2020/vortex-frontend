@@ -7,6 +7,7 @@ import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { useSolvers } from "@/hooks/useSolvers";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
+import { CHAINS } from "@/lib/marketData";
 
 function truncateAddress(address: string) {
   if (address.length <= 12) return address;
@@ -100,14 +101,23 @@ export default function SolverDetailPage({ params }: { params: { address: string
                 <h2 className="eyebrow text-xs mb-2">Supported Chains</h2>
                 <div className="flex flex-wrap gap-2">
                   {solver.chains.length > 0 ? (
-                    solver.chains.map(chain => (
-                      <span 
-                        key={chain} 
-                        className="text-xs px-2 py-1 bg-vx-surface rounded text-vx-text border border-vx-border"
-                      >
-                        {chain}
-                      </span>
-                    ))
+                    solver.chains.map(chainId => {
+                      const chainMeta = CHAINS.find(c => c.id === chainId);
+                      const chainName = chainMeta?.name ?? chainId;
+                      const chainColor = chainMeta?.color ?? "#6B7280";
+                      return (
+                        <span 
+                          key={chainId} 
+                          className="text-xs px-2 py-1 rounded text-white border font-medium"
+                          style={{ 
+                            backgroundColor: chainColor,
+                            borderColor: chainColor,
+                          }}
+                        >
+                          {chainName}
+                        </span>
+                      );
+                    })
                   ) : (
                     <span className="text-xs text-vx-muted">No chains supported yet</span>
                   )}
