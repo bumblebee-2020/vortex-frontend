@@ -240,4 +240,33 @@ describe("SolverDetailPage", () => {
       expect(trendIndicator).toBeInTheDocument();
     }
   });
+
+  // Issue #46: Not-found state for unknown address
+  it("shows not-found state for unknown solver address", () => {
+    render(
+      <SolverDetailPage params={{ address: "GBUNKNOWNADDRESSNOTFOUND0000000000000000000" }} />
+    );
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent(/No solver found/i);
+  });
+
+  it("distinguishes not-found from loading state", () => {
+    render(
+      <SolverDetailPage params={{ address: "GBUNKNOWNADDRESSNOTFOUND0000000000000000000" }} />
+    );
+
+    const notFoundAlert = screen.getByRole("alert");
+    expect(notFoundAlert).toBeInTheDocument();
+    expect(notFoundAlert).not.toHaveClass("animate-pulse");
+  });
+
+  it("displays not-found message with proper ARIA role", () => {
+    render(
+      <SolverDetailPage params={{ address: "GBUNKNOWNADDRESSNOTFOUND0000000000000000000" }} />
+    );
+
+    const alert = screen.getByRole("alert", { name: /No solver found/i });
+    expect(alert).toBeInTheDocument();
+  });
 });
