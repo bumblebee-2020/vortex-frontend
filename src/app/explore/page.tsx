@@ -6,6 +6,7 @@ import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
 import type { IntentStatus } from "@/lib/types";
@@ -14,16 +15,28 @@ const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted
 const SORT_OPTIONS = ["newest", "oldest", "largest"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
 const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 300;
 
 export default function ExplorePage() {
   const { intents, isLoading, error, isLive } = useLiveIntents();
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortOption>("newest");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
 
   const filtered = useMemo(() => {
     let result = intents;
+    const query = debouncedSearch.trim().toLowerCase();
+    if (query) {
+      result = result.filter((i) =>
+        [i.id, i.srcToken, i.dstToken, i.srcChain, i.solver].some((field) =>
+          field.toLowerCase().includes(query),
+        ),
+      );
+    }
     if (statusFilter !== "all") {
       result = result.filter((i) => i.status === statusFilter);
     }
@@ -38,14 +51,14 @@ export default function ExplorePage() {
     });
 
     return result;
-  }, [intents, statusFilter, chainFilter, sort]);
+  }, [intents, debouncedSearch, statusFilter, chainFilter, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, chainFilter, sort]);
+  }, [debouncedSearch, statusFilter, chainFilter, sort]);
 
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
@@ -72,6 +85,17 @@ export default function ExplorePage() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
+          <label htmlFor="intent-search" className="sr-only">Search intents</label>
+          <input
+            id="intent-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by id, token, chain or solver"
+            className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text
+                       placeholder-vx-dim/60 focus:outline-none focus:border-vx-sage/50 transition-colors"
+          />
+
           <label htmlFor="status-filter" className="sr-only">Filter by status</label>
           <select
             id="status-filter"

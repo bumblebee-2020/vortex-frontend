@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { FeedItem } from "@/lib/types";
 
@@ -99,6 +99,48 @@ describe("ExplorePage", () => {
 
     expect(screen.getByText("0.14 WETH → USDC")).toBeInTheDocument();
     expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
+  });
+
+  it("debounces the search input before filtering results", async () => {
+    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
+    vi.useFakeTimers();
+    try {
+      const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
+      render(<ExplorePage />);
+
+      await user.type(screen.getByLabelText("Search intents"), "b");
+
+      // Nothing is filtered until the debounce window elapses.
+      expect(screen.getByText("500 USDC → USDC")).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
+      expect(screen.getByText("0.14 WETH → USDC")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("matches the search query against solver name", async () => {
+    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
+    vi.useFakeTimers();
+    try {
+      const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
+      render(<ExplorePage />);
+
+      await user.type(screen.getByLabelText("Search intents"), "alpha");
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      expect(screen.getByText("500 USDC → USDC")).toBeInTheDocument();
+      expect(screen.getByText("1 intent")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("renders the results within a main landmark", () => {
