@@ -60,19 +60,12 @@ export default function SolvePage() {
       {/* Nav */}
       <Nav variant="breadcrumb" label={getMessage("solve.nav.label")} />
 
-      <main id="main-content" className="max-w-5xl mx-auto px-5 py-12">
-        <div className="mb-10">
-          <div className="eyebrow mb-3">{getMessage("solve.hero.eyebrow")}</div>
-          <h1 className="text-3xl font-bold text-vx-text mb-3">{getMessage("solve.hero.title")}</h1>
-          <p className="text-vx-muted text-sm max-w-lg leading-relaxed">
-            {getMessage("solve.hero.description")}
       <main id="main-content" className="max-w-5xl mx-auto px-3 sm:px-5 py-8 sm:py-12">
         <div className="mb-8 sm:mb-10">
-          <div className="eyebrow mb-2 sm:mb-3 text-xs">Solver Network</div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-vx-text mb-2 sm:mb-3">Become a Vortex Solver</h1>
+          <div className="eyebrow mb-2 sm:mb-3 text-xs">{getMessage("solve.hero.eyebrow")}</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-vx-text mb-2 sm:mb-3">{getMessage("solve.hero.title")}</h1>
           <p className="text-vx-muted text-xs sm:text-sm max-w-lg leading-relaxed">
-            Solvers are competitive market makers who fill user swap intents. Deposit a USDC bond,
-            watch the open intent feed, and earn fees on every fill you complete.
+            {getMessage("solve.hero.description")}
           </p>
         </div>
 
@@ -104,8 +97,7 @@ export default function SolvePage() {
         </div>
 
         {/* Tabs */}
-        <div role="tablist" aria-label={getMessage("solve.tabs.ariaLabel")} className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit">
-        <div role="tablist" aria-label="Solver portal sections" className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit overflow-x-auto">
+        <div role="tablist" aria-label={getMessage("solve.tabs.ariaLabel")} className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit overflow-x-auto">
           {(["leaderboard", "intents", "register"] as const).map(t => (
             <button
               key={t}
@@ -166,35 +158,22 @@ export default function SolvePage() {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-6">
                         <div>
-                          <div className="num text-sm font-semibold text-vx-text">{s.fills}</div>
-                          <div className="eyebrow">{getMessage("solve.leaderboard.fills")}</div>
-                        </div>
-                        <div>
-                          <div className="num text-sm font-semibold text-vx-text">{usdCompact.format(s.volumeUsd)}</div>
-                          <div className="eyebrow">{getMessage("solve.leaderboard.volume")}</div>
-                        </div>
-                        <div>
-                          <div className="num text-sm font-semibold text-vx-text">{s.avgFillTimeSeconds}s</div>
-                          <div className="eyebrow">{getMessage("solve.leaderboard.avgTime")}</div>
                           <div className="num text-xs sm:text-sm font-semibold text-vx-text">{s.fills}</div>
-                          <div className="eyebrow text-[10px] sm:text-xs">Fills</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">{getMessage("solve.leaderboard.fills")}</div>
                         </div>
                         <div>
-                          <div className="num text-sm font-semibold text-vx-text">{usdCompact(s.volumeUsd)}</div>
-                          <div className="eyebrow">Volume</div>
-                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{usdCompact.format(s.volumeUsd)}</div>
-                          <div className="eyebrow text-[10px] sm:text-xs">Volume</div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{usdCompact(s.volumeUsd)}</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">{getMessage("solve.leaderboard.volume")}</div>
                         </div>
                         <div>
                           <div className="num text-xs sm:text-sm font-semibold text-vx-text">{s.avgFillTimeSeconds}s</div>
-                          <div className="eyebrow text-[10px] sm:text-xs">Avg Time</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">{getMessage("solve.leaderboard.avgTime")}</div>
                         </div>
                         <div>
                           <div className={`num text-xs sm:text-sm font-semibold ${s.successRatePct > 99 ? "text-vx-sage" : "text-vx-amber"}`}>
                             {s.successRatePct}%
                           </div>
-                          <div className="eyebrow">{getMessage("solve.leaderboard.success")}</div>
-                          <div className="eyebrow text-[10px] sm:text-xs">Success</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">{getMessage("solve.leaderboard.success")}</div>
                         </div>
                       </div>
                     </div>
@@ -237,12 +216,9 @@ export default function SolvePage() {
             ) : (
               <div className="divide-y divide-vx-line">
                 {openIntents.map(intent => (
-                  <div key={intent.id} className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-vx-surface/30">
-                    <div>
-                      <div className="num text-xs text-vx-muted mb-1 capitalize">{getMessage("solve.intents.id", { id: intent.id })}</div>
                   <div key={intent.id} className="px-3 sm:px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:bg-vx-surface/30">
                     <div className="min-w-0 flex-1">
-                      <div className="num text-xs text-vx-muted mb-1 capitalize">ID: {intent.id}</div>
+                      <div className="num text-xs text-vx-muted mb-1 capitalize">{getMessage("solve.intents.id", { id: intent.id })}</div>
                       <div className="text-sm font-medium text-vx-text capitalize">
                         {intent.srcAmount} {intent.srcToken} on {intent.srcChain}
                       </div>
@@ -282,8 +258,7 @@ export default function SolvePage() {
               </div>
 
               <div>
-                <label htmlFor="solver-address" className="eyebrow block mb-2">{getMessage("solve.register.addressLabel")}</label>
-                <label htmlFor="solver-address" className="eyebrow block mb-2 text-xs">Stellar Address</label>
+                <label htmlFor="solver-address" className="eyebrow block mb-2 text-xs">{getMessage("solve.register.addressLabel")}</label>
                 <input
                   id="solver-address"
                   type="text"
@@ -302,8 +277,7 @@ export default function SolvePage() {
               </div>
 
               <div>
-                <label htmlFor="solver-bond" className="eyebrow block mb-2">{getMessage("solve.register.bondLabel")}</label>
-                <label htmlFor="solver-bond" className="eyebrow block mb-2 text-xs">Bond Amount (USDC)</label>
+                <label htmlFor="solver-bond" className="eyebrow block mb-2 text-xs">{getMessage("solve.register.bondLabel")}</label>
                 <input
                   id="solver-bond"
                   type="number"
