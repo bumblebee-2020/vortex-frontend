@@ -57,7 +57,7 @@ export function Nav(props: NavProps) {
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
               className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
             >
-              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+              <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 16 16" fill="none">
                 {mobileOpen ? (
                   <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 ) : (
