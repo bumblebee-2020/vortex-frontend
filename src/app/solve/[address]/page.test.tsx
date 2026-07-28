@@ -1,6 +1,8 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import SolverDetailPage from "./page";
+import { useToastStore } from "@/store/toast";
 
 // Mock the hooks
 vi.mock("@/hooks/useSolvers", () => ({
@@ -16,6 +18,18 @@ vi.mock("@/hooks/useSolvers", () => ({
         avgFillTimeSeconds: 12,
         successRatePct: 97.67,
         chains: ["ethereum", "polygon"],
+        status: "active",
+      },
+      {
+        name: "BetaBot",
+        address: "GBZXN3Z5GEO57LMOJNWHPGKBPJJQNVBIVLYOXG2VE7JQDZHW53DFUEI",
+        bondUsd: 300,
+        fills: 30,
+        failed: 2,
+        volumeUsd: 75000,
+        avgFillTimeSeconds: 15,
+        successRatePct: 93.33,
+        chains: ["ethereum"],
         status: "active",
       },
     ],
@@ -124,5 +138,72 @@ describe("SolverDetailPage", () => {
       name: /No solver found/,
     });
     expect(alert).toBeInTheDocument();
+  });
+
+  // Issue #48: Copy-to-clipboard for solver address
+  it("renders a copy button for the solver address", () => {
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const copyButton = screen.getByRole("button", { name: /copy/i });
+    expect(copyButton).toBeInTheDocument();
+  });
+
+  it("copies solver address to clipboard when copy button is clicked", async () => {
+    const mockClipboard = vi.fn();
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: mockClipboard,
+      },
+    });
+
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const copyButton = screen.getByRole("button", { name: /copy/i });
+    await userEvent.click(copyButton);
+
+    expect(mockClipboard).toHaveBeenCalledWith("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING");
+  });
+
+  it("shows a success toast when address is copied", async () => {
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const copyButton = screen.getByRole("button", { name: /copy/i });
+    await userEvent.click(copyButton);
+
+    await waitFor(() => {
+      const toasts = useToastStore.getState().toasts;
+      expect(toasts.some(t => t.variant === "success")).toBe(true);
+    });
+  });
+
+  it("copy button is keyboard accessible", async () => {
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+
+    const user = userEvent.setup();
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const copyButton = screen.getByRole("button", { name: /copy/i });
+    await user.tab();
+    expect(copyButton).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(navigator.clipboard.writeText).toHaveBeenCalled();
   });
 });
