@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuote } from "@/hooks/useQuote";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useSwapSubmission } from "@/hooks/useSwapSubmission";
@@ -25,8 +25,41 @@ export function SwapCard() {
   const [srcAmount, setSrcAmount] = useState("");
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
+  const chainToggleRef = useRef<HTMLButtonElement>(null);
+  const chainPickerRef = useRef<HTMLDivElement>(null);
 
   const chain = CHAINS.find(c => c.id === srcChain)!;
+
+  const closeChainPicker = () => {
+    setShowChainPicker(false);
+    chainToggleRef.current?.focus();
+  };
+
+  useEffect(() => {
+    if (showChainPicker) {
+      chainPickerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    }
+  }, [showChainPicker]);
+
+  const handleChainPickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeChainPicker();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusable = chainPickerRef.current?.querySelectorAll<HTMLButtonElement>("button");
+    if (!focusable || focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   const debouncedAmount = useDebouncedValue(srcAmount, 500);
   const hasAmount = Boolean(debouncedAmount) && parseFloat(debouncedAmount) > 0;
@@ -61,7 +94,14 @@ export function SwapCard() {
     <div className="relative">
       {/* Chain picker dropdown */}
       {showChainPicker && (
-        <div className="absolute top-0 left-0 right-0 z-20 bg-vx-card border border-vx-border rounded-xl p-3 shadow-2xl animate-fade-up">
+        <div
+          ref={chainPickerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("swap.chainPicker.title")}
+          onKeyDown={handleChainPickerKeyDown}
+          className="absolute top-0 left-0 right-0 z-20 bg-vx-card border border-vx-border rounded-xl p-3 shadow-2xl animate-fade-up"
+        >
           <div className="eyebrow mb-3 px-1">{t("swap.chainPicker.title")}</div>
           <div className="grid grid-cols-2 gap-2">
             {CHAINS.map(c => (
@@ -71,7 +111,7 @@ export function SwapCard() {
                 onClick={() => {
                   setSrcChain(c.id);
                   setSrcToken(SRC_TOKENS[c.id][0]);
-                  setShowChainPicker(false);
+                  closeChainPicker();
                 }}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all
                   ${srcChain === c.id
@@ -92,17 +132,22 @@ export function SwapCard() {
       )}
 
       {/* Main card */}
-      <div className={`card p-5 space-y-2 ${showChainPicker ? "opacity-0 pointer-events-none" : ""}`}>
+      <div
+        aria-hidden={showChainPicker}
+        className={`card p-5 space-y-2 ${showChainPicker ? "opacity-0 pointer-events-none" : ""}`}
+      >
 
         {/* ── From ── */}
         <div className="bg-vx-surface/50 rounded-xl p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="eyebrow">{t("swap.from.label")}</span>
             <button
+              ref={chainToggleRef}
               type="button"
               onClick={() => setShowChainPicker(true)}
               aria-haspopup="true"
               aria-expanded={showChainPicker}
+              aria-label={t("swap.from.selectChain", { name: chain.name })}
               className="chain-badge cursor-pointer hover:bg-vx-lav/15 transition-colors"
             >
               <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full" style={{ background: chain.color }} />
@@ -209,7 +254,7 @@ export function SwapCard() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
+            <div role="group" aria-label={t("swap.to.tokenGroup")} className="flex gap-2">
               {DST_TOKENS.map(token => (
                 <button
                   key={token.symbol}
