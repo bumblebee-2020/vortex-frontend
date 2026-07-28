@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
@@ -90,6 +91,16 @@ export default function MyIntentsPage() {
             ) : error ? (
               <div className="card p-8 text-center text-sm text-vx-muted">
                 Couldn&apos;t load intents right now. Try again shortly.
+              </div>
+            ) : intents.length === 0 ? (
+              <div className="card p-8 text-center text-sm text-vx-muted">
+                <p className="mb-4">You haven&apos;t submitted any swaps yet.</p>
+                <Link
+                  href="/"
+                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors"
+                >
+                  Make your first swap
+                </Link>
               </div>
             ) : filtered.length === 0 ? (
               <div className="card p-8 text-center text-sm text-vx-muted">

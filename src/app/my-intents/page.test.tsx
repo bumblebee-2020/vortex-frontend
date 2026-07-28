@@ -155,4 +155,24 @@ describe("MyIntentsPage", () => {
     render(<MyIntentsPage />);
     expect(screen.getByText("2 intents")).toBeInTheDocument();
   });
+
+  it("shows the empty state with a CTA when the wallet has no swaps", () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: undefined });
+    render(<MyIntentsPage />);
+    expect(screen.getByText(/haven't submitted any swaps/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /make your first swap/i })).toHaveAttribute("href", "/");
+  });
+
+  it("shows filter-empty state (not the no-swaps CTA) when filters exclude all results", async () => {
+    mockWallet({ address: "GABC123", isConnected: true });
+    useMyIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined });
+    const user = userEvent.setup();
+    render(<MyIntentsPage />);
+
+    await user.selectOptions(screen.getByLabelText("Filter by status"), "accepted");
+
+    expect(screen.getByText("No intents match your filters.")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /make your first swap/i })).not.toBeInTheDocument();
+  });
 });
