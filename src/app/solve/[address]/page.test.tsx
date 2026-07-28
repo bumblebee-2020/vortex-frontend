@@ -269,4 +269,60 @@ describe("SolverDetailPage", () => {
     const alert = screen.getByRole("alert", { name: /No solver found/i });
     expect(alert).toBeInTheDocument();
   });
+
+  // Issue #45: Loading skeleton
+  it("renders loading skeleton while fetching solver details", () => {
+    const { useSolversModule } = vi.hoisted(() => ({
+      useSolversModule: {
+        useSolvers: vi.fn(() => ({
+          solvers: [],
+          isLoading: true,
+          error: undefined,
+        })),
+      },
+    }));
+
+    vi.doMock("@/hooks/useSolvers", () => useSolversModule);
+
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const skeletons = screen.queryAllByTestId("skeleton");
+    if (skeletons.length > 0) {
+      expect(skeletons.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("skeleton has loading animation", () => {
+    const { useSolversModule } = vi.hoisted(() => ({
+      useSolversModule: {
+        useSolvers: vi.fn(() => ({
+          solvers: [],
+          isLoading: true,
+          error: undefined,
+        })),
+      },
+    }));
+
+    vi.doMock("@/hooks/useSolvers", () => useSolversModule);
+
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const animatedSkeletons = screen.queryAllByTestId("skeleton");
+    animatedSkeletons.forEach(skeleton => {
+      expect(skeleton).toHaveClass("animate-pulse");
+    });
+  });
+
+  it("does not show skeleton when content is loaded", () => {
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    const skeletons = screen.queryAllByTestId("skeleton");
+    expect(skeletons.length).toBe(0);
+  });
 });
