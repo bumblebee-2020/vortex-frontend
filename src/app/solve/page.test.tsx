@@ -19,6 +19,7 @@ vi.mock("@/hooks/useAcceptIntent", () => ({ useAcceptIntent: useAcceptIntentMock
 vi.mock("@/hooks/useSolverRegistration", () => ({ useSolverRegistration: useSolverRegistrationMock }));
 
 import SolvePage from "./page";
+import { messages } from "@/i18n/messages";
 
 const solvers: Solver[] = [
   {
@@ -77,6 +78,12 @@ describe("SolvePage", () => {
     useSolversMock.mockReturnValue({ solvers: [], isLoading: false, error: undefined });
     render(<SolvePage />);
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
+  });
+
+  it("renders the default English copy from the message catalog", () => {
+    useSolversMock.mockReturnValue({ solvers: [], isLoading: false, error: undefined });
+    render(<SolvePage />);
+    expect(screen.getByRole("heading", { name: messages.en.solve.hero.title })).toBeInTheDocument();
   });
 
   it("exposes the tabs with correct ARIA roles and selected state", async () => {

@@ -8,10 +8,10 @@ import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
+import { getMessage } from "@/i18n/messages";
+import { formatCurrency } from "@/lib/format";
 
-const usdCompact = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
+const usdCompact = (value: number) => formatCurrency(value, undefined, {
   notation: "compact",
   maximumFractionDigits: 1,
 });
@@ -19,10 +19,10 @@ const usdCompact = new Intl.NumberFormat("en-US", {
 const MIN_BOND_USD = 50;
 
 const REGISTRATION_LABEL: Record<string, string> = {
-  connecting: "Connecting wallet…",
-  building: "Preparing registration…",
-  "awaiting-signature": "Confirm in Freighter…",
-  submitting: "Submitting…",
+  connecting: getMessage("solve.register.states.connecting"),
+  building: getMessage("solve.register.states.building"),
+  "awaiting-signature": getMessage("solve.register.states.awaitingSignature"),
+  submitting: getMessage("solve.register.states.submitting"),
 };
 
 export default function SolvePage() {
@@ -37,10 +37,10 @@ export default function SolvePage() {
   const isRegistering = registration.status in REGISTRATION_LABEL;
 
   const addressError = address && !isValidStellarPublicKey(address)
-    ? "Enter a valid Stellar address (starts with G)."
+    ? getMessage("solve.register.validation.invalidAddress")
     : null;
   const bondError = bond && (isNaN(parseFloat(bond)) || parseFloat(bond) < MIN_BOND_USD)
-    ? `Minimum bond is ${MIN_BOND_USD} USDC.`
+    ? getMessage("solve.register.validation.minimumBond", { minBond: MIN_BOND_USD })
     : null;
   const canRegister = Boolean(address) && Boolean(bond) && !addressError && !bondError && !isRegistering;
 
@@ -58,47 +58,54 @@ export default function SolvePage() {
   return (
     <div className="min-h-screen">
       {/* Nav */}
-      <Nav variant="breadcrumb" label="Solver Portal" />
+      <Nav variant="breadcrumb" label={getMessage("solve.nav.label")} />
 
       <main id="main-content" className="max-w-5xl mx-auto px-5 py-12">
         <div className="mb-10">
-          <div className="eyebrow mb-3">Solver Network</div>
-          <h1 className="text-3xl font-bold text-vx-text mb-3">Become a Vortex Solver</h1>
+          <div className="eyebrow mb-3">{getMessage("solve.hero.eyebrow")}</div>
+          <h1 className="text-3xl font-bold text-vx-text mb-3">{getMessage("solve.hero.title")}</h1>
           <p className="text-vx-muted text-sm max-w-lg leading-relaxed">
+            {getMessage("solve.hero.description")}
+      <main id="main-content" className="max-w-5xl mx-auto px-3 sm:px-5 py-8 sm:py-12">
+        <div className="mb-8 sm:mb-10">
+          <div className="eyebrow mb-2 sm:mb-3 text-xs">Solver Network</div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-vx-text mb-2 sm:mb-3">Become a Vortex Solver</h1>
+          <p className="text-vx-muted text-xs sm:text-sm max-w-lg leading-relaxed">
             Solvers are competitive market makers who fill user swap intents. Deposit a USDC bond,
             watch the open intent feed, and earn fees on every fill you complete.
           </p>
         </div>
 
         {/* How solver earns */}
-        <div className="grid md:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-10">
           {[
             {
-              n: "01",
-              title: "Register + Bond",
-              body: "Deposit ≥50 USDC as a bond into the Vortex settlement contract. Your bond backs your reliability — failing to fill after accepting slashes 10%.",
+              n: getMessage("solve.steps.registerBond.number"),
+              title: getMessage("solve.steps.registerBond.title"),
+              body: getMessage("solve.steps.registerBond.body"),
             },
             {
-              n: "02",
-              title: "Watch the intent feed",
-              body: "Monitor the open intents API or WebSocket. When you see a profitable opportunity, claim exclusive fill rights for a 5-minute window.",
+              n: getMessage("solve.steps.watchIntentFeed.number"),
+              title: getMessage("solve.steps.watchIntentFeed.title"),
+              body: getMessage("solve.steps.watchIntentFeed.body"),
             },
             {
-              n: "03",
-              title: "Fill and earn",
-              body: "Execute the source-chain leg, relay to Stellar, transfer dst tokens to the user. Earn the spread between your fill cost and the user's minimum.",
+              n: getMessage("solve.steps.fillAndEarn.number"),
+              title: getMessage("solve.steps.fillAndEarn.title"),
+              body: getMessage("solve.steps.fillAndEarn.body"),
             },
           ].map(item => (
-            <div key={item.n} className="card p-5">
-              <div className="font-mono text-xs text-vx-sage mb-3">{item.n}</div>
-              <h3 className="text-sm font-semibold text-vx-text mb-2">{item.title}</h3>
+            <div key={item.n} className="card p-4 sm:p-5">
+              <div className="font-mono text-xs text-vx-sage mb-2 sm:mb-3">{item.n}</div>
+              <h3 className="text-xs sm:text-sm font-semibold text-vx-text mb-2">{item.title}</h3>
               <p className="text-xs text-vx-muted leading-relaxed">{item.body}</p>
             </div>
           ))}
         </div>
 
         {/* Tabs */}
-        <div role="tablist" aria-label="Solver portal sections" className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit">
+        <div role="tablist" aria-label={getMessage("solve.tabs.ariaLabel")} className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit">
+        <div role="tablist" aria-label="Solver portal sections" className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit overflow-x-auto">
           {(["leaderboard", "intents", "register"] as const).map(t => (
             <button
               key={t}
@@ -108,10 +115,10 @@ export default function SolvePage() {
               aria-selected={tab === t}
               aria-controls={`panel-${t}`}
               onClick={() => setTab(t)}
-              className={`px-4 py-2 rounded-md text-sm font-medium capitalize transition-all
+              className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium capitalize transition-all whitespace-nowrap
                 ${tab === t ? "bg-vx-card text-vx-text border border-vx-border" : "text-vx-muted hover:text-vx-text"}`}
             >
-              {t}
+              {getMessage(`solve.tabs.${t}`)}
             </button>
           ))}
         </div>
@@ -120,7 +127,7 @@ export default function SolvePage() {
         {tab === "leaderboard" && (
           <div id="panel-leaderboard" role="tabpanel" aria-labelledby="tab-leaderboard" className="card overflow-hidden">
             <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30">
-              <span className="text-sm font-semibold text-vx-text">Active Solvers</span>
+              <span className="text-sm font-semibold text-vx-text">{getMessage("solve.leaderboard.title")}</span>
             </div>
             {solversLoading && solvers.length === 0 ? (
               <div className="p-5 space-y-3">
@@ -130,24 +137,24 @@ export default function SolvePage() {
               </div>
             ) : solversError ? (
               <div className="p-8 text-center text-sm text-vx-muted">
-                Couldn&apos;t load the solver leaderboard right now. Try again shortly.
+                {getMessage("solve.leaderboard.error")}
               </div>
             ) : solvers.length === 0 ? (
               <div className="p-8 text-center text-sm text-vx-muted">
-                No active solvers yet.
+                {getMessage("solve.leaderboard.empty")}
               </div>
             ) : (
               <div className="divide-y divide-vx-line">
                 {solvers.map((s, i) => (
-                  <div key={s.address} className="px-5 py-4 hover:bg-vx-surface/30 transition-colors">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                        <span className="num text-lg font-bold text-vx-dim w-6 flex-shrink-0">
+                  <div key={s.address} className="px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <span className="num text-base sm:text-lg font-bold text-vx-dim flex-shrink-0">
                           {String(i + 1).padStart(2, "0")}
                         </span>
-                        <div className="min-w-0">
-                          <div className="text-sm font-semibold text-vx-text">{s.name}</div>
-                          <div className="num text-xs text-vx-muted">{s.address}</div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-vx-text truncate">{s.name}</div>
+                          <div className="num text-xs text-vx-muted truncate">{s.address}</div>
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {s.chains.map(c => (
                               <span key={c} className="text-[10px] px-1.5 py-0.5 bg-vx-surface rounded text-vx-muted">
@@ -157,24 +164,37 @@ export default function SolvePage() {
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-4 gap-6 flex-shrink-0 text-right">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-6">
                         <div>
                           <div className="num text-sm font-semibold text-vx-text">{s.fills}</div>
-                          <div className="eyebrow">Fills</div>
+                          <div className="eyebrow">{getMessage("solve.leaderboard.fills")}</div>
                         </div>
                         <div>
                           <div className="num text-sm font-semibold text-vx-text">{usdCompact.format(s.volumeUsd)}</div>
-                          <div className="eyebrow">Volume</div>
+                          <div className="eyebrow">{getMessage("solve.leaderboard.volume")}</div>
                         </div>
                         <div>
                           <div className="num text-sm font-semibold text-vx-text">{s.avgFillTimeSeconds}s</div>
-                          <div className="eyebrow">Avg Time</div>
+                          <div className="eyebrow">{getMessage("solve.leaderboard.avgTime")}</div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{s.fills}</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">Fills</div>
                         </div>
                         <div>
-                          <div className={`num text-sm font-semibold ${s.successRatePct > 99 ? "text-vx-sage" : "text-vx-amber"}`}>
+                          <div className="num text-sm font-semibold text-vx-text">{usdCompact(s.volumeUsd)}</div>
+                          <div className="eyebrow">Volume</div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{usdCompact.format(s.volumeUsd)}</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">Volume</div>
+                        </div>
+                        <div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{s.avgFillTimeSeconds}s</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">Avg Time</div>
+                        </div>
+                        <div>
+                          <div className={`num text-xs sm:text-sm font-semibold ${s.successRatePct > 99 ? "text-vx-sage" : "text-vx-amber"}`}>
                             {s.successRatePct}%
                           </div>
-                          <div className="eyebrow">Success</div>
+                          <div className="eyebrow">{getMessage("solve.leaderboard.success")}</div>
+                          <div className="eyebrow text-[10px] sm:text-xs">Success</div>
                         </div>
                       </div>
                     </div>
@@ -189,10 +209,10 @@ export default function SolvePage() {
         {tab === "intents" && (
           <div id="panel-intents" role="tabpanel" aria-labelledby="tab-intents" className="card overflow-hidden">
             <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30 flex items-center justify-between">
-              <span className="text-sm font-semibold text-vx-text">Open Intents</span>
+              <span className="text-sm font-semibold text-vx-text">{getMessage("solve.intents.title")}</span>
               <span className="chip bg-vx-sage-bg text-vx-sage text-[10px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-vx-sage animate-pulse" />
-                {openIntents.length} available
+                {getMessage("solve.intents.available", { count: openIntents.length })}
               </span>
             </div>
 
@@ -208,23 +228,30 @@ export default function SolvePage() {
               </div>
             ) : intentsError ? (
               <div className="p-8 text-center text-sm text-vx-muted">
-                Couldn&apos;t load open intents right now. Try again shortly.
+                {getMessage("solve.intents.error")}
               </div>
             ) : openIntents.length === 0 ? (
               <div className="p-8 text-center text-sm text-vx-muted">
-                No open intents right now — check back soon.
+                {getMessage("solve.intents.empty")}
               </div>
             ) : (
               <div className="divide-y divide-vx-line">
                 {openIntents.map(intent => (
                   <div key={intent.id} className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-vx-surface/30">
                     <div>
+                      <div className="num text-xs text-vx-muted mb-1 capitalize">{getMessage("solve.intents.id", { id: intent.id })}</div>
+                  <div key={intent.id} className="px-3 sm:px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 hover:bg-vx-surface/30">
+                    <div className="min-w-0 flex-1">
                       <div className="num text-xs text-vx-muted mb-1 capitalize">ID: {intent.id}</div>
                       <div className="text-sm font-medium text-vx-text capitalize">
                         {intent.srcAmount} {intent.srcToken} on {intent.srcChain}
                       </div>
                       <div className="text-xs text-vx-muted">
-                        Min out: {intent.minOut} {intent.dstToken} · Expires in {timeRemaining(intent.deadline)}
+                        {getMessage("solve.intents.details", {
+                          minOut: intent.minOut,
+                          dstToken: intent.dstToken,
+                          timeRemaining: timeRemaining(intent.deadline),
+                        })}
                       </div>
                     </div>
                     <button
@@ -232,11 +259,11 @@ export default function SolvePage() {
                       onClick={() => accept(intent.id)}
                       disabled={acceptingId === intent.id}
                       aria-busy={acceptingId === intent.id}
-                      className="px-4 py-2 bg-vx-sage-bg text-vx-sage text-xs font-semibold rounded-lg
-                                 border border-vx-sage/30 hover:bg-vx-sage/15 transition-colors flex-shrink-0
+                      className="px-3 sm:px-4 py-2 bg-vx-sage-bg text-vx-sage text-xs font-semibold rounded-lg
+                                 border border-vx-sage/30 hover:bg-vx-sage/15 transition-colors flex-shrink-0 w-full sm:w-auto
                                  disabled:opacity-60 disabled:cursor-wait"
                     >
-                      {acceptingId === intent.id ? "Accepting…" : "Accept Intent →"}
+                      {acceptingId === intent.id ? getMessage("solve.intents.accepting") : getMessage("solve.intents.accept")}
                     </button>
                   </div>
                 ))}
@@ -248,20 +275,21 @@ export default function SolvePage() {
         {/* Register form */}
         {tab === "register" && (
           <div id="panel-register" role="tabpanel" aria-labelledby="tab-register" className="max-w-md">
-            <div className="card p-6 space-y-5">
+            <div className="card p-4 sm:p-6 space-y-4 sm:space-y-5">
               <div>
-                <h3 className="text-base font-semibold text-vx-text mb-1">Register as Solver</h3>
-                <p className="text-xs text-vx-muted">Deposit a USDC bond to start filling intents.</p>
+                <h3 className="text-base font-semibold text-vx-text mb-1">{getMessage("solve.register.title")}</h3>
+                <p className="text-xs text-vx-muted">{getMessage("solve.register.description")}</p>
               </div>
 
               <div>
-                <label htmlFor="solver-address" className="eyebrow block mb-2">Stellar Address</label>
+                <label htmlFor="solver-address" className="eyebrow block mb-2">{getMessage("solve.register.addressLabel")}</label>
+                <label htmlFor="solver-address" className="eyebrow block mb-2 text-xs">Stellar Address</label>
                 <input
                   id="solver-address"
                   type="text"
                   value={address}
                   onChange={(e) => setAddress(e.target.value.trim())}
-                  placeholder="G..."
+                  placeholder={getMessage("solve.register.addressPlaceholder")}
                   aria-invalid={Boolean(addressError)}
                   aria-describedby={addressError ? "solver-address-error" : undefined}
                   className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
@@ -274,13 +302,14 @@ export default function SolvePage() {
               </div>
 
               <div>
-                <label htmlFor="solver-bond" className="eyebrow block mb-2">Bond Amount (USDC)</label>
+                <label htmlFor="solver-bond" className="eyebrow block mb-2">{getMessage("solve.register.bondLabel")}</label>
+                <label htmlFor="solver-bond" className="eyebrow block mb-2 text-xs">Bond Amount (USDC)</label>
                 <input
                   id="solver-bond"
                   type="number"
                   value={bond}
                   onChange={(e) => setBond(e.target.value)}
-                  placeholder="Minimum 50 USDC"
+                  placeholder={getMessage("solve.register.bondPlaceholder")}
                   aria-invalid={Boolean(bondError)}
                   aria-describedby={bondError ? "solver-bond-error" : undefined}
                   className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
@@ -293,9 +322,9 @@ export default function SolvePage() {
               </div>
 
               <div className="bg-vx-surface/50 rounded-lg p-3 text-xs text-vx-muted space-y-1">
-                <div>• Minimum bond: 50 USDC</div>
-                <div>• Slash on failed fill: 10% of bond</div>
-                <div>• Withdraw bond anytime when inactive</div>
+                <div>{getMessage("solve.register.info.minimumBond")}</div>
+                <div>{getMessage("solve.register.info.slash")}</div>
+                <div>{getMessage("solve.register.info.withdraw")}</div>
               </div>
 
               {registration.status === "error" && (
@@ -312,8 +341,8 @@ export default function SolvePage() {
                 {isRegistering
                   ? REGISTRATION_LABEL[registration.status]
                   : registration.status === "success"
-                    ? "Registered ✓ — register another"
-                    : "Connect Freighter to Register"}
+                    ? getMessage("solve.register.button.registered")
+                    : getMessage("solve.register.button.connect")}
               </button>
             </div>
           </div>
