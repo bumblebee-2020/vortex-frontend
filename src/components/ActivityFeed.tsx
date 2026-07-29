@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
 
@@ -8,8 +9,46 @@ const CHAIN_COLOR: Record<string, string> = {
   arbitrum: "#12AAFF", optimism: "#FF0420", avalanche: "#E84142",
 };
 
+// Batches new-item announcements instead of firing one per item, so a burst
+// of fills on a high-frequency feed reads as one summary (e.g. "3 new fills").
+const ANNOUNCE_DEBOUNCE_MS = 1500;
+
 export function ActivityFeed() {
   const { items, isLoading, error, isLive } = useIntentFeed();
+
+  const [announcement, setAnnouncement] = useState("");
+  const seenIdsRef = useRef<Set<string> | null>(null);
+  const pendingCountRef = useRef(0);
+  const announceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    const currentIds = new Set(items.map((item) => item.id));
+
+    // First render just seeds the seen set — the initial snapshot isn't a "new" arrival.
+    if (seenIdsRef.current === null) {
+      seenIdsRef.current = currentIds;
+      return;
+    }
+
+    const newCount = items.reduce(
+      (count, item) => (seenIdsRef.current!.has(item.id) ? count : count + 1),
+      0
+    );
+    seenIdsRef.current = currentIds;
+    if (newCount === 0) return;
+
+    pendingCountRef.current += newCount;
+    clearTimeout(announceTimeoutRef.current);
+    announceTimeoutRef.current = setTimeout(() => {
+      const total = pendingCountRef.current;
+      pendingCountRef.current = 0;
+      setAnnouncement(total === 1 ? "1 new fill" : `${total} new fills`);
+    }, ANNOUNCE_DEBOUNCE_MS);
+  }, [items]);
+
+  useEffect(() => {
+    return () => clearTimeout(announceTimeoutRef.current);
+  }, []);
 
   if (isLoading && items.length === 0) {
     return (
@@ -23,6 +62,7 @@ export function ActivityFeed() {
 
   return (
     <div className="space-y-2">
+      <div role="status" className="sr-only">{announcement}</div>
       <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1">
         <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
         {isLive ? "Live" : "Polling"}

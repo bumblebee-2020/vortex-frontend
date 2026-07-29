@@ -212,6 +212,14 @@ describe("SolvePage", () => {
       expect(button).toBeEnabled();
     });
 
+    it("shows a visible focus ring on the address and bond inputs", async () => {
+      render(<SolvePage />);
+      await registerTab();
+
+      expect(screen.getByLabelText("Stellar Address")).toHaveClass("focus:ring-2", "focus:ring-vx-sage");
+      expect(screen.getByLabelText("Bond Amount (USDC)")).toHaveClass("focus:ring-2", "focus:ring-vx-sage");
+    });
+
     it("shows a validation error for a malformed Stellar address", async () => {
       render(<SolvePage />);
       const user = await registerTab();

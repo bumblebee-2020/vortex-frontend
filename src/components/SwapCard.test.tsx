@@ -58,6 +58,60 @@ describe("SwapCard", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("tabs through the form controls in visual order", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    // Enter an amount first so the submit button is enabled (and thus tabbable).
+    const amountInput = screen.getByLabelText("Amount to swap");
+    await user.type(amountInput, "500");
+
+    const chainPickerToggle = screen.getByRole("button", { name: "Ethereum" });
+    const tokenPickerToggle = screen.getByRole("button", { name: "Select source token, currently USDC" });
+    const usdcDstButton = screen.getByRole("button", { name: "USDC" });
+    const xlmDstButton = screen.getByRole("button", { name: "XLM" });
+    const yxlmDstButton = screen.getByRole("button", { name: "yXLM" });
+    const submitButton = screen.getByRole("button", { name: /Swap 500 USDC/ });
+
+    amountInput.focus();
+    await user.tab({ shift: true });
+    expect(chainPickerToggle).toHaveFocus();
+
+    await user.tab();
+    expect(amountInput).toHaveFocus();
+
+    await user.tab();
+    expect(tokenPickerToggle).toHaveFocus();
+
+    await user.tab();
+    expect(usdcDstButton).toHaveFocus();
+
+    await user.tab();
+    expect(xlmDstButton).toHaveFocus();
+
+    await user.tab();
+    expect(yxlmDstButton).toHaveFocus();
+
+    await user.tab();
+    expect(submitButton).toHaveFocus();
+  });
+
+  it("removes the hidden main card from the tab order while the chain picker overlay is open", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    await user.click(screen.getByRole("button", { name: "Ethereum" }));
+
+    const amountInput = screen.getByLabelText("Amount to swap");
+    expect(amountInput).toHaveAttribute("tabindex", "-1");
+
+    const ethereumOption = screen.getByRole("button", { name: "Ethereum" });
+    expect(ethereumOption).toHaveFocus();
+
+    await user.tab();
+    expect(amountInput).not.toHaveFocus();
+  });
+
   it("fetches and renders a live quote after the debounced amount settles", async () => {
     const quote: Quote = {
       dstAmount: "497.1234",

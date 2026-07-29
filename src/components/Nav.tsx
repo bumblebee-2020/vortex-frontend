@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { VortexLogo } from "./VortexLogo";
 import { ConnectWalletButton } from "./ConnectWalletButton";
@@ -13,9 +13,53 @@ const NAV_LINKS = [
   { href: "/solve", label: "becomeSolver" as const },
 ];
 
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
 export function Nav(props: NavProps) {
   const maxWidth = props.variant === "home" ? "max-w-6xl" : "max-w-5xl";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const closeMobileMenu = () => {
+    setMobileOpen(false);
+    toggleRef.current?.focus();
+  };
+
+  // Traps focus within the open mobile panel and returns it to the toggle on close.
+  useEffect(() => {
+    const panel = panelRef.current;
+    if (!mobileOpen || !panel) return;
+
+    const focusables = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+    focusables[0]?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeMobileMenu();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen]);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-vx-border bg-vx-ink/80 backdrop-blur-md">
@@ -52,7 +96,8 @@ export function Nav(props: NavProps) {
           <ConnectWalletButton compact={props.variant === "breadcrumb"} />
           {props.variant === "home" && (
             <button
-              onClick={() => setMobileOpen((open) => !open)}
+              ref={toggleRef}
+              onClick={() => (mobileOpen ? closeMobileMenu() : setMobileOpen(true))}
               aria-expanded={mobileOpen}
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
               className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
@@ -70,12 +115,12 @@ export function Nav(props: NavProps) {
       </div>
 
       {props.variant === "home" && mobileOpen && (
-        <div className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1">
+        <div ref={panelRef} className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobileMenu}
               className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
             >
               {getMessage(`nav.${link.label}`)}
@@ -83,7 +128,7 @@ export function Nav(props: NavProps) {
           ))}
           <a
             href="https://github.com/vortex-protocol"
-            onClick={() => setMobileOpen(false)}
+            onClick={closeMobileMenu}
             className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
           >
             {getMessage("nav.docs")}
