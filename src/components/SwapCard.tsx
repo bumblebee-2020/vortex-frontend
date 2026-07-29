@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuote } from "@/hooks/useQuote";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useSwapSubmission } from "@/hooks/useSwapSubmission";
+import { useWalletStore } from "@/store/wallet";
 import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
 import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
+import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import type { MessageKey } from "@/lib/i18n";
 
 const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
@@ -23,18 +25,30 @@ export function SwapCard() {
   const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
   const [dstToken, setDstToken] = useState(DST_TOKENS[0]);
   const [srcAmount, setSrcAmount] = useState("");
+  const [dstAddress, setDstAddress] = useState("");
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
 
   const chain = CHAINS.find(c => c.id === srcChain)!;
 
+  useEffect(() => {
+    const wallet = useWalletStore.getState();
+    if (!dstAddress && wallet.isConnected && wallet.address) {
+      setDstAddress(wallet.address);
+    }
+  }, [dstAddress]);
+
   const debouncedAmount = useDebouncedValue(srcAmount, 500);
   const hasAmount = Boolean(debouncedAmount) && parseFloat(debouncedAmount) > 0;
-  const { quote, isLoading: quoting, error: quoteError } = useQuote(
+  const { quote, isLoading: quoting, error: quoteError, quoteErrorType } = useQuote(
     hasAmount
       ? { srcChain, srcToken: srcToken.symbol, srcAmount: debouncedAmount, dstToken: dstToken.symbol }
       : null
   );
+
+  const dstAddressError = dstAddress && !isValidStellarPublicKey(dstAddress)
+    ? t("swap.destination.invalidAddress")
+    : null;
 
   const dstAmount = quote
     ? parseFloat(quote.dstAmount)
@@ -46,7 +60,7 @@ export function SwapCard() {
 
   const submission = useSwapSubmission();
   const isSubmitting = submission.status in SUBMISSION_LABEL_KEY;
-  const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting;
+  const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting && !dstAddressError;
 
   const handleSubmit = () => {
     if (submission.status === "success") {
@@ -54,7 +68,20 @@ export function SwapCard() {
       setSrcAmount("");
       return;
     }
-    submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol });
+
+    if (dstAddressError) {
+      useToastStore.getState().addToast(dstAddressError, "error");
+      return;
+    }
+
+    const wallet = useWalletStore.getState();
+    const resolvedDstAddress = dstAddress || wallet.address || "";
+    if (!resolvedDstAddress || !isValidStellarPublicKey(resolvedDstAddress)) {
+      useToastStore.getState().addToast(t("swap.destination.invalidAddress"), "error");
+      return;
+    }
+
+    submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol, dstAddress: resolvedDstAddress });
   };
 
   return (
@@ -227,6 +254,27 @@ export function SwapCard() {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Destination address */}
+        <div className="bg-vx-surface/50 rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="eyebrow">{t("swap.destination.label")}</span>
+          </div>
+          <label htmlFor="dst-address" className="sr-only">{t("swap.destination.label")}</label>
+          <input
+            id="dst-address"
+            type="text"
+            value={dstAddress}
+            onChange={e => setDstAddress(e.target.value.trim())}
+            placeholder={t("swap.destination.placeholder")}
+            aria-invalid={Boolean(dstAddressError)}
+            aria-describedby={dstAddressError ? "dst-address-error" : undefined}
+            className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5 text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none focus:border-vx-sage/50 transition-colors"
+          />
+          {dstAddressError && (
+            <p id="dst-address-error" role="alert" className="text-[11px] text-red-400">{dstAddressError}</p>
+          )}
         </div>
 
         {/* Quote details */}
