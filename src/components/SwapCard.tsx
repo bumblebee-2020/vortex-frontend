@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useQuote } from "@/hooks/useQuote";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useSwapSubmission } from "@/hooks/useSwapSubmission";
+import { useToastStore } from "@/store/toast";
 import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
 import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
@@ -15,6 +16,8 @@ const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   "awaiting-signature": "swap.submit.awaitingSignature",
   submitting: "swap.submit.submitting",
 };
+
+const STALE_QUOTE_THRESHOLD_MS = 30_000;
 
 export function SwapCard() {
   const { t } = useTranslation();
@@ -30,7 +33,7 @@ export function SwapCard() {
 
   const debouncedAmount = useDebouncedValue(srcAmount, 500);
   const hasAmount = Boolean(debouncedAmount) && parseFloat(debouncedAmount) > 0;
-  const { quote, isLoading: quoting, error: quoteError } = useQuote(
+  const { quote, quoteFetchedAt, isLoading: quoting, error: quoteError } = useQuote(
     hasAmount
       ? { srcChain, srcToken: srcToken.symbol, srcAmount: debouncedAmount, dstToken: dstToken.symbol }
       : null
@@ -54,6 +57,12 @@ export function SwapCard() {
       setSrcAmount("");
       return;
     }
+
+    if (quote && quoteFetchedAt && Date.now() - quoteFetchedAt > STALE_QUOTE_THRESHOLD_MS) {
+      useToastStore.getState().addToast(t("swap.quote.staleWarning"), "error");
+      return;
+    }
+
     submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol });
   };
 
