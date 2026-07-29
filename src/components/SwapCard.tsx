@@ -30,7 +30,7 @@ export function SwapCard() {
 
   const debouncedAmount = useDebouncedValue(srcAmount, 500);
   const hasAmount = Boolean(debouncedAmount) && parseFloat(debouncedAmount) > 0;
-  const { quote, isLoading: quoting, error: quoteError } = useQuote(
+  const { quote, isLoading: quoting, error: quoteError, quoteErrorType } = useQuote(
     hasAmount
       ? { srcChain, srcToken: srcToken.symbol, srcAmount: debouncedAmount, dstToken: dstToken.symbol }
       : null
@@ -254,7 +254,9 @@ export function SwapCard() {
         {/* Quote error — falls back to an estimated rate above */}
         {quoteError && hasAmount && !quoting && (
           <p role="status" className="text-center text-[11px] text-amber-400/90 px-1">
-            {t("swap.quote.unavailable")}
+            {quoteErrorType?.kind === "no-solver"
+              ? t("swap.quote.noSolver")
+              : t("swap.quote.unavailable")}
           </p>
         )}
 
