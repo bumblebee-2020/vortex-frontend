@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { CopyButton } from "@/components/CopyButton";
 import { useSolvers } from "@/hooks/useSolvers";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
@@ -74,8 +75,9 @@ export default function SolverDetailPage({ params }: { params: { address: string
                 </div>
               </div>
 
-              <div className="text-xs sm:text-sm text-vx-muted font-mono break-all">
-                Address: {params.address}
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-vx-muted font-mono break-all">
+                <span>Address: {params.address}</span>
+                <CopyButton value={params.address} label="Copy solver address" />
               </div>
 
               {/* Metrics grid */}
