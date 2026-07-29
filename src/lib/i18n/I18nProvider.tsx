@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo } from "react";
-import { createTranslator, DEFAULT_LOCALE, type Locale, type Translator } from ".";
+import { createTranslator, DEFAULT_LOCALE, type Locale, type Translator } from "./index";
 
 const LocaleContext = createContext<Locale>(DEFAULT_LOCALE);
 

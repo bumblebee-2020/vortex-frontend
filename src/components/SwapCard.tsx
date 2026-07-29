@@ -7,7 +7,7 @@ import { useSwapSubmission } from "@/hooks/useSwapSubmission";
 import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
 import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
-import type { MessageKey } from "@/lib/i18n";
+import type { MessageKey } from "@/lib/i18n/index";
 
 const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   connecting: "swap.submit.connecting",
@@ -20,8 +20,8 @@ export function SwapCard() {
   const { t } = useTranslation();
 
   const [srcChain, setSrcChain] = useState("ethereum");
-  const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
-  const [dstToken, setDstToken] = useState(DST_TOKENS[0]);
+  const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"]![0]!);
+  const [dstToken, setDstToken] = useState(DST_TOKENS[0]!);
   const [srcAmount, setSrcAmount] = useState("");
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
@@ -70,7 +70,7 @@ export function SwapCard() {
                 type="button"
                 onClick={() => {
                   setSrcChain(c.id);
-                  setSrcToken(SRC_TOKENS[c.id][0]);
+                  setSrcToken(SRC_TOKENS[c.id]![0]!);
                   setShowChainPicker(false);
                 }}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all
@@ -143,7 +143,7 @@ export function SwapCard() {
 
           {showTokenPicker && (
             <div className="pt-2 border-t border-vx-line space-y-1">
-              {SRC_TOKENS[srcChain].map(token => (
+              {(SRC_TOKENS[srcChain] ?? []).map(token => (
                 <button
                   key={token.symbol}
                   type="button"
@@ -151,8 +151,6 @@ export function SwapCard() {
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
                     ${token.symbol === srcToken.symbol ? "bg-vx-lav-bg text-vx-lav" : "hover:bg-vx-surface text-vx-muted hover:text-vx-text"}`}
                 >
-                  <span className="font-medium">{t.symbol}</span>
-                  <span className="num text-xs">{formatCurrency(t.priceUSD)}</span>
                   <span className="font-medium">{token.symbol}</span>
                   <span className="num text-xs">${token.priceUSD.toLocaleString()}</span>
                 </button>
@@ -162,8 +160,6 @@ export function SwapCard() {
 
           {srcValueUSD > 0 && (
             <div className="num text-xs text-vx-muted">
-              ≈ {formatCurrency(srcValueUSD, undefined, { maximumFractionDigits: 2 })}
-              {/* Number formatting stays locale-hardcoded here; issue #63 owns making it locale-aware. */}
               {t("swap.from.approxValue", {
                 value: srcValueUSD.toLocaleString("en-US", { maximumFractionDigits: 2 }),
               })}
@@ -276,7 +272,7 @@ export function SwapCard() {
               <svg aria-hidden="true" className="w-4 h-4 animate-spin-slow" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" />
               </svg>
-              {t(SUBMISSION_LABEL_KEY[submission.status])}
+              {t(SUBMISSION_LABEL_KEY[submission.status]!)}
             </span>
           ) : submission.status === "success" ? (
             t("swap.submit.success")
