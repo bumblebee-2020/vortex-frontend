@@ -10,6 +10,7 @@ const RECONNECT_DELAY_MS = 3000;
 export function useWebSocket<T>(url: string | null) {
   const [status, setStatus] = useState<WebSocketStatus>("connecting");
   const [lastMessage, setLastMessage] = useState<T | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (!url) {
@@ -24,6 +25,7 @@ export function useWebSocket<T>(url: string | null) {
     const connect = () => {
       setStatus("connecting");
       socket = new WebSocket(url);
+      socketRef.current = socket;
 
       socket.onopen = () => {
         if (!cancelled) setStatus("open");
@@ -51,8 +53,19 @@ export function useWebSocket<T>(url: string | null) {
 
     connect();
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      const s = socketRef.current;
+      if (s && s.readyState === WebSocket.CLOSED) {
+        connect();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (reconnectTimer) clearTimeout(reconnectTimer);
       socket?.close();
     };
