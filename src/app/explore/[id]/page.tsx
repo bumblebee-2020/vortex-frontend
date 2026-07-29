@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
@@ -24,6 +25,10 @@ function deadlineLabel(deadline: string) {
 
 export default function IntentDetailPage({ params }: { params: { id: string } }) {
   const { intent, isLoading, error } = useIntent(params.id);
+  const isExpired = useMemo(() => {
+    if (!intent || intent.status !== "pending" || !intent.deadline) return false;
+    return new Date(intent.deadline).getTime() <= Date.now();
+  }, [intent]);
 
   return (
     <div className="min-h-screen">
@@ -56,7 +61,14 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
                   {intent.srcAmount} {intent.srcToken} → {intent.dstAmount} {intent.dstToken}
                 </h1>
               </div>
-              <IntentStatusBadge status={intent.status} />
+              <div className="flex flex-col items-end gap-2">
+                <IntentStatusBadge status={intent.status} />
+                {isExpired && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-400 border border-amber-400/30 rounded-full px-2 py-0.5">
+                    Likely expired
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">

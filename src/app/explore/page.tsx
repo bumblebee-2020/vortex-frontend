@@ -8,12 +8,17 @@ import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
-import type { IntentStatus } from "@/lib/types";
+import type { FeedItem, IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
 const SORT_OPTIONS = ["newest", "oldest", "largest"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
 const PAGE_SIZE = 10;
+
+function isExpiredPending(item: FeedItem): boolean {
+  if (item.status !== "pending" || !item.deadline) return false;
+  return new Date(item.deadline).getTime() <= Date.now();
+}
 
 export default function ExplorePage() {
   const { intents, isLoading, error, isLive } = useLiveIntents();
@@ -151,10 +156,17 @@ export default function ExplorePage() {
                       {item.srcChain} · via {item.solver}
                     </div>
                   </div>
-                  <IntentStatusBadge status={item.status} />
-                  <span className="text-xs text-vx-muted num flex-shrink-0 w-16 text-right">
-                    {timeAgo(item.createdAt)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <IntentStatusBadge status={item.status} />
+                    {isExpiredPending(item) && (
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-400 border border-amber-400/30 rounded-full px-2 py-0.5">
+                        Likely expired
+                      </span>
+                    )}
+                    <span className="text-xs text-vx-muted num flex-shrink-0 w-16 text-right">
+                      {timeAgo(item.createdAt)}
+                    </span>
+                  </div>
                 </Link>
               ))}
             </div>

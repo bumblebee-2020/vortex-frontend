@@ -39,6 +39,7 @@ export type FeedItem = {
   solver: string;
   status: IntentStatus;
   createdAt: string;
+  deadline?: string;
 };
 
 export type IntentDetail = FeedItem & {
