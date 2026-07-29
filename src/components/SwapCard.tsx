@@ -54,6 +54,9 @@ export function SwapCard() {
       setSrcAmount("");
       return;
     }
+    if (submission.status in SUBMISSION_LABEL_KEY) {
+      return;
+    }
     submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol });
   };
 
