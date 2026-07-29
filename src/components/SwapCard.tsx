@@ -48,6 +48,17 @@ export function SwapCard() {
   const isSubmitting = submission.status in SUBMISSION_LABEL_KEY;
   const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting;
 
+  /** Truncate a raw amount string to at most `decimals` decimal places. */
+  function truncateToDecimals(value: string, decimals: number): string {
+    const dotIndex = value.indexOf(".");
+    if (dotIndex === -1 || decimals === 0) return value.split(".")[0];
+    return value.slice(0, dotIndex + 1 + decimals);
+  }
+
+  const handleAmountChange = (raw: string) => {
+    setSrcAmount(truncateToDecimals(raw, srcToken.decimals));
+  };
+
   const handleSubmit = () => {
     if (submission.status === "success") {
       submission.reset();
@@ -119,7 +130,7 @@ export function SwapCard() {
               id="src-amount"
               type="number"
               value={srcAmount}
-              onChange={e => setSrcAmount(e.target.value)}
+              onChange={e => handleAmountChange(e.target.value)}
               placeholder={t("swap.from.amountPlaceholder")}
               className="input-swap flex-1"
             />
