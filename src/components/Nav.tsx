@@ -8,6 +8,7 @@ import { ConnectWalletButton } from "./ConnectWalletButton";
 import { getMessage } from "@/lib/i18n-legacy";
 import { useLocale, useSetLocale } from "@/lib/i18n/I18nProvider";
 import { LOCALES, type Locale } from "@/lib/i18n";
+import { useWalletStore } from "@/store/wallet";
 
 type NavProps = { variant: "home" } | { variant: "breadcrumb"; label: string };
 
@@ -42,23 +43,23 @@ export function Nav(props: NavProps) {
             </div>
             <div className="hidden md:flex items-center gap-5 text-sm text-vx-muted">
               {NAV_LINKS.map((link) => (
-                <Link key={link.href} href={link.href} className="hover:text-vx-text transition-colors">
+                <Link key={link.href} href={link.href} className="hover:text-vx-text active:text-vx-sage transition-colors">
                   {getMessage(`nav.${link.label}`)}
                 </Link>
               ))}
               {isConnected && (
-                <Link href="/my-intents" className={`transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "hover:text-vx-text"}`}>
+                <Link href="/my-intents" className={`transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "hover:text-vx-text active:text-vx-sage"}`}>
                   My Intents
                 </Link>
               )}
-              <a href="https://github.com/vortex-protocol" className="hover:text-vx-text transition-colors">
+              <a href="https://github.com/vortex-protocol" className="hover:text-vx-text active:text-vx-sage transition-colors">
                 {getMessage("nav.docs")}
               </a>
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 transition-opacity active:opacity-80">
               <VortexLogo className="w-5 h-5 text-vx-sage" />
               <span className="font-semibold text-sm text-vx-text">{getMessage("nav.branding")}</span>
             </Link>
@@ -78,7 +79,7 @@ export function Nav(props: NavProps) {
             onChange={(e) => setLocale(e.target.value as Locale)}
             aria-label="Switch language"
             className="bg-transparent border border-vx-border rounded-md px-2 py-1 text-xs
-                       text-vx-muted hover:text-vx-text hover:border-vx-sage/50 transition-colors
+                       text-vx-muted hover:text-vx-text hover:border-vx-sage/50 active:text-vx-sage transition-colors
                        cursor-pointer focus:outline-none focus:ring-2 focus:ring-vx-sage/50"
           >
             {LOCALES.map((loc) => (
@@ -95,7 +96,7 @@ export function Nav(props: NavProps) {
               onClick={() => (mobileOpen ? closeMobileMenu() : setMobileOpen(true))}
               aria-expanded={mobileOpen}
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
-              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text active:text-vx-sage transition-colors"
             >
               <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 16 16" fill="none">
                 {mobileOpen ? (
@@ -125,7 +126,7 @@ export function Nav(props: NavProps) {
             <Link
               href="/my-intents"
               onClick={() => setMobileOpen(false)}
-              className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text"}`}
+              className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text active:text-vx-sage"}`}
             >
               My Intents
             </Link>

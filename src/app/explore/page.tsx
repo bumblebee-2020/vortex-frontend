@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
@@ -17,11 +16,7 @@ const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted
 const SORT_OPTIONS = ["newest", "oldest", "largest"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
 
-/** Height of a single intent row in pixels (matches the p-4 + border row). */
-const ROW_HEIGHT = 64;
-
-/** Height of the virtualized scroll container. */
-const LIST_HEIGHT = 480;
+const PAGE_SIZE = 10;
 
 function isExpiredPending(item: FeedItem): boolean {
   if (item.status !== "pending" || !item.deadline) return false;
@@ -33,14 +28,8 @@ export default function ExplorePage() {
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortOption>("newest");
+  const [page, setPage] = useState(1);
 
-  // Reset scroll to top whenever filters change.
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * Stable callbacks for filter controls. Prevents unnecessary re-renders of
-   * child components that receive these as props (e.g. if selects were extracted).
-   */
   const handleStatusChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) =>
       setStatusFilter(e.target.value as IntentStatus | "all"),
@@ -76,21 +65,20 @@ export default function ExplorePage() {
     return result;
   }, [intents, debouncedSearch, statusFilter, chainFilter, sort]);
 
-  // Scroll back to top when filtered list changes.
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-    }
+    setPage(1);
   }, [statusFilter, chainFilter, sort]);
 
-  const virtualizer = useVirtualizer({
-    count: filtered.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 5,
-  });
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
-  const virtualItems = virtualizer.getVirtualItems();
+  const handleExportCsv = () => {
+    downloadCsv("vortex-intents.csv", buildIntentsCsv(filtered));
+  };
 
   return (
     <div className="min-h-screen">
@@ -102,7 +90,6 @@ export default function ExplorePage() {
           <div className="h-4 w-80 bg-vx-surface/40 rounded animate-pulse" />
         </div>
 
-        {/* Filters */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <label htmlFor="intent-search" className="sr-only">Search intents</label>
           <input
@@ -156,12 +143,20 @@ export default function ExplorePage() {
             <option value="largest">Largest amount</option>
           </select>
 
-          <span className="text-xs text-vx-muted ml-auto">
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={filtered.length === 0}
+            className="ml-auto px-3 py-2 rounded-lg border border-vx-border text-xs font-semibold text-vx-muted hover:text-vx-text hover:border-vx-sage/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-vx-border disabled:hover:text-vx-muted"
+          >
+            Export CSV
+          </button>
+
+          <span className="text-xs text-vx-muted">
             {filtered.length} intent{filtered.length === 1 ? "" : "s"}
           </span>
         </div>
 
-        {/* Results */}
         {isLoading && intents.length === 0 ? (
           <IntentListSkeleton count={4} />
         ) : error ? (
@@ -173,18 +168,19 @@ export default function ExplorePage() {
             No intents match your filters.
           </div>
         ) : (
-          <>
+          <div className="space-y-2">
             <div role="row" className="flex items-center gap-4 px-4 pb-2 text-[10px] uppercase tracking-wide text-vx-dim">
               <div role="columnheader" aria-sort={sort === "largest" ? "descending" : "none"} className="flex-1 min-w-0">
                 <button
                   type="button"
                   onClick={() => setSort("largest")}
-                  className="flex items-center gap-1 text-left hover:text-vx-text transition-colors"
+                  className="flex items-center gap-1 text-left hover:text-vx-text active:text-vx-sage transition-colors"
                 >
                   Amount
                   {sort === "largest" && <span aria-hidden="true">↓</span>}
                 </button>
               </div>
+              <div className="w-20 flex-shrink-0">Status</div>
               <div
                 role="columnheader"
                 aria-sort={sort === "newest" ? "descending" : sort === "oldest" ? "ascending" : "none"}
@@ -193,7 +189,7 @@ export default function ExplorePage() {
                 <button
                   type="button"
                   onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
-                  className="flex items-center justify-end gap-1 w-full text-right hover:text-vx-text transition-colors"
+                  className="flex items-center justify-end gap-1 w-full text-right hover:text-vx-text active:text-vx-sage transition-colors"
                 >
                   Time
                   {sort === "newest" && <span aria-hidden="true">↓</span>}
@@ -202,25 +198,50 @@ export default function ExplorePage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              {paginated.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/explore/${item.id}`}
-                  className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line
-                             hover:border-vx-border transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-vx-text truncate">
-                      {item.srcAmount} {item.srcToken} → {item.dstToken}
-                    </div>
-                    <div className="text-xs text-vx-muted capitalize">
-                      {item.srcChain} · via {item.solver}
-                    </div>
+            {paginated.map((item) => (
+              <Link
+                key={item.id}
+                href={`/explore/${item.id}`}
+                className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 active:bg-vx-surface/60 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-vx-text truncate">
+                    {item.srcAmount} {item.srcToken} → {item.dstToken}
                   </div>
-                );
-              })}
-            </div>
+                  <div className="text-xs text-vx-muted capitalize">
+                    {item.srcChain} · via {item.solver}
+                  </div>
+                </div>
+                <div className="w-20 flex-shrink-0">
+                  <IntentStatusBadge status={item.status} />
+                </div>
+                <div className="w-16 flex-shrink-0 text-right text-xs text-vx-muted">
+                  {timeAgo(item.createdAt)}
+                </div>
+              </Link>
+            ))}
+
+            {pageCount > 1 && (
+              <div className="flex items-center justify-between pt-4 text-xs text-vx-muted">
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-2 rounded-lg border border-vx-border hover:text-vx-text hover:border-vx-sage/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-vx-border disabled:hover:text-vx-muted"
+                >
+                  Previous
+                </button>
+                <span>Page {page} of {pageCount}</span>
+                <button
+                  type="button"
+                  onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+                  disabled={page === pageCount}
+                  className="px-3 py-2 rounded-lg border border-vx-border hover:text-vx-text hover:border-vx-sage/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-vx-border disabled:hover:text-vx-muted"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>

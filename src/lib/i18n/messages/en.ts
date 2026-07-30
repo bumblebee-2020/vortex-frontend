@@ -22,6 +22,10 @@ export const en = {
   "swap.to.tokenGroup": "Destination token",
   "swap.to.quoteLoading": "Loading quote…",
 
+  "swap.slippage.label": "Slippage tolerance",
+  "swap.slippage.inputLabel": "Slippage tolerance percent",
+  "swap.slippage.minOut": "Min out: {amount} {token}",
+
   "swap.quote.solver": "Best solver",
   "swap.quote.fillTime": "Est. fill time",
   "swap.quote.fillTimeValue": "~{seconds}s",

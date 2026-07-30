@@ -12,6 +12,9 @@ import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import type { MessageKey } from "@/lib/i18n";
 import type { Quote, QuoteRequest } from "@/lib/types";
 
+export const DEFAULT_SLIPPAGE_PCT = 0.5;
+export const HIGH_PRICE_IMPACT_THRESHOLD_PCT = 3;
+
 const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   connecting: "swap.submit.connecting",
   building: "swap.submit.building",
@@ -95,6 +98,13 @@ export function SwapCard({
       : 0;
 
   const srcValueUSD = srcAmount ? parseFloat(srcAmount) * srcToken.priceUSD : 0;
+  const parsedSlippagePct = Math.max(0, Math.min(50, parseFloat(slippagePct) || 0));
+  const minOut = dstAmount > 0
+    ? (dstAmount * (1 - parsedSlippagePct / 100)).toFixed(dstToken.symbol === "XLM" ? 2 : 4)
+    : "0";
+  const hasHighPriceImpact = quote
+    ? quote.priceImpactPct > HIGH_PRICE_IMPACT_THRESHOLD_PCT
+    : false;
 
   const submission = useSwapSubmission();
   const isSubmitting = submission.status in SUBMISSION_LABEL_KEY;
@@ -373,7 +383,13 @@ export function SwapCard({
 
         {/* Quote details */}
         {quote && srcAmount && (
-          <div className="bg-vx-surface/40 rounded-xl p-3.5 space-y-2.5 animate-fade-up">
+          <div
+            className={`rounded-xl p-3.5 space-y-2.5 animate-fade-up border ${
+              hasHighPriceImpact
+                ? "bg-amber-500/10 border-amber-400/30"
+                : "bg-vx-surface/40 border-transparent"
+            }`}
+          >
             {([
               ["swap.quote.solver",       quote.solver],
               ["swap.quote.fillTime",     t("swap.quote.fillTimeValue", { seconds: quote.fillTimeSeconds })],
@@ -387,9 +403,24 @@ export function SwapCard({
             ] as const).map(([labelKey, value]) => (
               <div key={labelKey} className="flex items-center justify-between">
                 <span className="text-xs text-vx-muted">{t(labelKey)}</span>
-                <span className="num text-xs text-vx-text font-medium">{value}</span>
+                <span
+                  className={`num text-xs font-medium ${
+                    labelKey === "swap.quote.priceImpact" && hasHighPriceImpact
+                      ? "text-amber-300"
+                      : "text-vx-text"
+                  }`}
+                >
+                  {value}
+                </span>
               </div>
             ))}
+            {hasHighPriceImpact && (
+              <p role="alert" className="text-xs text-amber-300">
+                {t("swap.quote.highPriceImpactWarning", {
+                  threshold: HIGH_PRICE_IMPACT_THRESHOLD_PCT,
+                })}
+              </p>
+            )}
           </div>
         )}
 

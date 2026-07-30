@@ -22,6 +22,10 @@ export const es = {
   "swap.to.tokenGroup": "Token de destino",
   "swap.to.quoteLoading": "Cargando cotización…",
 
+  "swap.slippage.label": "Tolerancia de deslizamiento",
+  "swap.slippage.inputLabel": "Porcentaje de tolerancia de deslizamiento",
+  "swap.slippage.minOut": "Mínimo recibido: {amount} {token}",
+
   "swap.quote.solver": "Mejor solver",
   "swap.quote.fillTime": "Tiempo estimado",
   "swap.quote.fillTimeValue": "~{seconds}s",
@@ -32,6 +36,7 @@ export const es = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Tasa",
   "swap.quote.unavailable": "Cotización en tiempo real no disponible — mostrando tasa estimada.",
+  "swap.quote.highPriceImpactWarning": "Impacto de precio alto por encima de {threshold}% — revisa antes de intercambiar.",
 
   "swap.submit.connecting": "Conectando billetera…",
   "swap.submit.building": "Preparando swap…",
