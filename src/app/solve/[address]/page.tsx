@@ -4,9 +4,10 @@ import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
-import { useSolvers } from "@/hooks/useSolvers";
+import { useSolver } from "@/hooks/useSolver";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
+import { CHAINS } from "@/lib/marketData";
 
 function truncateAddress(address: string) {
   if (address.length <= 12) return address;
@@ -21,29 +22,32 @@ const usdCompact = new Intl.NumberFormat("en-US", {
 });
 
 export default function SolverDetailPage({ params }: { params: { address: string } }) {
-  const { solvers, isLoading: solversLoading, error: solversError } = useSolvers();
+  const isValidAddress = isValidStellarPublicKey(params.address);
+  const { solver, isLoading, error } = useSolver(isValidAddress ? params.address : null);
   const { items: fillHistory, isLoading: historyLoading, error: historyError } = useIntentFeed();
-
-  const solver = solvers.find(s => s.address === params.address);
 
   return (
     <div className="min-h-screen">
       <Nav variant="breadcrumb" label={`Solver ${params.address.slice(0, 8)}`} />
 
       <main id="main-content" className="max-w-3xl mx-auto px-3 sm:px-5 py-8 sm:py-12">
-        <Link 
-          href="/solve" 
+        <Link
+          href="/solve"
           className="text-xs text-vx-sage hover:underline mb-6 inline-block focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink rounded"
         >
           ← Back to solvers
         </Link>
 
-        {solversLoading ? (
+        {!isValidAddress ? (
+          <div role="alert" className="card p-6 sm:p-8 text-center text-sm text-vx-muted">
+            Invalid solver address format.
+          </div>
+        ) : isLoading ? (
           <div className="card p-6 sm:p-8 space-y-3">
             <div className="h-6 w-2/3 bg-vx-surface rounded animate-pulse" />
             <div className="h-4 w-1/3 bg-vx-surface rounded animate-pulse" />
           </div>
-        ) : solversError ? (
+        ) : error ? (
           <div role="alert" className="card p-6 sm:p-8 text-center text-sm text-vx-muted">
             Couldn&apos;t load solver details right now. Try again shortly.
           </div>
@@ -100,14 +104,23 @@ export default function SolverDetailPage({ params }: { params: { address: string
                 <h2 className="eyebrow text-xs mb-2">Supported Chains</h2>
                 <div className="flex flex-wrap gap-2">
                   {solver.chains.length > 0 ? (
-                    solver.chains.map(chain => (
-                      <span 
-                        key={chain} 
-                        className="text-xs px-2 py-1 bg-vx-surface rounded text-vx-text border border-vx-border"
-                      >
-                        {chain}
-                      </span>
-                    ))
+                    solver.chains.map(chainId => {
+                      const chainMeta = CHAINS.find(c => c.id === chainId);
+                      const chainName = chainMeta?.name ?? chainId;
+                      const chainColor = chainMeta?.color ?? "#6B7280";
+                      return (
+                        <span 
+                          key={chainId} 
+                          className="text-xs px-2 py-1 rounded text-white border font-medium"
+                          style={{ 
+                            backgroundColor: chainColor,
+                            borderColor: chainColor,
+                          }}
+                        >
+                          {chainName}
+                        </span>
+                      );
+                    })
                   ) : (
                     <span className="text-xs text-vx-muted">No chains supported yet</span>
                   )}
@@ -122,10 +135,8 @@ export default function SolverDetailPage({ params }: { params: { address: string
               </div>
 
               {historyLoading && fillHistory.length === 0 ? (
-                <div className="p-4 sm:p-5 space-y-3">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="h-16 bg-vx-surface/40 rounded-lg animate-pulse" />
-                  ))}
+                <div className="p-4 sm:p-5">
+                  <SkeletonCard rows={3} rowHeight="h-16" />
                 </div>
               ) : historyError ? (
                 <div role="alert" className="p-6 sm:p-8 text-center text-sm text-vx-muted">
