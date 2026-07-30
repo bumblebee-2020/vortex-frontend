@@ -1,10 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { SkeletonDetailCard } from "@/components/Skeleton";
 import { useIntent } from "@/hooks/useIntent";
 import { timeAgo } from "@/lib/time";
 
@@ -25,7 +27,10 @@ function deadlineLabel(deadline: string) {
 
 export default function IntentDetailPage({ params }: { params: { id: string } }) {
   const { intent, isLoading, error } = useIntent(params.id);
-  const { copy, copied } = useCopyToClipboard();
+  const isExpired = useMemo(() => {
+    if (!intent || intent.status !== "pending" || !intent.deadline) return false;
+    return new Date(intent.deadline).getTime() <= Date.now();
+  }, [intent]);
 
   return (
     <div className="min-h-screen">
@@ -37,10 +42,7 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
         </Link>
 
         {isLoading ? (
-          <div className="card p-8 space-y-3">
-            <div className="h-6 w-2/3 bg-vx-surface rounded animate-pulse" />
-            <div className="h-4 w-1/3 bg-vx-surface rounded animate-pulse" />
-          </div>
+          <SkeletonDetailCard />
         ) : error ? (
           <div className="card p-8 text-center text-sm text-vx-muted">
             Couldn&apos;t find that intent. It may not exist, or the relay is unreachable.
@@ -58,7 +60,14 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
                   {intent.srcAmount} {intent.srcToken} → {intent.dstAmount} {intent.dstToken}
                 </h1>
               </div>
-              <IntentStatusBadge status={intent.status} />
+              <div className="flex flex-col items-end gap-2">
+                <IntentStatusBadge status={intent.status} />
+                {isExpired && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-400 border border-amber-400/30 rounded-full px-2 py-0.5">
+                    Likely expired
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -68,13 +77,19 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
                 ["Minimum out", `${intent.minOut} ${intent.dstToken}`],
                 ["Submitted", timeAgo(intent.createdAt)],
                 ["Deadline", deadlineLabel(intent.deadline)],
-                ["Destination address", truncateAddress(intent.dstAddress)],
               ].map(([k, v]) => (
                 <div key={k} className="bg-vx-surface/40 rounded-lg p-3">
                   <div className="eyebrow mb-1">{k}</div>
                   <div className="text-sm text-vx-text num capitalize">{v}</div>
                 </div>
               ))}
+              <div className="bg-vx-surface/40 rounded-lg p-3">
+                <div className="eyebrow mb-1">Destination address</div>
+                <div className="flex items-center gap-2 text-sm text-vx-text num">
+                  <span className="truncate">{truncateAddress(intent.dstAddress)}</span>
+                  <CopyButton value={intent.dstAddress} label="Copy destination address" />
+                </div>
+              </div>
             </div>
 
             {intent.txHash && (

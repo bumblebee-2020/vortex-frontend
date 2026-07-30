@@ -1,17 +1,22 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
+import { useToastStore } from "@/store/toast";
 
 export function useCopyToClipboard() {
-  const [copied, setCopied] = useState(false);
+  const addToast = useToastStore((s) => s.addToast);
 
-  const copy = useCallback(async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      setCopied(false);
-    }
-  }, []);
+  const copy = useCallback(
+    async (text: string, successMessage = "Copied to clipboard") => {
+      try {
+        await navigator.clipboard.writeText(text);
+        addToast(successMessage, "success");
+        return true;
+      } catch {
+        addToast("Couldn't copy to clipboard", "error");
+        return false;
+      }
+    },
+    [addToast]
+  );
 
-  return { copy, copied };
+  return { copy };
 }
