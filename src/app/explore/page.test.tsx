@@ -1,20 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { FeedItem } from "@/lib/types";
 
-const { useLiveIntentsMock, useSearchParamsMock, routerReplaceMock } = vi.hoisted(() => ({
+const { useLiveIntentsMock, downloadCsvMock } = vi.hoisted(() => ({
   useLiveIntentsMock: vi.fn(),
-  useSearchParamsMock: vi.fn(),
-  routerReplaceMock: vi.fn(),
+  downloadCsvMock: vi.fn(),
 }));
 vi.mock("@/hooks/useLiveIntents", () => ({ useLiveIntents: useLiveIntentsMock }));
-vi.mock("@/components/Nav", () => ({ Nav: () => <nav /> }));
-vi.mock("@/components/Footer", () => ({ Footer: () => <footer /> }));
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace: routerReplaceMock }),
-  useSearchParams: useSearchParamsMock,
-}));
+vi.mock("@/lib/csv", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/csv")>();
+  return { ...actual, downloadCsv: downloadCsvMock };
+});
 
 import ExplorePage from "./page";
 
@@ -135,6 +132,23 @@ describe("ExplorePage", () => {
 
     expect(screen.getByText("0.14 WETH → USDC")).toBeInTheDocument();
     expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
+  });
+
+  it("exports CSV for the currently filtered rows", async () => {
+    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
+    const user = userEvent.setup();
+    render(<ExplorePage />);
+
+    await user.selectOptions(screen.getByLabelText("Filter by status"), "pending");
+    await user.click(screen.getByRole("button", { name: "Export CSV" }));
+
+    expect(downloadCsvMock).toHaveBeenCalledWith(
+      "vortex-intents.csv",
+      [
+        "id,srcChain,srcToken,srcAmount,dstToken,solver,status,createdAt",
+        "2,base,WETH,0.14,USDC,Beta,pending,2026-07-14T00:05:00Z",
+      ].join("\n")
+    );
   });
 
   it("exposes the active sort column via aria-sort, defaulting to newest-first on Time", () => {
