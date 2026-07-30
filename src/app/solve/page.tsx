@@ -24,6 +24,7 @@ const usdCompact = (value: number) =>
   });
 
 const MIN_BOND_USD = 50;
+type SolverSort = "name" | "volumeUsd" | "fills" | "successRatePct";
 
 const REGISTRATION_LABEL: Record<string, string> = {
   connecting: getMessage("solve.register.states.connecting"),
@@ -33,15 +34,42 @@ const REGISTRATION_LABEL: Record<string, string> = {
 };
 
 export default function SolvePage() {
-  const [tab, setTab] = useState<"leaderboard" | "intents" | "register">("leaderboard");
-  const { solvers, isLoading: solversLoading, error: solversError } = useSolvers();
-  const { intents: openIntents, isLoading: intentsLoading, error: intentsError } = useOpenIntents();
+  const [tab, setTab] = useState<"leaderboard" | "intents" | "register">(
+    "leaderboard"
+  );
+  const { solvers, isLoading: solversLoading, error: solversError } =
+    useSolvers();
+  const {
+    intents: openIntents,
+    isLoading: intentsLoading,
+    error: intentsError,
+  } = useOpenIntents();
   const { accept, acceptingId, error: acceptError } = useAcceptIntent();
 
   const [address, setAddress] = useState("");
   const [bond, setBond] = useState("");
   const registration = useSolverRegistration();
   const isRegistering = registration.status in REGISTRATION_LABEL;
+  const sortedSolvers = useMemo(
+    () =>
+      [...solvers].sort((a, b) => {
+        const comparison =
+          solverSort === "name"
+            ? a.name.localeCompare(b.name)
+            : a[solverSort] - b[solverSort];
+        return solverSortAscending ? comparison : -comparison;
+      }),
+    [solvers, solverSort, solverSortAscending],
+  );
+
+  const handleSolverSort = (column: SolverSort) => {
+    if (solverSort === column) {
+      setSolverSortAscending((ascending) => !ascending);
+    } else {
+      setSolverSort(column);
+      setSolverSortAscending(column === "name");
+    }
+  };
 
   const addressError =
     address && !isValidStellarPublicKey(address)
@@ -101,8 +129,12 @@ export default function SolvePage() {
             },
           ].map((item) => (
             <div key={item.n} className="card p-4 sm:p-5">
-              <div className="font-mono text-xs text-vx-sage mb-2 sm:mb-3">{item.n}</div>
-              <h3 className="text-xs sm:text-sm font-semibold text-vx-text mb-2">{item.title}</h3>
+              <div className="font-mono text-xs text-vx-sage mb-2 sm:mb-3">
+                {item.n}
+              </div>
+              <h3 className="text-xs sm:text-sm font-semibold text-vx-text mb-2">
+                {item.title}
+              </h3>
               <p className="text-xs text-vx-muted leading-relaxed">{item.body}</p>
             </div>
           ))}
@@ -150,7 +182,10 @@ export default function SolvePage() {
             {solversLoading && solvers.length === 0 ? (
               <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-16 bg-vx-surface/40 rounded-lg animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-16 bg-vx-surface/40 rounded-lg animate-pulse"
+                  />
                 ))}
               </div>
             ) : solversError ? (
@@ -162,8 +197,32 @@ export default function SolvePage() {
                 {getMessage("solve.leaderboard.empty")}
               </div>
             ) : (
-              <div className="divide-y divide-vx-line">
-                {solvers.map((s, i) => (
+              <>
+                <div role="row" className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-3 sm:px-5 py-2 border-b border-vx-line">
+                  {([
+                    ["name", "Name"],
+                    ["volumeUsd", getMessage("solve.leaderboard.volume")],
+                    ["fills", getMessage("solve.leaderboard.fills")],
+                    ["successRatePct", getMessage("solve.leaderboard.success")],
+                  ] as const).map(([column, label]) => (
+                    <div
+                      key={column}
+                      role="columnheader"
+                      aria-sort={solverSort === column ? (solverSortAscending ? "ascending" : "descending") : "none"}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleSolverSort(column)}
+                        className="eyebrow text-[10px] sm:text-xs hover:text-vx-text transition-colors"
+                      >
+                        {label}
+                        {solverSort === column && <span aria-hidden="true"> {solverSortAscending ? "↑" : "↓"}</span>}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="divide-y divide-vx-line">
+                {sortedSolvers.map((s, i) => (
                   <div
                     key={s.address}
                     className="px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors"
@@ -174,8 +233,12 @@ export default function SolvePage() {
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-vx-text truncate">{s.name}</div>
-                          <div className="num text-xs text-vx-muted truncate">{s.address}</div>
+                          <div className="text-sm font-semibold text-vx-text truncate">
+                            {s.name}
+                          </div>
+                          <div className="num text-xs text-vx-muted truncate">
+                            {s.address}
+                          </div>
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {s.chains.map((c) => (
                               <span
@@ -229,7 +292,8 @@ export default function SolvePage() {
                     </div>
                   </div>
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </div>
         )}
@@ -248,7 +312,9 @@ export default function SolvePage() {
               </span>
               <span className="chip bg-vx-sage-bg text-vx-sage text-[10px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-vx-sage animate-pulse" />
-                {getMessage("solve.intents.available", { count: openIntents.length })}
+                {getMessage("solve.intents.available", {
+                  count: openIntents.length,
+                })}
               </span>
             </div>
 
@@ -261,7 +327,10 @@ export default function SolvePage() {
             {intentsLoading && openIntents.length === 0 ? (
               <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-14 bg-vx-surface/40 rounded-lg animate-pulse"
+                  />
                 ))}
               </div>
             ) : intentsError ? (
@@ -341,10 +410,12 @@ export default function SolvePage() {
                   onChange={(e) => setAddress(e.target.value.trim())}
                   placeholder={getMessage("solve.register.addressPlaceholder")}
                   aria-invalid={Boolean(addressError)}
-                  aria-describedby={addressError ? "solver-address-error" : undefined}
+                  aria-describedby={
+                    addressError ? "solver-address-error" : undefined
+                  }
                   className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
                              text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none
-                             focus:border-vx-sage/50 transition-colors"
+                             focus:border-vx-sage/50 focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-card transition-colors"
                 />
                 {addressError && (
                   <p id="solver-address-error" role="alert" className="text-xs text-red-400 mt-1.5">
@@ -367,7 +438,7 @@ export default function SolvePage() {
                   aria-describedby={bondError ? "solver-bond-error" : undefined}
                   className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
                              text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none
-                             focus:border-vx-sage/50 transition-colors"
+                             focus:border-vx-sage/50 focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-card transition-colors"
                 />
                 {bondError && (
                   <p id="solver-bond-error" role="alert" className="text-xs text-red-400 mt-1.5">

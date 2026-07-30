@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import type { Locale } from "@/lib/i18n";
 
 const { isConnectedMock, requestAccessMock, getNetworkMock, addToastMock } = vi.hoisted(() => ({
   isConnectedMock: vi.fn(),
@@ -26,18 +28,28 @@ import { ConnectWalletButton } from "./ConnectWalletButton";
 
 const initialState = useWalletStore.getState();
 
+function renderButton(locale: Locale = "en") {
+  return render(
+    <I18nProvider locale={locale}>
+      <ConnectWalletButton />
+    </I18nProvider>
+  );
+}
+
 describe("ConnectWalletButton", () => {
   beforeEach(() => {
     useWalletStore.setState(initialState, true);
     vi.clearAllMocks();
+    vi.stubEnv("NEXT_PUBLIC_NETWORK", "testnet");
   });
 
   afterEach(() => {
     useWalletStore.setState(initialState, true);
+    vi.unstubAllEnvs();
   });
 
   it("shows a Connect Freighter prompt when disconnected", () => {
-    render(<ConnectWalletButton />);
+    renderButton();
     expect(screen.getByText("Connect Freighter")).toBeInTheDocument();
   });
 
@@ -60,7 +72,7 @@ describe("ConnectWalletButton", () => {
     getNetworkMock.mockResolvedValue("TESTNET");
 
     const user = userEvent.setup();
-    render(<ConnectWalletButton />);
+    renderButton();
 
     await user.click(screen.getByText("Connect Freighter"));
 
@@ -75,7 +87,7 @@ describe("ConnectWalletButton", () => {
     getNetworkMock.mockResolvedValue("TESTNET");
 
     const user = userEvent.setup();
-    render(<ConnectWalletButton />);
+    renderButton();
     await user.click(screen.getByText("Connect Freighter"));
     await waitFor(() => screen.getByText("GABC...3456"));
 
@@ -88,7 +100,7 @@ describe("ConnectWalletButton", () => {
     isConnectedMock.mockResolvedValue(false);
 
     const user = userEvent.setup();
-    render(<ConnectWalletButton />);
+    renderButton();
     await user.click(screen.getByText("Connect Freighter"));
 
     await waitFor(() => {
@@ -97,5 +109,71 @@ describe("ConnectWalletButton", () => {
         "error"
       );
     });
+  });
+
+  // ── Issue #1: network-mismatch warning ───────────────────────────────────
+
+  it("shows a network-mismatch warning when connected to the wrong network", async () => {
+    vi.stubEnv("NEXT_PUBLIC_NETWORK", "testnet");
+    isConnectedMock.mockResolvedValue(true);
+    requestAccessMock.mockResolvedValue("GABCDEFGHIJKLMNOPQRSTUVWXYZ23456");
+    // Freighter is on mainnet but the app expects testnet
+    getNetworkMock.mockResolvedValue("MAINNET");
+
+    const user = userEvent.setup();
+    render(<ConnectWalletButton />);
+    await user.click(screen.getByText("Connect Freighter"));
+
+    await waitFor(() => {
+      expect(screen.getByRole("alert")).toHaveTextContent(/wrong network/i);
+    });
+  });
+
+  it("does not show a network-mismatch warning when connected to the correct network", async () => {
+    vi.stubEnv("NEXT_PUBLIC_NETWORK", "testnet");
+    isConnectedMock.mockResolvedValue(true);
+    requestAccessMock.mockResolvedValue("GABCDEFGHIJKLMNOPQRSTUVWXYZ23456");
+    getNetworkMock.mockResolvedValue("TESTNET");
+
+    const user = userEvent.setup();
+    render(<ConnectWalletButton />);
+    await user.click(screen.getByText("Connect Freighter"));
+
+    await waitFor(() => {
+      expect(screen.getByText("GABC...3456")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  // ── Issue #2: not-installed CTA ──────────────────────────────────────────
+
+  it("shows an Install Freighter link (not a retry button) when Freighter is not installed", async () => {
+    isConnectedMock.mockResolvedValue(false);
+
+    const user = userEvent.setup();
+    render(<ConnectWalletButton />);
+    await user.click(screen.getByText("Connect Freighter"));
+
+    await waitFor(() => {
+      const link = screen.getByRole("link", { name: /install.*freighter/i });
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute("href", "https://www.freighter.app/");
+    });
+    // The generic "Retry Connection" button must NOT be present
+    expect(screen.queryByText("Retry Connection")).not.toBeInTheDocument();
+  });
+
+  it("shows Retry Connection for a generic (non-install) failure", async () => {
+    isConnectedMock.mockResolvedValue(true);
+    requestAccessMock.mockRejectedValue(new Error("User declined access"));
+
+    const user = userEvent.setup();
+    render(<ConnectWalletButton />);
+    await user.click(screen.getByText("Connect Freighter"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Retry Connection")).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("link", { name: /install.*freighter/i })).not.toBeInTheDocument();
   });
 });
