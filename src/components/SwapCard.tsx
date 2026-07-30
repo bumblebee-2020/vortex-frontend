@@ -123,6 +123,35 @@ export function SwapCard({
     submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol });
   };
 
+  // While the chain picker overlay is open, the main card sits behind it
+  // (opacity-0, pointer-events-none) — keep its controls out of the tab
+  // order too, or keyboard users tab through invisible fields.
+  const hiddenTabIndex = showChainPicker ? -1 : undefined;
+
+  const chainPickerRef = useRef<HTMLDivElement>(null);
+  const chainToggleRef = useRef<HTMLButtonElement>(null);
+
+  const closeChainPicker = () => {
+    setShowChainPicker(false);
+    chainToggleRef.current?.focus();
+  };
+
+  // Moves focus into the overlay when it opens, since its trigger becomes
+  // aria-hidden/untabbable the moment the main card is hidden behind it.
+  useEffect(() => {
+    if (!showChainPicker) return;
+    chainPickerRef.current?.querySelector<HTMLElement>("button")?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeChainPicker();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showChainPicker]);
+
   return (
     <div className="relative">
       {/* Chain picker dropdown */}
@@ -177,6 +206,7 @@ export function SwapCard({
             <button
               ref={chainToggleRef}
               type="button"
+              tabIndex={hiddenTabIndex}
               onClick={() => setShowChainPicker(true)}
               aria-haspopup="true"
               aria-expanded={showChainPicker}
@@ -196,6 +226,7 @@ export function SwapCard({
             <input
               id="src-amount"
               type="number"
+              tabIndex={hiddenTabIndex}
               value={srcAmount}
               onChange={e => handleAmountChange(e.target.value)}
               placeholder={t("swap.from.amountPlaceholder")}
@@ -203,6 +234,7 @@ export function SwapCard({
             />
             <button
               type="button"
+              tabIndex={hiddenTabIndex}
               className="token-btn"
               onClick={() => setShowTokenPicker(!showTokenPicker)}
               aria-haspopup="true"
@@ -225,6 +257,7 @@ export function SwapCard({
                 <button
                   key={token.symbol}
                   type="button"
+                  tabIndex={hiddenTabIndex}
                   onClick={() => { setSrcToken(token); setShowTokenPicker(false); }}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
                     ${token.symbol === srcToken.symbol ? "bg-vx-lav-bg text-vx-lav" : "hover:bg-vx-surface text-vx-muted hover:text-vx-text"}`}
@@ -289,6 +322,7 @@ export function SwapCard({
                 <button
                   key={token.symbol}
                   type="button"
+                  tabIndex={hiddenTabIndex}
                   onClick={() => setDstToken(token)}
                   aria-pressed={dstToken.symbol === token.symbol}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all
@@ -341,6 +375,7 @@ export function SwapCard({
         {/* Submit */}
         <button
           type="button"
+          tabIndex={hiddenTabIndex}
           className="btn-swap"
           disabled={!canSwap && submission.status !== "success"}
           aria-busy={isSubmitting}

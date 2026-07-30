@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { VortexLogo } from "./VortexLogo";
@@ -91,7 +91,8 @@ export function Nav(props: NavProps) {
           <ConnectWalletButton compact={props.variant === "breadcrumb"} />
           {props.variant === "home" && (
             <button
-              onClick={() => setMobileOpen((open) => !open)}
+              ref={toggleRef}
+              onClick={() => (mobileOpen ? closeMobileMenu() : setMobileOpen(true))}
               aria-expanded={mobileOpen}
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
               className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
@@ -109,12 +110,12 @@ export function Nav(props: NavProps) {
       </div>
 
       {props.variant === "home" && mobileOpen && (
-        <div className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1">
+        <div ref={panelRef} className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobileMenu}
               className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
             >
               {getMessage(`nav.${link.label}`)}
@@ -131,7 +132,7 @@ export function Nav(props: NavProps) {
           )}
           <a
             href="https://github.com/vortex-protocol"
-            onClick={() => setMobileOpen(false)}
+            onClick={closeMobileMenu}
             className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
           >
             {getMessage("nav.docs")}

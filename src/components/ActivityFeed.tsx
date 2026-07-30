@@ -28,6 +28,7 @@ export function ActivityFeed() {
 
   return (
     <div className="space-y-2">
+      <div role="status" className="sr-only">{announcement}</div>
       <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1">
         <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
         {isLive ? "Live" : "Polling"}

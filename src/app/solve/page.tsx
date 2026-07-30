@@ -369,7 +369,7 @@ export default function SolvePage() {
                   }
                   className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
                              text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none
-                             focus:border-vx-sage/50 transition-colors"
+                             focus:border-vx-sage/50 focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-card transition-colors"
                 />
                 {addressError && (
                   <p id="solver-address-error" role="alert" className="text-xs text-red-400 mt-1.5">
@@ -392,7 +392,7 @@ export default function SolvePage() {
                   aria-describedby={bondError ? "solver-bond-error" : undefined}
                   className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
                              text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none
-                             focus:border-vx-sage/50 transition-colors"
+                             focus:border-vx-sage/50 focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-card transition-colors"
                 />
                 {bondError && (
                   <p id="solver-bond-error" role="alert" className="text-xs text-red-400 mt-1.5">
