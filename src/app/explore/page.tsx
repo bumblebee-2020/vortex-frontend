@@ -11,7 +11,7 @@ import { useLiveIntents } from "@/hooks/useLiveIntents";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
-import type { IntentStatus } from "@/lib/types";
+import type { FeedItem, IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
 const SORT_OPTIONS = ["newest", "oldest", "largest"] as const;
@@ -22,6 +22,11 @@ const ROW_HEIGHT = 64;
 
 /** Height of the virtualized scroll container. */
 const LIST_HEIGHT = 480;
+
+function isExpiredPending(item: FeedItem): boolean {
+  if (item.status !== "pending" || !item.deadline) return false;
+  return new Date(item.deadline).getTime() <= Date.now();
+}
 
 export default function ExplorePage() {
   const { intents, isLoading, error, isLive } = useLiveIntents();
