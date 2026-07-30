@@ -73,7 +73,58 @@ vi.mock("@/components/IntentStatusBadge", () => ({
 }));
 
 describe("SolverDetailPage", () => {
-  it("renders solver information with proper headings", () => {
+  it("rejects an invalid address format", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: false, error: undefined });
+    render(<SolverDetailPage params={{ address: "INVALID_ADDRESS" }} />);
+
+    expect(screen.getByText("Invalid solver address format.")).toBeInTheDocument();
+  });
+
+  it("does not fetch when address is invalid", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: false, error: undefined });
+    render(<SolverDetailPage params={{ address: "INVALID" }} />);
+
+    expect(useSolverMock).toHaveBeenCalledWith(null);
+  });
+
+  it("fetches solver when address is valid", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    expect(useSolverMock).toHaveBeenCalledWith("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING");
+  });
+
+  it("renders loading state", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: true, error: undefined });
+    const { container } = render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+  });
+
+  it("renders error state when fetch fails", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: false, error: new Error("Network error") });
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    expect(screen.getByRole("alert", { name: /Couldn't load solver/ })).toBeInTheDocument();
+  });
+
+  it("renders not found state when solver is null", () => {
+    useSolverMock.mockReturnValue({ solver: null, isLoading: false, error: undefined });
+    render(
+      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+    );
+
+    expect(screen.getByRole("alert", { name: /No solver found/ })).toBeInTheDocument();
+  });
+
+  it("renders solver information when found", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
@@ -82,16 +133,8 @@ describe("SolverDetailPage", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("AlphaMax");
   });
 
-  it("displays solver status with proper ARIA label", () => {
-    render(
-      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
-    );
-
-    const statusBadge = screen.getByLabelText(/Solver status:/);
-    expect(statusBadge).toBeInTheDocument();
-  });
-
   it("displays solver metrics in proper structure", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
@@ -228,7 +271,8 @@ describe("SolverDetailPage", () => {
     });
   });
 
-  it("displays fill history with proper section heading", () => {
+  it("displays fill history heading", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
@@ -236,7 +280,8 @@ describe("SolverDetailPage", () => {
     expect(screen.getByText("Recent Fills by Solver")).toBeInTheDocument();
   });
 
-  it("has back link with proper styling for focus", () => {
+  it("has back link to solvers list", () => {
+    useSolverMock.mockReturnValue({ solver: solverData, isLoading: false, error: undefined });
     render(
       <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
     );
@@ -385,6 +430,71 @@ describe("SolverDetailPage", () => {
     expect(alert).toBeInTheDocument();
   });
 
+  describe("uptime indicator", () => {
+    it("displays active status badge when solver is active", () => {
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const statusBadge = screen.getByLabelText(/Solver status:/);
+      expect(statusBadge).toHaveTextContent("Active");
+      expect(statusBadge).toHaveClass("bg-vx-sage-bg");
+      expect(statusBadge).toHaveClass("text-vx-sage");
+    });
+
+    it("displays inactive status badge when solver is inactive", () => {
+      vi.mocked(vi.mocked(require("@/hooks/useSolvers").useSolvers)).mockReturnValue({
+        solvers: [
+          {
+            name: "Inactive Solver",
+            address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING",
+            bondUsd: 500,
+            fills: 42,
+            failed: 10,
+            volumeUsd: 125000,
+            avgFillTimeSeconds: 12,
+            successRatePct: 80.95,
+            chains: ["ethereum"],
+            status: "inactive",
+          },
+        ],
+        isLoading: false,
+        error: undefined,
+      });
+
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const statusBadge = screen.getByLabelText(/Solver status:/);
+      expect(statusBadge).toHaveTextContent("Inactive");
+      expect(statusBadge).toHaveClass("bg-vx-surface");
+      expect(statusBadge).toHaveClass("text-vx-muted");
+    });
+
+    it("shows status badge in header with proper styling", () => {
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const statusBadge = screen.getByLabelText(/Solver status:/);
+      expect(statusBadge).toHaveClass("font-semibold");
+      expect(statusBadge).toHaveClass("border");
+      expect(statusBadge).toHaveClass("rounded-lg");
+    });
+
+    it("maintains status visibility in responsive layout", () => {
+      const { container } = render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const headerCard = container.querySelector(".card");
+      const statusBadge = screen.getByLabelText(/Solver status:/);
+
+      expect(headerCard).toContainElement(statusBadge);
+      expect(statusBadge).toHaveClass("flex-shrink-0");
+      expect(statusBadge).toHaveClass("whitespace-nowrap");
+    });
   // Issue #45: Loading skeleton
   it("renders loading skeleton while fetching solver details", () => {
     const { useSolversModule } = vi.hoisted(() => ({

@@ -32,6 +32,7 @@ export const en = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Rate",
   "swap.quote.unavailable": "Live quote unavailable — showing an estimated rate.",
+  "swap.quote.staleWarning": "Quote is stale. Please wait for a refresh before submitting.",
 
   "swap.submit.connecting": "Connecting wallet…",
   "swap.submit.building": "Preparing swap…",
@@ -42,6 +43,10 @@ export const en = {
   "swap.submit.enterAmount": "Enter an amount",
   "swap.submit.cta": "Swap {amount} {srcToken} → {dstToken}",
   "swap.submit.retryCta": "Retry: Swap {amount} {srcToken} → {dstToken}",
+
+  "swap.destination.label": "Destination address",
+  "swap.destination.placeholder": "G...",
+  "swap.destination.invalidAddress": "Enter a valid Stellar address (starts with G).",
 
   "swap.disclaimer": "Swap settles directly on Stellar · No wrapped tokens · Protected by solver bonds",
 

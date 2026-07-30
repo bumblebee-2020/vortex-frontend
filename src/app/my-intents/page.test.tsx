@@ -61,6 +61,17 @@ const intents: FeedItem[] = [
   },
 ];
 
+const manyIntents: FeedItem[] = Array.from({ length: 25 }, (_, i) => ({
+  id: String(i + 1),
+  srcChain: i % 5 === 0 ? "base" : "ethereum",
+  srcToken: "USDC",
+  srcAmount: String(100 + i),
+  dstToken: "USDC",
+  solver: "Solver" + i,
+  status: (i % 3 === 0 ? "pending" : i % 3 === 1 ? "filled" : "accepted") as const,
+  createdAt: new Date(2026, 6, 14, i, 0).toISOString(),
+}));
+
 describe("MyIntentsPage", () => {
   it("renders the main landmark with the correct id", () => {
     mockWallet();
@@ -136,18 +147,28 @@ describe("MyIntentsPage", () => {
     expect(screen.getByText("No intents match your filters.")).toBeInTheDocument();
   });
 
-  it("shows loading skeleton when fetching", () => {
+  it("renders loading skeleton with aria-hidden and status announcement", () => {
     mockWallet({ address: "GABC123", isConnected: true });
     useMyLiveIntentsMock.mockReturnValue({ intents: [], isLoading: true, error: undefined });
     const { container } = render(<MyIntentsPage />);
+
     expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    const skeletonContainer = container.querySelector('[aria-hidden="true"]');
+    expect(skeletonContainer).toBeInTheDocument();
+    expect(screen.getByText("Loading your intents...")).toHaveAttribute("role", "status");
   });
 
-  it("shows error state when the fetch fails", () => {
+  it("shows error state with retry button when fetch fails", async () => {
     mockWallet({ address: "GABC123", isConnected: true });
     useMyLiveIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: new Error("boom") });
     render(<MyIntentsPage />);
+
     expect(screen.getByText(/Couldn't load intents/)).toBeInTheDocument();
+    const retryButton = screen.getByRole("button", { name: /Retry/i });
+    expect(retryButton).toBeInTheDocument();
+
+    await user.click(retryButton);
+    expect(mutateMock).toHaveBeenCalled();
   });
 
   it("shows intent count", () => {
