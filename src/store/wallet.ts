@@ -12,6 +12,7 @@ const EXPECTED_NETWORK = (process.env.NEXT_PUBLIC_NETWORK ?? "testnet").toUpperC
 
 export type WalletState = {
   address: string | null;
+  lastKnownAddress: string | null;
   network: string | null;
   isConnected: boolean;
   isConnecting: boolean;
@@ -39,9 +40,11 @@ export const useWalletStore = create<WalletState>()(
   persist(
     (set, get) => ({
       address: null,
+      lastKnownAddress: null,
       network: null,
       isConnected: false,
       isConnecting: false,
+      wasSessionCleared: false,
       error: null,
       networkMismatch: false,
       notInstalled: false,
@@ -68,9 +71,11 @@ export const useWalletStore = create<WalletState>()(
 
           set({
             address,
+            lastKnownAddress: address,
             network,
             isConnected: true,
             isConnecting: false,
+            wasSessionCleared: false,
             error: null,
             networkMismatch: mismatch,
             notInstalled: false,
@@ -85,6 +90,7 @@ export const useWalletStore = create<WalletState>()(
             network: null,
             isConnected: false,
             isConnecting: false,
+            wasSessionCleared: false,
             error: err instanceof Error ? err.message : "Failed to connect wallet.",
             networkMismatch: false,
             notInstalled: false,
@@ -98,6 +104,7 @@ export const useWalletStore = create<WalletState>()(
           network: null,
           isConnected: false,
           isConnecting: false,
+          wasSessionCleared: false,
           error: null,
           networkMismatch: false,
         });
@@ -109,6 +116,7 @@ export const useWalletStore = create<WalletState>()(
       // the stale persisted session.
       hydrate: async () => {
         if (!get().isConnected) return;
+        const previousAddress = get().address ?? get().lastKnownAddress;
         try {
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());
@@ -132,6 +140,7 @@ export const useWalletStore = create<WalletState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         address: state.address,
+        lastKnownAddress: state.lastKnownAddress,
         network: state.network,
         isConnected: state.isConnected,
       }),

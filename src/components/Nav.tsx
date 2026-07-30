@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { VortexLogo } from "./VortexLogo";
 import { ConnectWalletButton } from "./ConnectWalletButton";
+import { SettingsPanel } from "./SettingsPanel";
 import { getMessage } from "@/lib/i18n-legacy";
 import { useLocale, useSetLocale } from "@/lib/i18n/I18nProvider";
 import { LOCALES, type Locale } from "@/lib/i18n";
@@ -17,20 +18,11 @@ const NAV_LINKS = [
   { href: "/solve", label: "becomeSolver" as const },
 ];
 
-/** Locale display names shown in the switcher. */
-const LOCALE_LABELS: Record<Locale, string> = {
-  en: "EN",
-  es: "ES",
-};
-
 export function Nav(props: NavProps) {
   const maxWidth = props.variant === "home" ? "max-w-6xl" : "max-w-5xl";
   const [mobileOpen, setMobileOpen] = useState(false);
   const isConnected = useWalletStore((s) => s.isConnected);
   const pathname = usePathname();
-
-  const locale = useLocale();
-  const setLocale = useSetLocale();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-vx-border bg-vx-ink/80 backdrop-blur-md">

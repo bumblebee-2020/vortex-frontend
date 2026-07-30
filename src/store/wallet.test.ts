@@ -54,7 +54,9 @@ describe("useWalletStore", () => {
     expect(state.isConnected).toBe(true);
     expect(state.isConnecting).toBe(false);
     expect(state.address).toBe("GABC123");
+    expect(state.lastKnownAddress).toBe("GABC123");
     expect(state.network).toBe("TESTNET");
+    expect(state.wasSessionCleared).toBe(false);
     expect(state.error).toBeNull();
     expect(state.networkMismatch).toBe(false);
   });
@@ -213,5 +215,7 @@ describe("useWalletStore", () => {
     const state = useWalletStore.getState();
     expect(state.isConnected).toBe(false);
     expect(state.address).toBeNull();
+    expect(state.lastKnownAddress).toBe("GOLD123");
+    expect(state.wasSessionCleared).toBe(true);
   });
 });

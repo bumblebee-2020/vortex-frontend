@@ -170,13 +170,9 @@ export default function ExplorePage() {
         {isLoading && intents.length === 0 ? (
           <IntentListSkeleton count={4} />
         ) : error ? (
-          <div className="card p-8 text-center text-sm text-vx-muted">
-            Couldn&apos;t load intents right now. Try again shortly.
-          </div>
+          <EmptyState title="Couldn't load intents" message="Try again shortly." />
         ) : filtered.length === 0 ? (
-          <div className="card p-8 text-center text-sm text-vx-muted">
-            No intents match your filters.
-          </div>
+          <EmptyState title="No intents found" message="No intents match your filters." />
         ) : (
           <div className="space-y-2">
             <div role="row" className="flex items-center gap-4 px-4 pb-2 text-[10px] uppercase tracking-wide text-vx-dim">
@@ -256,7 +252,7 @@ export default function ExplorePage() {
         )}
       </main>
       <Footer />
-    </div>
+    </div>Merge
   ),
   ssr: false,
 });
