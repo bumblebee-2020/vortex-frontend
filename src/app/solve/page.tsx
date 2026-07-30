@@ -62,10 +62,10 @@ export default function SolvePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Nav */}
       <Nav variant="breadcrumb" label={getMessage("solve.nav.label")} />
 
       <main id="main-content" className="max-w-5xl mx-auto px-3 sm:px-5 py-8 sm:py-12">
+        {/* ── Hero ── */}
         <div className="mb-8 sm:mb-10">
           <div className="eyebrow mb-2 sm:mb-3 text-xs">{getMessage("solve.hero.eyebrow")}</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-vx-text mb-2 sm:mb-3">
@@ -119,14 +119,17 @@ export default function SolvePage() {
               aria-controls={`panel-${t}`}
               onClick={() => setTab(t)}
               className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium capitalize transition-all whitespace-nowrap
-                ${tab === t ? "bg-vx-card text-vx-text border border-vx-border" : "text-vx-muted hover:text-vx-text"}`}
+                ${tab === t
+                  ? "bg-vx-card text-vx-text border border-vx-border"
+                  : "text-vx-muted hover:text-vx-text"
+                }`}
             >
               {getMessage(`solve.tabs.${t}`)}
             </button>
           ))}
         </div>
 
-        {/* Leaderboard */}
+        {/* ── Leaderboard panel ── */}
         {tab === "leaderboard" && (
           <div
             id="panel-leaderboard"
@@ -226,7 +229,7 @@ export default function SolvePage() {
           </div>
         )}
 
-        {/* Open intents */}
+        {/* ── Open intents panel ── */}
         {tab === "intents" && (
           <div
             id="panel-intents"
@@ -306,7 +309,7 @@ export default function SolvePage() {
           </div>
         )}
 
-        {/* Register form */}
+        {/* ── Register panel ── */}
         {tab === "register" && (
           <div
             id="panel-register"
