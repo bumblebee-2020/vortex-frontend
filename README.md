@@ -49,6 +49,16 @@ cp .env.example .env.local
 npm run dev    # http://localhost:3000
 ```
 
+### Required Environment Variables
+
+| Variable | Where to get the value |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | URL of your running `vortex-backend` relay |
+| `NEXT_PUBLIC_WS_URL` | WebSocket URL of the relay (usually with `/ws` path) |
+| `NEXT_PUBLIC_NETWORK` | Stellar network: `testnet`, `futurenet`, or `mainnet` |
+| `NEXT_PUBLIC_SETTLEMENT_CONTRACT` | Settlement contract ID from `vortex-contract` deployment |
+| `NEXT_PUBLIC_SOLVER_REGISTRY_CONTRACT` | Solver registry contract ID from `vortex-contract` deployment |
+
 ### Scripts
 
 | Script | Description |
