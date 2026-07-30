@@ -1,6 +1,12 @@
 // Source-of-truth message catalog. Keys are dot-namespaced by feature; values
 // may contain {placeholder} tokens that are filled in at render time.
 export const en = {
+  "activityFeed.status.live": "Live",
+  "activityFeed.status.polling": "Polling",
+  "activityFeed.error.unavailable": "Live feed unavailable right now.",
+  "activityFeed.empty": "No fills yet.",
+  "activityFeed.item.route": "{chain} · via {solver}",
+
   "swap.chainPicker.title": "Select source chain",
 
   "swap.from.label": "From",

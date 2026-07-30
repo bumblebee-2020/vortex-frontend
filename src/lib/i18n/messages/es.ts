@@ -1,6 +1,12 @@
 // Spanish (es) message catalog.
 // Keys must stay in sync with en.ts — the test suite enforces this.
 export const es = {
+  "activityFeed.status.live": "En vivo",
+  "activityFeed.status.polling": "Actualizando",
+  "activityFeed.error.unavailable": "El feed en vivo no está disponible en este momento.",
+  "activityFeed.empty": "Aún no hay llenados.",
+  "activityFeed.item.route": "{chain} · vía {solver}",
+
   "swap.chainPicker.title": "Seleccionar cadena origen",
 
   "swap.from.label": "De",
