@@ -64,13 +64,19 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
                 ["Minimum out", `${intent.minOut} ${intent.dstToken}`],
                 ["Submitted", timeAgo(intent.createdAt)],
                 ["Deadline", deadlineLabel(intent.deadline)],
-                ["Destination address", truncateAddress(intent.dstAddress)],
               ].map(([k, v]) => (
                 <div key={k} className="bg-vx-surface/40 rounded-lg p-3">
                   <div className="eyebrow mb-1">{k}</div>
                   <div className="text-sm text-vx-text num capitalize">{v}</div>
                 </div>
               ))}
+              <div className="bg-vx-surface/40 rounded-lg p-3">
+                <div className="eyebrow mb-1">Destination address</div>
+                <div className="flex items-center gap-2 text-sm text-vx-text num">
+                  <span className="truncate">{truncateAddress(intent.dstAddress)}</span>
+                  <CopyButton value={intent.dstAddress} label="Copy destination address" />
+                </div>
+              </div>
             </div>
 
             {intent.txHash && (
