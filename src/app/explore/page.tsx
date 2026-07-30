@@ -135,6 +135,34 @@ export default function ExplorePage() {
           </div>
         ) : (
           <>
+            <div role="row" className="flex items-center gap-4 px-4 pb-2 text-[10px] uppercase tracking-wide text-vx-dim">
+              <div role="columnheader" aria-sort={sort === "largest" ? "descending" : "none"} className="flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setSort("largest")}
+                  className="flex items-center gap-1 text-left hover:text-vx-text transition-colors"
+                >
+                  Amount
+                  {sort === "largest" && <span aria-hidden="true">↓</span>}
+                </button>
+              </div>
+              <div
+                role="columnheader"
+                aria-sort={sort === "newest" ? "descending" : sort === "oldest" ? "ascending" : "none"}
+                className="w-16 flex-shrink-0"
+              >
+                <button
+                  type="button"
+                  onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
+                  className="flex items-center justify-end gap-1 w-full text-right hover:text-vx-text transition-colors"
+                >
+                  Time
+                  {sort === "newest" && <span aria-hidden="true">↓</span>}
+                  {sort === "oldest" && <span aria-hidden="true">↑</span>}
+                </button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               {paginated.map((item) => (
                 <Link
