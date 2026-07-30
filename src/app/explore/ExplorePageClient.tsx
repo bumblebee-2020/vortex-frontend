@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { SkeletonCard } from "@/components/Skeleton";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
@@ -14,43 +14,17 @@ import type { IntentStatus } from "@/lib/types";
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
 const SORT_OPTIONS = ["newest", "oldest", "largest"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
+const PAGE_SIZE = 10;
 
-/** Height of a single intent row in pixels (matches the p-4 + border row). */
-const ROW_HEIGHT = 64;
-
-/** Height of the virtualized scroll container. */
-const LIST_HEIGHT = 480;
-
-export default function ExplorePage() {
+export default function ExplorePageClient() {
   const { intents, isLoading, error, isLive } = useLiveIntents();
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortOption>("newest");
-
-  // Reset scroll to top whenever filters change.
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  /**
-   * Stable callbacks for filter controls. Prevents unnecessary re-renders of
-   * child components that receive these as props (e.g. if selects were extracted).
-   */
-  const handleStatusChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) =>
-      setStatusFilter(e.target.value as IntentStatus | "all"),
-    [],
-  );
-  const handleChainChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => setChainFilter(e.target.value),
-    [],
-  );
-  const handleSortChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => setSort(e.target.value as SortOption),
-    [],
-  );
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     let result = intents;
-
     if (statusFilter !== "all") {
       result = result.filter((i) => i.status === statusFilter);
     }
@@ -67,30 +41,34 @@ export default function ExplorePage() {
     return result;
   }, [intents, statusFilter, chainFilter, sort]);
 
-  // Scroll back to top when filtered list changes.
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-    }
+    setPage(1);
   }, [statusFilter, chainFilter, sort]);
 
-  const virtualizer = useVirtualizer({
-    count: filtered.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 5,
-  });
-
-  const virtualItems = virtualizer.getVirtualItems();
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
   return (
     <div className="min-h-screen">
       <Nav variant="breadcrumb" label="Explore" />
+
       <main id="main-content" className="max-w-5xl mx-auto px-5 py-12">
-        <div className="mb-8">
-          <div className="h-3 w-24 bg-vx-surface/40 rounded animate-pulse mb-3" />
-          <div className="h-8 w-52 bg-vx-surface/40 rounded animate-pulse mb-3" />
-          <div className="h-4 w-80 bg-vx-surface/40 rounded animate-pulse" />
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-3">Intent Explorer</div>
+            <h1 className="text-3xl font-bold text-vx-text mb-3">Browse all intents</h1>
+            <p className="text-vx-muted text-sm max-w-lg leading-relaxed">
+              Every swap intent submitted to Vortex, from open auctions to completed fills.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1 pt-1 flex-shrink-0">
+            <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
+            {isLive ? "Live" : "Polling"}
+          </div>
         </div>
 
         {/* Filters */}
@@ -99,7 +77,7 @@ export default function ExplorePage() {
           <select
             id="status-filter"
             value={statusFilter}
-            onChange={handleStatusChange}
+            onChange={(e) => setStatusFilter(e.target.value as IntentStatus | "all")}
             className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
           >
             {STATUS_OPTIONS.map((s) => (
@@ -113,7 +91,7 @@ export default function ExplorePage() {
           <select
             id="chain-filter"
             value={chainFilter}
-            onChange={handleChainChange}
+            onChange={(e) => setChainFilter(e.target.value)}
             className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
           >
             <option value="all">All chains</option>
@@ -128,7 +106,7 @@ export default function ExplorePage() {
           <select
             id="sort-order"
             value={sort}
-            onChange={handleSortChange}
+            onChange={(e) => setSort(e.target.value as SortOption)}
             className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
           >
             <option value="newest">Newest first</option>
@@ -143,11 +121,7 @@ export default function ExplorePage() {
 
         {/* Results */}
         {isLoading && intents.length === 0 ? (
-          <div className="space-y-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-            ))}
-          </div>
+          <SkeletonCard rows={4} rowHeight="h-14" />
         ) : error ? (
           <div className="card p-8 text-center text-sm text-vx-muted">
             Couldn&apos;t load intents right now. Try again shortly.
@@ -158,34 +132,6 @@ export default function ExplorePage() {
           </div>
         ) : (
           <>
-            <div role="row" className="flex items-center gap-4 px-4 pb-2 text-[10px] uppercase tracking-wide text-vx-dim">
-              <div role="columnheader" aria-sort={sort === "largest" ? "descending" : "none"} className="flex-1 min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setSort("largest")}
-                  className="flex items-center gap-1 text-left hover:text-vx-text transition-colors"
-                >
-                  Amount
-                  {sort === "largest" && <span aria-hidden="true">↓</span>}
-                </button>
-              </div>
-              <div
-                role="columnheader"
-                aria-sort={sort === "newest" ? "descending" : sort === "oldest" ? "ascending" : "none"}
-                className="w-16 flex-shrink-0"
-              >
-                <button
-                  type="button"
-                  onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
-                  className="flex items-center justify-end gap-1 w-full text-right hover:text-vx-text transition-colors"
-                >
-                  Time
-                  {sort === "newest" && <span aria-hidden="true">↓</span>}
-                  {sort === "oldest" && <span aria-hidden="true">↑</span>}
-                </button>
-              </div>
-            </div>
-
             <div className="space-y-2">
               {paginated.map((item) => (
                 <Link
@@ -202,18 +148,44 @@ export default function ExplorePage() {
                       {item.srcChain} · via {item.solver}
                     </div>
                   </div>
-                );
-              })}
+                  <IntentStatusBadge status={item.status} />
+                  <span className="text-xs text-vx-muted num flex-shrink-0 w-16 text-right">
+                    {timeAgo(item.createdAt)}
+                  </span>
+                </Link>
+              ))}
             </div>
-          </div>
+
+            {pageCount > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-vx-border text-vx-muted
+                             hover:text-vx-text hover:border-vx-sage/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-vx-muted num">
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={page === pageCount}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-vx-border text-vx-muted
+                             hover:text-vx-text hover:border-vx-sage/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
+
       <Footer />
     </div>
-  ),
-  ssr: false,
-});
-
-export default function ExplorePage() {
-  return <ExplorePageClient />;
+  );
 }
