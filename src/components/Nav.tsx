@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { VortexLogo } from "./VortexLogo";
 import { ConnectWalletButton } from "./ConnectWalletButton";
 import { getMessage } from "@/lib/i18n-legacy";
@@ -24,6 +25,8 @@ const LOCALE_LABELS: Record<Locale, string> = {
 export function Nav(props: NavProps) {
   const maxWidth = props.variant === "home" ? "max-w-6xl" : "max-w-5xl";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isConnected = useWalletStore((s) => s.isConnected);
+  const pathname = usePathname();
 
   const locale = useLocale();
   const setLocale = useSetLocale();
@@ -43,6 +46,11 @@ export function Nav(props: NavProps) {
                   {getMessage(`nav.${link.label}`)}
                 </Link>
               ))}
+              {isConnected && (
+                <Link href="/my-intents" className={`transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "hover:text-vx-text"}`}>
+                  My Intents
+                </Link>
+              )}
               <a href="https://github.com/vortex-protocol" className="hover:text-vx-text transition-colors">
                 {getMessage("nav.docs")}
               </a>
@@ -112,6 +120,15 @@ export function Nav(props: NavProps) {
               {getMessage(`nav.${link.label}`)}
             </Link>
           ))}
+          {isConnected && (
+            <Link
+              href="/my-intents"
+              onClick={() => setMobileOpen(false)}
+              className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text"}`}
+            >
+              My Intents
+            </Link>
+          )}
           <a
             href="https://github.com/vortex-protocol"
             onClick={() => setMobileOpen(false)}

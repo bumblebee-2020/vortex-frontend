@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
@@ -12,6 +12,7 @@ import { CHAINS } from "@/lib/marketData";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
+const PAGE_SIZE = 10;
 
 export default function MyIntentsPage() {
   const address = useWalletStore((s) => s.address);
@@ -21,6 +22,7 @@ export default function MyIntentsPage() {
 
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     let result = intents;
@@ -28,6 +30,17 @@ export default function MyIntentsPage() {
     if (chainFilter !== "all") result = result.filter((i) => i.srcChain === chainFilter);
     return result;
   }, [intents, statusFilter, chainFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, chainFilter]);
+
+  useEffect(() => {
+    if (page > pageCount) setPage(pageCount);
+  }, [page, pageCount]);
 
   return (
     <div className="min-h-screen">
@@ -140,6 +153,7 @@ export default function MyIntentsPage() {
                       <div className="text-xs text-vx-muted capitalize">
                         {item.srcChain} · via {item.solver}
                       </div>
+                      <IntentStatusBadge status={item.status} />
                     </div>
                     <div className="self-start sm:self-center">
                       <IntentStatusBadge status={item.status} />
