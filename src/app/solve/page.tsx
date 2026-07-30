@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { useSolvers } from "@/hooks/useSolvers";
@@ -19,6 +19,7 @@ const usdCompact = (value: number) =>
   });
 
 const MIN_BOND_USD = 50;
+type SolverSort = "name" | "volumeUsd" | "fills" | "successRatePct";
 
 const REGISTRATION_LABEL: Record<string, string> = {
   connecting: getMessage("solve.register.states.connecting"),
@@ -29,6 +30,8 @@ const REGISTRATION_LABEL: Record<string, string> = {
 
 export default function SolvePage() {
   const [tab, setTab] = useState<"leaderboard" | "intents" | "register">("leaderboard");
+  const [solverSort, setSolverSort] = useState<SolverSort>("volumeUsd");
+  const [solverSortAscending, setSolverSortAscending] = useState(false);
   const { solvers, isLoading: solversLoading, error: solversError } = useSolvers();
   const { intents: openIntents, isLoading: intentsLoading, error: intentsError } = useOpenIntents();
   const { accept, acceptingId, error: acceptError } = useAcceptIntent();
@@ -37,6 +40,26 @@ export default function SolvePage() {
   const [bond, setBond] = useState("");
   const registration = useSolverRegistration();
   const isRegistering = registration.status in REGISTRATION_LABEL;
+  const sortedSolvers = useMemo(
+    () =>
+      [...solvers].sort((a, b) => {
+        const comparison =
+          solverSort === "name"
+            ? a.name.localeCompare(b.name)
+            : a[solverSort] - b[solverSort];
+        return solverSortAscending ? comparison : -comparison;
+      }),
+    [solvers, solverSort, solverSortAscending],
+  );
+
+  const handleSolverSort = (column: SolverSort) => {
+    if (solverSort === column) {
+      setSolverSortAscending((ascending) => !ascending);
+    } else {
+      setSolverSort(column);
+      setSolverSortAscending(column === "name");
+    }
+  };
 
   const addressError =
     address && !isValidStellarPublicKey(address)
@@ -157,8 +180,32 @@ export default function SolvePage() {
                 {getMessage("solve.leaderboard.empty")}
               </div>
             ) : (
-              <div className="divide-y divide-vx-line">
-                {solvers.map((s, i) => (
+              <>
+                <div role="row" className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-3 sm:px-5 py-2 border-b border-vx-line">
+                  {([
+                    ["name", "Name"],
+                    ["volumeUsd", getMessage("solve.leaderboard.volume")],
+                    ["fills", getMessage("solve.leaderboard.fills")],
+                    ["successRatePct", getMessage("solve.leaderboard.success")],
+                  ] as const).map(([column, label]) => (
+                    <div
+                      key={column}
+                      role="columnheader"
+                      aria-sort={solverSort === column ? (solverSortAscending ? "ascending" : "descending") : "none"}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleSolverSort(column)}
+                        className="eyebrow text-[10px] sm:text-xs hover:text-vx-text transition-colors"
+                      >
+                        {label}
+                        {solverSort === column && <span aria-hidden="true"> {solverSortAscending ? "↑" : "↓"}</span>}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="divide-y divide-vx-line">
+                {sortedSolvers.map((s, i) => (
                   <div
                     key={s.address}
                     className="px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors"
@@ -224,7 +271,8 @@ export default function SolvePage() {
                     </div>
                   </div>
                 ))}
-              </div>
+                </div>
+              </>
             )}
           </div>
         )}

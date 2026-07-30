@@ -65,7 +65,13 @@ export function ActivityFeed() {
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <span aria-hidden="true" className="state-dot bg-vx-sage" />
-              <span className="text-[10px] text-vx-muted">{timeAgo(item.createdAt)}</span>
+              <span
+                className="text-[10px] text-vx-muted"
+                title={new Date(item.createdAt).toLocaleString()}
+                tabIndex={0}
+              >
+                {timeAgo(item.createdAt)}
+              </span>
             </div>
           </div>
         );

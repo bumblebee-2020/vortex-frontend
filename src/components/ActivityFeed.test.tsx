@@ -34,6 +34,13 @@ describe("ActivityFeed", () => {
     expect(screen.getByText(/ethereum · via Alpha/)).toBeInTheDocument();
   });
 
+  it("shows the absolute timestamp for relative feed times", () => {
+    useIntentFeedMock.mockReturnValue({ items: [item], isLoading: false, isLive: true });
+    render(<ActivityFeed />);
+
+    expect(screen.getByText(/ago$/)).toHaveAttribute("title", new Date(item.createdAt).toLocaleString());
+  });
+
   it("shows a Polling indicator when the socket is not open", () => {
     useIntentFeedMock.mockReturnValue({ items: [item], isLoading: false, isLive: false });
     render(<ActivityFeed />);
