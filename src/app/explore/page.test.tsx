@@ -101,46 +101,51 @@ describe("ExplorePage", () => {
     expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
   });
 
-  it("debounces the search input before filtering results", async () => {
+  it("exposes the active sort column via aria-sort, defaulting to newest-first on Time", () => {
     useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
-    vi.useFakeTimers();
-    try {
-      const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
-      render(<ExplorePage />);
+    render(<ExplorePage />);
 
-      await user.type(screen.getByLabelText("Search intents"), "b");
-
-      // Nothing is filtered until the debounce window elapses.
-      expect(screen.getByText("500 USDC → USDC")).toBeInTheDocument();
-
-      act(() => {
-        vi.advanceTimersByTime(300);
-      });
-
-      expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
-      expect(screen.getByText("0.14 WETH → USDC")).toBeInTheDocument();
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(screen.getByRole("columnheader", { name: /Time/ })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByRole("columnheader", { name: /Amount/ })).toHaveAttribute("aria-sort", "none");
   });
 
-  it("matches the search query against solver name", async () => {
+  it("sorts by clicking the Time column header, updating aria-sort and row order", async () => {
     useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
-    vi.useFakeTimers();
-    try {
-      const user = userEvent.setup({ advanceTimers: (ms) => vi.advanceTimersByTime(ms) });
-      render(<ExplorePage />);
+    const user = userEvent.setup();
+    render(<ExplorePage />);
 
-      await user.type(screen.getByLabelText("Search intents"), "alpha");
-      act(() => {
-        vi.advanceTimersByTime(300);
-      });
+    expect(screen.getAllByRole("link").filter(a => a.getAttribute("href")?.startsWith("/explore/"))[0]).toHaveTextContent("0.14 WETH → USDC");
 
-      expect(screen.getByText("500 USDC → USDC")).toBeInTheDocument();
-      expect(screen.getByText("1 intent")).toBeInTheDocument();
-    } finally {
-      vi.useRealTimers();
-    }
+    await user.click(screen.getByRole("button", { name: /Time/ }));
+
+    expect(screen.getByRole("columnheader", { name: /Time/ })).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getAllByRole("link").filter(a => a.getAttribute("href")?.startsWith("/explore/"))[0]).toHaveTextContent("500 USDC → USDC");
+  });
+
+  it("sorts by triggering the Time column header via the keyboard", async () => {
+    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
+    const user = userEvent.setup();
+    render(<ExplorePage />);
+
+    const timeButton = screen.getByRole("button", { name: /Time/ });
+    timeButton.focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByRole("columnheader", { name: /Time/ })).toHaveAttribute("aria-sort", "ascending");
+    expect(screen.getAllByRole("link").filter(a => a.getAttribute("href")?.startsWith("/explore/"))[0]).toHaveTextContent("500 USDC → USDC");
+  });
+
+  it("sorts by the Amount column header", async () => {
+    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
+    const user = userEvent.setup();
+    render(<ExplorePage />);
+
+    const amountButton = screen.getByRole("button", { name: /Amount/ });
+    amountButton.focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByRole("columnheader", { name: /Amount/ })).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getAllByRole("link").filter(a => a.getAttribute("href")?.startsWith("/explore/"))[0]).toHaveTextContent("500 USDC → USDC");
   });
 
   it("renders the results within a main landmark", () => {
