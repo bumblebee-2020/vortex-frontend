@@ -4,12 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { VortexLogo } from "./VortexLogo";
 import { ConnectWalletButton } from "./ConnectWalletButton";
+import { getMessage } from "@/lib/messages";
 
 type NavProps = { variant: "home" } | { variant: "breadcrumb"; label: string };
 
 const NAV_LINKS = [
-  { href: "/explore", label: "Explore" },
-  { href: "/solve", label: "Become a Solver" },
+  { href: "/explore", label: "explore" as const },
+  { href: "/solve", label: "becomeSolver" as const },
 ];
 
 export function Nav(props: NavProps) {
@@ -23,16 +24,16 @@ export function Nav(props: NavProps) {
           <div className="flex items-center gap-8">
             <div className="flex items-center gap-2">
               <VortexLogo className="w-6 h-6 text-vx-sage" />
-              <span className="font-semibold text-sm tracking-tight text-vx-text">Vortex</span>
+              <span className="font-semibold text-sm tracking-tight text-vx-text">{getMessage("nav.branding")}</span>
             </div>
             <div className="hidden md:flex items-center gap-5 text-sm text-vx-muted">
               {NAV_LINKS.map((link) => (
                 <Link key={link.href} href={link.href} className="hover:text-vx-text transition-colors">
-                  {link.label}
+                  {getMessage(`nav.${link.label}`)}
                 </Link>
               ))}
               <a href="https://github.com/vortex-protocol" className="hover:text-vx-text transition-colors">
-                Docs
+                {getMessage("nav.docs")}
               </a>
             </div>
           </div>
@@ -40,7 +41,7 @@ export function Nav(props: NavProps) {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2">
               <VortexLogo className="w-5 h-5 text-vx-sage" />
-              <span className="font-semibold text-sm text-vx-text">Vortex</span>
+              <span className="font-semibold text-sm text-vx-text">{getMessage("nav.branding")}</span>
             </Link>
             <span className="text-vx-dim">/</span>
             <span className="text-sm text-vx-muted">{props.label}</span>
@@ -53,7 +54,7 @@ export function Nav(props: NavProps) {
             <button
               onClick={() => setMobileOpen((open) => !open)}
               aria-expanded={mobileOpen}
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
               className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
             >
               <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
@@ -77,7 +78,7 @@ export function Nav(props: NavProps) {
               onClick={() => setMobileOpen(false)}
               className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
             >
-              {link.label}
+              {getMessage(`nav.${link.label}`)}
             </Link>
           ))}
           <a
@@ -85,7 +86,7 @@ export function Nav(props: NavProps) {
             onClick={() => setMobileOpen(false)}
             className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
           >
-            Docs
+            {getMessage("nav.docs")}
           </a>
         </div>
       )}
