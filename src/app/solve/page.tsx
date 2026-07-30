@@ -11,6 +11,7 @@ import { useSolvers } from "@/hooks/useSolvers";
 import { useOpenIntents } from "@/hooks/useOpenIntents";
 import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
+import { IntentListSkeleton, SolverListSkeleton } from "@/components/Skeleton";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { getMessage } from "@/i18n/messages";
