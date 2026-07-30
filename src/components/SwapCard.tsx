@@ -8,6 +8,7 @@ import { useToastStore } from "@/store/toast";
 import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
 import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
+import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import type { MessageKey } from "@/lib/i18n";
 import type { Quote, QuoteRequest } from "@/lib/types";
 
@@ -83,6 +84,10 @@ export function SwapCard({
   const quote = previewQuote ?? fetchedQuote;
   const quoting = previewQuote ? false : quoteIsLoading;
 
+  const dstAddressError = dstAddress && !isValidStellarPublicKey(dstAddress)
+    ? t("swap.destination.invalidAddress")
+    : null;
+
   const dstAmount = quote
     ? parseFloat(quote.dstAmount)
     : srcAmount
@@ -93,7 +98,7 @@ export function SwapCard({
 
   const submission = useSwapSubmission();
   const isSubmitting = submission.status in SUBMISSION_LABEL_KEY;
-  const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting;
+  const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting && !dstAddressError;
 
   /** Truncate a raw amount string to at most `decimals` decimal places. */
   function truncateToDecimals(value: string, decimals: number): string {
@@ -343,6 +348,27 @@ export function SwapCard({
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Destination address */}
+        <div className="bg-vx-surface/50 rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="eyebrow">{t("swap.destination.label")}</span>
+          </div>
+          <label htmlFor="dst-address" className="sr-only">{t("swap.destination.label")}</label>
+          <input
+            id="dst-address"
+            type="text"
+            value={dstAddress}
+            onChange={e => setDstAddress(e.target.value.trim())}
+            placeholder={t("swap.destination.placeholder")}
+            aria-invalid={Boolean(dstAddressError)}
+            aria-describedby={dstAddressError ? "dst-address-error" : undefined}
+            className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5 text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none focus:border-vx-sage/50 transition-colors"
+          />
+          {dstAddressError && (
+            <p id="dst-address-error" role="alert" className="text-[11px] text-red-400">{dstAddressError}</p>
+          )}
         </div>
 
         {/* Quote details */}
