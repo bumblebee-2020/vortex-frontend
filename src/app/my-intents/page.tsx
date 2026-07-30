@@ -9,6 +9,7 @@ import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { useWalletStore } from "@/store/wallet";
 import { useMyLiveIntents } from "@/hooks/useMyLiveIntents";
 import { CHAINS } from "@/lib/marketData";
+import { SkeletonCard } from "@/components/Skeleton";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];

@@ -135,10 +135,8 @@ export default function SolverDetailPage({ params }: { params: { address: string
               </div>
 
               {historyLoading && fillHistory.length === 0 ? (
-                <div className="p-4 sm:p-5 space-y-3">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="h-16 bg-vx-surface/40 rounded-lg animate-pulse" />
-                  ))}
+                <div className="p-4 sm:p-5">
+                  <SkeletonCard rows={3} rowHeight="h-16" />
                 </div>
               ) : historyError ? (
                 <div role="alert" className="p-6 sm:p-8 text-center text-sm text-vx-muted">

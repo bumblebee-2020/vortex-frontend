@@ -1,21 +1,17 @@
-/**
- * /solve — dynamically imported to keep it out of the initial homepage
- * bundle. Heavy dependencies (SWR hooks for solvers + open intents,
- * registration form) only load when the user navigates here.
- */
-import dynamic from "next/dynamic";
-import { SkeletonCard } from "@/components/Skeleton";
+"use client";
+
+import { useState } from "react";
 import { Nav } from "@/components/Nav";
-import { Footer } from "@/components/Footer";
+import { SkeletonCard } from "@/components/Skeleton";
 import { useSolvers } from "@/hooks/useSolvers";
 import { useOpenIntents } from "@/hooks/useOpenIntents";
 import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
-import { IntentListSkeleton, SolverListSkeleton } from "@/components/Skeleton";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { getMessage } from "@/i18n/messages";
 import { formatCurrency } from "@/lib/format";
+import Link from "next/link";
 
 const usdCompact = (value: number) =>
   formatCurrency(value, undefined, {
@@ -32,7 +28,7 @@ const REGISTRATION_LABEL: Record<string, string> = {
   submitting: getMessage("solve.register.states.submitting"),
 };
 
-export default function SolvePage() {
+export default function SolvePageClient() {
   const [tab, setTab] = useState<"leaderboard" | "intents" | "register">("leaderboard");
   const { solvers, isLoading: solversLoading, error: solversError } = useSolvers();
   const { intents: openIntents, isLoading: intentsLoading, error: intentsError } = useOpenIntents();
@@ -70,14 +66,14 @@ export default function SolvePage() {
       <Nav variant="breadcrumb" label={getMessage("solve.nav.label")} />
 
       <main id="main-content" className="max-w-5xl mx-auto px-3 sm:px-5 py-8 sm:py-12">
-        {/* ── Hero ── */}
         <div className="mb-8 sm:mb-10">
-          <div className="eyebrow mb-2 sm:mb-3 text-xs">{getMessage("solve.hero.eyebrow")}</div>
+          <div className="eyebrow mb-2 sm:mb-3 text-xs">Solver Network</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-vx-text mb-2 sm:mb-3">
-            {getMessage("solve.hero.title")}
+            Become a Vortex Solver
           </h1>
           <p className="text-vx-muted text-xs sm:text-sm max-w-lg leading-relaxed">
-            {getMessage("solve.hero.description")}
+            Solvers are competitive market makers who fill user swap intents. Deposit a USDC bond,
+            watch the open intent feed, and earn fees on every fill you complete.
           </p>
         </div>
 
@@ -111,7 +107,7 @@ export default function SolvePage() {
         {/* Tabs */}
         <div
           role="tablist"
-          aria-label={getMessage("solve.tabs.ariaLabel")}
+          aria-label="Solver portal sections"
           className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit overflow-x-auto"
         >
           {(["leaderboard", "intents", "register"] as const).map((t) => (
@@ -134,7 +130,7 @@ export default function SolvePage() {
           ))}
         </div>
 
-        {/* ── Leaderboard panel ── */}
+        {/* ── Leaderboard tab ── */}
         {tab === "leaderboard" && (
           <div
             id="panel-leaderboard"
@@ -142,31 +138,31 @@ export default function SolvePage() {
             aria-labelledby="tab-leaderboard"
             className="card overflow-hidden"
           >
-            <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30">
+            <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30">
               <span className="text-sm font-semibold text-vx-text">
                 {getMessage("solve.leaderboard.title")}
               </span>
             </div>
+
             {solversLoading && solvers.length === 0 ? (
-              <div className="p-4 sm:p-5 space-y-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-16 bg-vx-surface/40 rounded-lg animate-pulse" />
-                ))}
+              <div className="p-5">
+                <SkeletonCard rows={3} rowHeight="h-16" />
               </div>
             ) : solversError ? (
-              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
+              <div className="p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.leaderboard.error")}
               </div>
             ) : solvers.length === 0 ? (
-              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
+              <div className="p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.leaderboard.empty")}
               </div>
             ) : (
               <div className="divide-y divide-vx-line">
                 {solvers.map((s, i) => (
-                  <div
+                  <Link
                     key={s.address}
-                    className="px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors"
+                    href={`/solve/${s.address}`}
+                    className="block px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors"
                   >
                     <div className="flex flex-col gap-3">
                       <div className="flex items-start gap-3 min-w-0">
@@ -190,9 +186,7 @@ export default function SolvePage() {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-6">
                         <div>
-                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">
-                            {s.fills}
-                          </div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{s.fills}</div>
                           <div className="eyebrow text-[10px] sm:text-xs">
                             {getMessage("solve.leaderboard.fills")}
                           </div>
@@ -227,14 +221,14 @@ export default function SolvePage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
           </div>
         )}
 
-        {/* ── Open intents panel ── */}
+        {/* ── Open intents tab ── */}
         {tab === "intents" && (
           <div
             id="panel-intents"
@@ -242,7 +236,7 @@ export default function SolvePage() {
             aria-labelledby="tab-intents"
             className="card overflow-hidden"
           >
-            <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30 flex items-center justify-between">
+            <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30 flex items-center justify-between">
               <span className="text-sm font-semibold text-vx-text">
                 {getMessage("solve.intents.title")}
               </span>
@@ -259,17 +253,15 @@ export default function SolvePage() {
             )}
 
             {intentsLoading && openIntents.length === 0 ? (
-              <div className="p-4 sm:p-5 space-y-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg animate-pulse" />
-                ))}
+              <div className="p-5">
+                <SkeletonCard rows={3} rowHeight="h-14" />
               </div>
             ) : intentsError ? (
-              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
+              <div className="p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.intents.error")}
               </div>
             ) : openIntents.length === 0 ? (
-              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
+              <div className="p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.intents.empty")}
               </div>
             ) : (
@@ -300,8 +292,8 @@ export default function SolvePage() {
                       disabled={acceptingId === intent.id}
                       aria-busy={acceptingId === intent.id}
                       className="px-3 sm:px-4 py-2 bg-vx-sage-bg text-vx-sage text-xs font-semibold rounded-lg
-                                 border border-vx-sage/30 hover:bg-vx-sage/15 transition-colors flex-shrink-0 w-full sm:w-auto
-                                 disabled:opacity-60 disabled:cursor-wait"
+                                 border border-vx-sage/30 hover:bg-vx-sage/15 transition-colors flex-shrink-0
+                                 w-full sm:w-auto disabled:opacity-60 disabled:cursor-wait"
                     >
                       {acceptingId === intent.id
                         ? getMessage("solve.intents.accepting")
@@ -314,7 +306,7 @@ export default function SolvePage() {
           </div>
         )}
 
-        {/* ── Register panel ── */}
+        {/* ── Register tab ── */}
         {tab === "register" && (
           <div
             id="panel-register"
@@ -405,13 +397,6 @@ export default function SolvePage() {
           </div>
         )}
       </main>
-
-      <Footer />
     </div>
-  ),
-  ssr: false,
-});
-
-export default function SolvePage() {
-  return <SolvePageClient />;
+  );
 }

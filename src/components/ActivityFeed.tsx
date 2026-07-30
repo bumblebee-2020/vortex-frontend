@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
+import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
   ethereum: "#627EEA", base: "#0052FF", polygon: "#8247E5",
@@ -22,13 +23,7 @@ export function ActivityFeed() {
   const visibleItems = useMemo(() => items.slice(0, FEED_LIMIT), [items]);
 
   if (isLoading && items.length === 0) {
-    return (
-      <div className="space-y-2">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-[52px] bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-        ))}
-      </div>
-    );
+    return <FeedSkeleton count={3} />;
   }
 
   return (
@@ -72,4 +67,8 @@ export function ActivityFeed() {
       })}
     </div>
   );
+}
+
+export function ActivityFeed() {
+  return <ActivityFeedView {...useIntentFeed()} />;
 }

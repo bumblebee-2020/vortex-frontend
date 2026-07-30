@@ -45,19 +45,41 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
       title={error ?? undefined}
       className={`${baseClass} border-vx-border text-vx-muted hover:border-vx-sage/30 hover:text-vx-text disabled:opacity-60 disabled:cursor-wait`}
     >
-      {!compact && (
-        <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" />
-          <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        </svg>
+      {isConnecting ? (
+        <>
+          <svg
+            aria-hidden="true"
+            className="w-3.5 h-3.5 animate-spin-slow flex-shrink-0"
+            viewBox="0 0 16 16"
+            fill="none"
+          >
+            <circle
+              cx="8" cy="8" r="6"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeDasharray="28"
+              strokeDashoffset="8"
+            />
+          </svg>
+          <span>Connecting</span>
+          {/* Animated dots so the state is perceivable without relying on text alone */}
+          <span aria-hidden="true" className="inline-flex gap-0.5 items-end h-4">
+            <span className="w-0.5 h-0.5 rounded-full bg-current animate-bounce [animation-delay:0ms]" />
+            <span className="w-0.5 h-0.5 rounded-full bg-current animate-bounce [animation-delay:150ms]" />
+            <span className="w-0.5 h-0.5 rounded-full bg-current animate-bounce [animation-delay:300ms]" />
+          </span>
+        </>
+      ) : (
+        <>
+          {!compact && (
+            <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          )}
+          {error ? "Retry Connection" : "Connect Freighter"}
+        </>
       )}
-      {isConnecting
-        ? "Connecting..."
-        : wasSessionCleared && lastKnownAddress
-          ? `Reconnect ${truncateAddress(lastKnownAddress)}`
-          : error
-            ? "Retry Connection"
-            : "Connect Freighter"}
     </button>
   );
 }
