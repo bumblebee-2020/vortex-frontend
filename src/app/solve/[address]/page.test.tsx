@@ -87,14 +87,131 @@ describe("SolverDetailPage", () => {
     expect(screen.getByText("Success Rate")).toBeInTheDocument();
   });
 
-  it("displays chain coverage with heading", () => {
-    render(
-      <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
-    );
+  describe("chain coverage section", () => {
+    it("displays the Supported Chains heading", () => {
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
 
-    expect(screen.getByText("Supported Chains")).toBeInTheDocument();
-    expect(screen.getByText("ethereum")).toBeInTheDocument();
-    expect(screen.getByText("polygon")).toBeInTheDocument();
+      expect(screen.getByText("Supported Chains")).toBeInTheDocument();
+    });
+
+    it("displays chain full names from marketData for a solver with multiple chains", () => {
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      // AlphaMax has chains: ["ethereum", "polygon"]
+      // Should render the full names from CHAINS metadata, not the raw IDs
+      expect(screen.getByText("Ethereum")).toBeInTheDocument();
+      expect(screen.getByText("Polygon")).toBeInTheDocument();
+      // Raw chain IDs should NOT be visible (replaced by names)
+      expect(screen.queryByText("ethereum")).not.toBeInTheDocument();
+      expect(screen.queryByText("polygon")).not.toBeInTheDocument();
+    });
+
+    it("applies chain-specific colors from marketData as inline styles", () => {
+      render(
+        <SolverDetailPage params={{ address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" }} />
+      );
+
+      const ethereumBadge = screen.getByText("Ethereum");
+      const polygonBadge = screen.getByText("Polygon");
+
+      // Ethereum color is #627EEA, Polygon color is #8247E5
+      expect(ethereumBadge).toHaveStyle({ backgroundColor: "#627EEA" });
+      expect(polygonBadge).toHaveStyle({ backgroundColor: "#8247E5" });
+    });
+
+    it("displays chain name for a solver with a single chain", async () => {
+      const { useSolvers } = await import("@/hooks/useSolvers");
+      vi.mocked(useSolvers).mockReturnValueOnce({
+        solvers: [
+          {
+            name: "SingleChainSolver",
+            address: "SINGLECHAIN000000000000000000000000000000000000000000",
+            bondUsd: 100,
+            fills: 5,
+            failed: 0,
+            volumeUsd: 5000,
+            avgFillTimeSeconds: 8,
+            successRatePct: 100,
+            chains: ["base"],
+            status: "active",
+          },
+        ],
+        isLoading: false,
+        error: undefined,
+      });
+
+      render(
+        <SolverDetailPage params={{ address: "SINGLECHAIN000000000000000000000000000000000000000000" }} />
+      );
+
+      // Should display the full name "Base", not the id "base"
+      expect(screen.getByText("Base")).toBeInTheDocument();
+      expect(screen.queryByText("base")).not.toBeInTheDocument();
+
+      // Should not show "No chains supported yet"
+      expect(screen.queryByText("No chains supported yet")).not.toBeInTheDocument();
+    });
+
+    it("falls back to chain id and default color for unknown chains", async () => {
+      const { useSolvers } = await import("@/hooks/useSolvers");
+      vi.mocked(useSolvers).mockReturnValueOnce({
+        solvers: [
+          {
+            name: "UnknownChainSolver",
+            address: "UNKNOWNCHAIN00000000000000000000000000000000000000000",
+            bondUsd: 100,
+            fills: 2,
+            failed: 0,
+            volumeUsd: 2000,
+            avgFillTimeSeconds: 15,
+            successRatePct: 100,
+            chains: ["solana"],
+            status: "active",
+          },
+        ],
+        isLoading: false,
+        error: undefined,
+      });
+
+      render(
+        <SolverDetailPage params={{ address: "UNKNOWNCHAIN00000000000000000000000000000000000000000" }} />
+      );
+
+      // "solana" is not in CHAINS, so falls back to rendering the raw id
+      expect(screen.getByText("solana")).toBeInTheDocument();
+    });
+
+    it("shows empty state when solver has no chains", async () => {
+      const { useSolvers } = await import("@/hooks/useSolvers");
+      vi.mocked(useSolvers).mockReturnValueOnce({
+        solvers: [
+          {
+            name: "NoChainsYet",
+            address: "NOCHAINS000000000000000000000000000000000000000000000",
+            bondUsd: 50,
+            fills: 0,
+            failed: 0,
+            volumeUsd: 0,
+            avgFillTimeSeconds: 0,
+            successRatePct: 0,
+            chains: [],
+            status: "inactive",
+          },
+        ],
+        isLoading: false,
+        error: undefined,
+      });
+
+      render(
+        <SolverDetailPage params={{ address: "NOCHAINS000000000000000000000000000000000000000000000" }} />
+      );
+
+      expect(screen.getByText("No chains supported yet")).toBeInTheDocument();
+    });
   });
 
   it("displays fill history with proper section heading", () => {
@@ -116,13 +233,11 @@ describe("SolverDetailPage", () => {
   });
 
   it("uses alert role for error messages", () => {
-    const { rerender } = render(
+    render(
       <SolverDetailPage params={{ address: "INVALID" }} />
     );
 
-    const alert = screen.getByRole("alert", {
-      name: /No solver found/,
-    });
-    expect(alert).toBeInTheDocument();
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("No solver found at that address.");
   });
 });

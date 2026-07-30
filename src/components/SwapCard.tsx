@@ -151,8 +151,6 @@ export function SwapCard() {
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
                     ${token.symbol === srcToken.symbol ? "bg-vx-lav-bg text-vx-lav" : "hover:bg-vx-surface text-vx-muted hover:text-vx-text"}`}
                 >
-                  <span className="font-medium">{t.symbol}</span>
-                  <span className="num text-xs">{formatCurrency(t.priceUSD)}</span>
                   <span className="font-medium">{token.symbol}</span>
                   <span className="num text-xs">${token.priceUSD.toLocaleString()}</span>
                 </button>
@@ -162,7 +160,6 @@ export function SwapCard() {
 
           {srcValueUSD > 0 && (
             <div className="num text-xs text-vx-muted">
-              ≈ {formatCurrency(srcValueUSD, undefined, { maximumFractionDigits: 2 })}
               {/* Number formatting stays locale-hardcoded here; issue #63 owns making it locale-aware. */}
               {t("swap.from.approxValue", {
                 value: srcValueUSD.toLocaleString("en-US", { maximumFractionDigits: 2 }),
