@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CATALOGS, createTranslator, interpolate, isLocale, translate, LOCALES } from ".";
+import { CATALOGS, createTranslator, interpolate, isLocale, translate, LOCALES } from "./index";
 import { en } from "./messages/en";
 
 describe("interpolate", () => {

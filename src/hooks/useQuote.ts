@@ -1,3 +1,4 @@
+import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api";
 import type { Quote, QuoteRequest, QuoteErrorType } from "@/lib/types";
@@ -24,11 +25,17 @@ function classifyQuoteError(err: unknown): QuoteErrorType {
 }
 
 export function useQuote(params: QuoteRequest | null) {
+  const [quoteFetchedAt, setQuoteFetchedAt] = useState<number | null>(null);
   const { data, error, isLoading } = useSWR<Quote>(quoteKey(params), fetcher, {
     revalidateOnFocus: false,
+    onErrorRetry(error, _key, _config, revalidate, { retryCount }) {
+      // Do not retry on 4xx client errors — they won't self-heal.
+      if (error?.status >= 400 && error?.status < 500) return;
+      // Cap at 3 retries with exponential back-off: 1s, 2s, 4s.
+      if (retryCount >= 3) return;
+      setTimeout(() => revalidate({ retryCount }), 1000 * 2 ** retryCount);
+    },
   });
 
-  const classifiedError = error ? classifyQuoteError(error) : null;
-
-  return { quote: data, isLoading, error, quoteErrorType: classifiedError };
+  return { quote: data, quoteFetchedAt, isLoading, error };
 }
