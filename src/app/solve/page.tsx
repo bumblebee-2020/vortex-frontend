@@ -1,11 +1,17 @@
-"use client";
-
-import { useState } from "react";
+/**
+ * /solve — dynamically imported to keep it out of the initial homepage
+ * bundle. Heavy dependencies (SWR hooks for solvers + open intents,
+ * registration form) only load when the user navigates here.
+ */
+import dynamic from "next/dynamic";
+import { SkeletonCard } from "@/components/Skeleton";
 import { Nav } from "@/components/Nav";
+import { Footer } from "@/components/Footer";
 import { useSolvers } from "@/hooks/useSolvers";
 import { useOpenIntents } from "@/hooks/useOpenIntents";
 import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
+import { IntentListSkeleton, SolverListSkeleton } from "@/components/Skeleton";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { getMessage } from "@/i18n/messages";
@@ -49,18 +55,11 @@ export default function SolvePage() {
       ? getMessage("solve.register.validation.invalidAddress")
       : null;
   const bondError =
-    bond &&
-    (isNaN(parseFloat(bond)) || parseFloat(bond) < MIN_BOND_USD)
-      ? getMessage("solve.register.validation.minimumBond", {
-          minBond: MIN_BOND_USD,
-        })
+    bond && (isNaN(parseFloat(bond)) || parseFloat(bond) < MIN_BOND_USD)
+      ? getMessage("solve.register.validation.minimumBond", { minBond: MIN_BOND_USD })
       : null;
   const canRegister =
-    Boolean(address) &&
-    Boolean(bond) &&
-    !addressError &&
-    !bondError &&
-    !isRegistering;
+    Boolean(address) && Boolean(bond) && !addressError && !bondError && !isRegistering;
 
   const handleRegister = () => {
     if (registration.status === "success") {
@@ -75,17 +74,12 @@ export default function SolvePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Nav */}
       <Nav variant="breadcrumb" label={getMessage("solve.nav.label")} />
 
-      <main
-        id="main-content"
-        className="max-w-5xl mx-auto px-3 sm:px-5 py-8 sm:py-12"
-      >
+      <main id="main-content" className="max-w-5xl mx-auto px-3 sm:px-5 py-8 sm:py-12">
+        {/* ── Hero ── */}
         <div className="mb-8 sm:mb-10">
-          <div className="eyebrow mb-2 sm:mb-3 text-xs">
-            {getMessage("solve.hero.eyebrow")}
-          </div>
+          <div className="eyebrow mb-2 sm:mb-3 text-xs">{getMessage("solve.hero.eyebrow")}</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-vx-text mb-2 sm:mb-3">
             {getMessage("solve.hero.title")}
           </h1>
@@ -141,10 +135,9 @@ export default function SolvePage() {
               aria-controls={`panel-${t}`}
               onClick={() => setTab(t)}
               className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium capitalize transition-all whitespace-nowrap
-                ${
-                  tab === t
-                    ? "bg-vx-card text-vx-text border border-vx-border"
-                    : "text-vx-muted hover:text-vx-text"
+                ${tab === t
+                  ? "bg-vx-card text-vx-text border border-vx-border"
+                  : "text-vx-muted hover:text-vx-text"
                 }`}
             >
               {getMessage(`solve.tabs.${t}`)}
@@ -152,7 +145,7 @@ export default function SolvePage() {
           ))}
         </div>
 
-        {/* Leaderboard */}
+        {/* ── Leaderboard panel ── */}
         {tab === "leaderboard" && (
           <div
             id="panel-leaderboard"
@@ -160,13 +153,13 @@ export default function SolvePage() {
             aria-labelledby="tab-leaderboard"
             className="card overflow-hidden"
           >
-            <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30">
+            <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30">
               <span className="text-sm font-semibold text-vx-text">
                 {getMessage("solve.leaderboard.title")}
               </span>
             </div>
             {solversLoading && solvers.length === 0 ? (
-              <div className="p-5 space-y-3">
+              <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
@@ -175,11 +168,11 @@ export default function SolvePage() {
                 ))}
               </div>
             ) : solversError ? (
-              <div className="p-8 text-center text-sm text-vx-muted">
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.leaderboard.error")}
               </div>
             ) : solvers.length === 0 ? (
-              <div className="p-8 text-center text-sm text-vx-muted">
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.leaderboard.empty")}
               </div>
             ) : (
@@ -241,9 +234,7 @@ export default function SolvePage() {
                         <div>
                           <div
                             className={`num text-xs sm:text-sm font-semibold ${
-                              s.successRatePct > 99
-                                ? "text-vx-sage"
-                                : "text-vx-amber"
+                              s.successRatePct > 99 ? "text-vx-sage" : "text-vx-amber"
                             }`}
                           >
                             {s.successRatePct}%
@@ -261,7 +252,7 @@ export default function SolvePage() {
           </div>
         )}
 
-        {/* Open intents */}
+        {/* ── Open intents panel ── */}
         {tab === "intents" && (
           <div
             id="panel-intents"
@@ -269,7 +260,7 @@ export default function SolvePage() {
             aria-labelledby="tab-intents"
             className="card overflow-hidden"
           >
-            <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30 flex items-center justify-between">
+            <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30 flex items-center justify-between">
               <span className="text-sm font-semibold text-vx-text">
                 {getMessage("solve.intents.title")}
               </span>
@@ -282,16 +273,13 @@ export default function SolvePage() {
             </div>
 
             {acceptError && (
-              <div
-                role="alert"
-                className="px-5 py-2.5 text-xs text-red-400 border-b border-vx-line"
-              >
+              <div role="alert" className="px-5 py-2.5 text-xs text-red-400 border-b border-vx-line">
                 {acceptError}
               </div>
             )}
 
             {intentsLoading && openIntents.length === 0 ? (
-              <div className="p-5 space-y-3">
+              <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
@@ -300,11 +288,11 @@ export default function SolvePage() {
                 ))}
               </div>
             ) : intentsError ? (
-              <div className="p-8 text-center text-sm text-vx-muted">
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.intents.error")}
               </div>
             ) : openIntents.length === 0 ? (
-              <div className="p-8 text-center text-sm text-vx-muted">
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.intents.empty")}
               </div>
             ) : (
@@ -349,7 +337,7 @@ export default function SolvePage() {
           </div>
         )}
 
-        {/* Register form */}
+        {/* ── Register panel ── */}
         {tab === "register" && (
           <div
             id="panel-register"
@@ -362,16 +350,11 @@ export default function SolvePage() {
                 <h3 className="text-base font-semibold text-vx-text mb-1">
                   {getMessage("solve.register.title")}
                 </h3>
-                <p className="text-xs text-vx-muted">
-                  {getMessage("solve.register.description")}
-                </p>
+                <p className="text-xs text-vx-muted">{getMessage("solve.register.description")}</p>
               </div>
 
               <div>
-                <label
-                  htmlFor="solver-address"
-                  className="eyebrow block mb-2 text-xs"
-                >
+                <label htmlFor="solver-address" className="eyebrow block mb-2 text-xs">
                   {getMessage("solve.register.addressLabel")}
                 </label>
                 <input
@@ -389,21 +372,14 @@ export default function SolvePage() {
                              focus:border-vx-sage/50 transition-colors"
                 />
                 {addressError && (
-                  <p
-                    id="solver-address-error"
-                    role="alert"
-                    className="text-xs text-red-400 mt-1.5"
-                  >
+                  <p id="solver-address-error" role="alert" className="text-xs text-red-400 mt-1.5">
                     {addressError}
                   </p>
                 )}
               </div>
 
               <div>
-                <label
-                  htmlFor="solver-bond"
-                  className="eyebrow block mb-2 text-xs"
-                >
+                <label htmlFor="solver-bond" className="eyebrow block mb-2 text-xs">
                   {getMessage("solve.register.bondLabel")}
                 </label>
                 <input
@@ -419,11 +395,7 @@ export default function SolvePage() {
                              focus:border-vx-sage/50 transition-colors"
                 />
                 {bondError && (
-                  <p
-                    id="solver-bond-error"
-                    role="alert"
-                    className="text-xs text-red-400 mt-1.5"
-                  >
+                  <p id="solver-bond-error" role="alert" className="text-xs text-red-400 mt-1.5">
                     {bondError}
                   </p>
                 )}
@@ -458,6 +430,13 @@ export default function SolvePage() {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
-  );
+  ),
+  ssr: false,
+});
+
+export default function SolvePage() {
+  return <SolvePageClient />;
 }

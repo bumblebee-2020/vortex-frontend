@@ -37,7 +37,7 @@ function IntentPipeline() {
           </div>
           {i < STAGES.length - 1 && (
             <div className="w-12 mb-5 mx-1">
-              <svg viewBox="0 0 48 4" className="w-full">
+              <svg aria-hidden="true" viewBox="0 0 48 4" className="w-full">
                 <line x1="0" y1="2" x2="48" y2="2"
                       stroke="rgba(76,235,168,0.3)"
                       strokeWidth="1.5"

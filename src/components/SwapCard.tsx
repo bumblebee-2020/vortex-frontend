@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuote } from "@/hooks/useQuote";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useSwapSubmission } from "@/hooks/useSwapSubmission";
 import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
 import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
-import type { MessageKey } from "@/lib/i18n/index";
+import type { MessageKey } from "@/lib/i18n";
+import type { Quote, QuoteRequest } from "@/lib/types";
 
 const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   connecting: "swap.submit.connecting",
@@ -16,25 +17,70 @@ const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   submitting: "swap.submit.submitting",
 };
 
-export function SwapCard() {
+export type SwapCardProps = {
+  initialAmount?: string;
+  previewQuote?: Quote;
+  onPreviewSubmit?: (request: QuoteRequest) => void;
+};
+
+export function SwapCard({
+  initialAmount = "",
+  previewQuote,
+  onPreviewSubmit,
+}: SwapCardProps = {}) {
   const { t } = useTranslation();
 
   const [srcChain, setSrcChain] = useState("ethereum");
-  const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"]![0]!);
-  const [dstToken, setDstToken] = useState(DST_TOKENS[0]!);
-  const [srcAmount, setSrcAmount] = useState("");
+  const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
+  const [dstToken, setDstToken] = useState(DST_TOKENS[0]);
+  const [srcAmount, setSrcAmount] = useState(initialAmount);
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
+  const chainToggleRef = useRef<HTMLButtonElement>(null);
+  const chainPickerRef = useRef<HTMLDivElement>(null);
 
   const chain = CHAINS.find(c => c.id === srcChain)!;
 
+  const closeChainPicker = () => {
+    setShowChainPicker(false);
+    chainToggleRef.current?.focus();
+  };
+
+  useEffect(() => {
+    if (showChainPicker) {
+      chainPickerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    }
+  }, [showChainPicker]);
+
+  const handleChainPickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeChainPicker();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusable = chainPickerRef.current?.querySelectorAll<HTMLButtonElement>("button");
+    if (!focusable || focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
   const debouncedAmount = useDebouncedValue(srcAmount, 500);
   const hasAmount = Boolean(debouncedAmount) && parseFloat(debouncedAmount) > 0;
-  const { quote, isLoading: quoting, error: quoteError } = useQuote(
-    hasAmount
+  const { quote: fetchedQuote, isLoading: quoteIsLoading, error: quoteError } = useQuote(
+    hasAmount && !previewQuote
       ? { srcChain, srcToken: srcToken.symbol, srcAmount: debouncedAmount, dstToken: dstToken.symbol }
       : null
   );
+  const quote = previewQuote ?? fetchedQuote;
+  const quoting = previewQuote ? false : quoteIsLoading;
 
   const dstAmount = quote
     ? parseFloat(quote.dstAmount)
@@ -49,6 +95,15 @@ export function SwapCard() {
   const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting;
 
   const handleSubmit = () => {
+    if (onPreviewSubmit) {
+      onPreviewSubmit({
+        srcChain,
+        srcToken: srcToken.symbol,
+        srcAmount,
+        dstToken: dstToken.symbol,
+      });
+      return;
+    }
     if (submission.status === "success") {
       submission.reset();
       setSrcAmount("");
@@ -61,7 +116,14 @@ export function SwapCard() {
     <div className="relative">
       {/* Chain picker dropdown */}
       {showChainPicker && (
-        <div className="absolute top-0 left-0 right-0 z-20 bg-vx-card border border-vx-border rounded-xl p-3 shadow-2xl animate-fade-up">
+        <div
+          ref={chainPickerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("swap.chainPicker.title")}
+          onKeyDown={handleChainPickerKeyDown}
+          className="absolute top-0 left-0 right-0 z-20 bg-vx-card border border-vx-border rounded-xl p-3 shadow-2xl animate-fade-up"
+        >
           <div className="eyebrow mb-3 px-1">{t("swap.chainPicker.title")}</div>
           <div className="grid grid-cols-2 gap-2">
             {CHAINS.map(c => (
@@ -70,8 +132,8 @@ export function SwapCard() {
                 type="button"
                 onClick={() => {
                   setSrcChain(c.id);
-                  setSrcToken(SRC_TOKENS[c.id]![0]!);
-                  setShowChainPicker(false);
+                  setSrcToken(SRC_TOKENS[c.id][0]);
+                  closeChainPicker();
                 }}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all
                   ${srcChain === c.id
@@ -92,17 +154,22 @@ export function SwapCard() {
       )}
 
       {/* Main card */}
-      <div className={`card p-5 space-y-2 ${showChainPicker ? "opacity-0 pointer-events-none" : ""}`}>
+      <div
+        aria-hidden={showChainPicker}
+        className={`card p-5 space-y-2 ${showChainPicker ? "opacity-0 pointer-events-none" : ""}`}
+      >
 
         {/* ── From ── */}
         <div className="bg-vx-surface/50 rounded-xl p-4 space-y-2">
           <div className="flex items-center justify-between">
             <span className="eyebrow">{t("swap.from.label")}</span>
             <button
+              ref={chainToggleRef}
               type="button"
               onClick={() => setShowChainPicker(true)}
               aria-haspopup="true"
               aria-expanded={showChainPicker}
+              aria-label={t("swap.from.selectChain", { name: chain.name })}
               className="chain-badge cursor-pointer hover:bg-vx-lav/15 transition-colors"
             >
               <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full" style={{ background: chain.color }} />
@@ -160,6 +227,7 @@ export function SwapCard() {
 
           {srcValueUSD > 0 && (
             <div className="num text-xs text-vx-muted">
+              {/* Number formatting stays locale-hardcoded here; issue #63 owns making it locale-aware. */}
               {t("swap.from.approxValue", {
                 value: srcValueUSD.toLocaleString("en-US", { maximumFractionDigits: 2 }),
               })}
@@ -205,7 +273,7 @@ export function SwapCard() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
+            <div role="group" aria-label={t("swap.to.tokenGroup")} className="flex gap-2">
               {DST_TOKENS.map(token => (
                 <button
                   key={token.symbol}
