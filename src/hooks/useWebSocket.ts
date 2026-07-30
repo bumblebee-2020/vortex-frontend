@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 export type WebSocketStatus = "connecting" | "open" | "closed" | "error";
 
-const RECONNECT_DELAY_MS = 3000;
+const INITIAL_RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT_DELAY_MS = 60000;
 
 // Generic JSON-over-WebSocket subscription with auto-reconnect. Passing a
 // null url tears down any existing connection and stays idle — useful for
@@ -20,13 +21,18 @@ export function useWebSocket<T>(url: string | null) {
     let socket: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    let retries = 0;
 
     const connect = () => {
       setStatus("connecting");
       socket = new WebSocket(url);
 
       socket.onopen = () => {
-        if (!cancelled) setStatus("open");
+        if (cancelled) return;
+        // A successful connection clears the accumulated backoff so a later
+        // outage starts over at the initial delay.
+        retries = 0;
+        setStatus("open");
       };
 
       socket.onmessage = (event) => {
@@ -45,7 +51,12 @@ export function useWebSocket<T>(url: string | null) {
       socket.onclose = () => {
         if (cancelled) return;
         setStatus("closed");
-        reconnectTimer = setTimeout(connect, RECONNECT_DELAY_MS);
+        const delay = Math.min(
+          INITIAL_RECONNECT_DELAY_MS * 2 ** retries,
+          MAX_RECONNECT_DELAY_MS,
+        );
+        retries += 1;
+        reconnectTimer = setTimeout(connect, delay);
       };
     };
 
