@@ -8,30 +8,18 @@ import type { Solver } from "@/lib/types";
 const wrapper = ({ children }: { children: ReactNode }) =>
   createElement(SWRConfig, { value: { provider: () => new Map(), dedupingInterval: 0 } }, children);
 
-const solvers: Solver[] = [
-  {
-    name: "Alpha Solver",
-    address: "GABC123DEF456GHI789JKL012MNO345PQR678STU",
-    bondUsd: 50000,
-    fills: 152,
-    failed: 3,
-    volumeUsd: 2500000,
-    avgFillTimeSeconds: 45,
-    successRatePct: 98.05,
-    chains: ["ethereum", "stellar"],
-  },
-  {
-    name: "Beta Market",
-    address: "GXYZ789ABC456DEF012GHI345JKL678MNO901PQR",
-    bondUsd: 75000,
-    fills: 298,
-    failed: 5,
-    volumeUsd: 4200000,
-    avgFillTimeSeconds: 52,
-    successRatePct: 98.34,
-    chains: ["ethereum"],
-  },
-];
+const mockSolver: Solver = {
+  name: "AlphaMax",
+  address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING",
+  bondUsd: 5000,
+  fills: 150,
+  failed: 3,
+  volumeUsd: 2500000,
+  avgFillTimeSeconds: 8.5,
+  successRatePct: 98.0,
+  chains: ["ethereum", "polygon", "base"],
+  status: "active",
+};
 
 describe("useSolver", () => {
   beforeEach(() => {
@@ -47,34 +35,76 @@ describe("useSolver", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it("fetches and returns the solver by address", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => solvers,
-    });
+  it("starts in loading state with undefined solver when address is provided", () => {
+    (fetch as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
 
-    const { result } = renderHook(() => useSolver(solvers[0].address), { wrapper });
+    const { result } = renderHook(
+      () => useSolver("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING"),
+      { wrapper }
+    );
 
-    await waitFor(() => expect(result.current.solver).toEqual(solvers[0]));
-    expect(fetch).toHaveBeenCalledWith(expect.stringContaining("/solvers"), expect.anything());
-  });
-
-  it("returns null when solver address is not found", async () => {
-    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => solvers,
-    });
-
-    const { result } = renderHook(() => useSolver("GNOT_A_VALID_ADDRESS_1234567890123456789"), { wrapper });
-
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
-    expect(result.current.solver).toBeNull();
+    expect(result.current.solver).toBeUndefined();
+    expect(result.current.isLoading).toBe(true);
     expect(result.current.error).toBeUndefined();
   });
 
-  it("surfaces a fetch failure as an error", async () => {
+  it("fetches solver by address and returns data", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockSolver,
+    });
+
+    const { result } = renderHook(
+      () => useSolver("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING"),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.solver).toEqual(mockSolver));
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeUndefined();
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/solvers/GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING"),
+      expect.anything()
+    );
+  });
+
+  it("uses the address in the request URL", async () => {
+    const customAddress = "GCUSTOM00000000000000000000000000000000000000000000000";
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ...mockSolver, address: customAddress }),
+    });
+
+    const { result } = renderHook(() => useSolver(customAddress), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining(`/solvers/${customAddress}`),
+      expect.anything()
+    );
+  });
+
+  it("surfaces a 404 as an error and leaves solver undefined", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: false,
+      status: 404,
+      statusText: "Not Found",
+      text: async () => "solver not found",
+    });
+
+    const { result } = renderHook(
+      () => useSolver("NONEXISTENT0000000000000000000000000000000000000000000"),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.solver).toBeUndefined();
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it("surfaces a 500 server error as an error and leaves solver undefined", async () => {
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
       status: 500,
@@ -82,23 +112,88 @@ describe("useSolver", () => {
       text: async () => "",
     });
 
-    const { result } = renderHook(() => useSolver(solvers[0].address), { wrapper });
+    const { result } = renderHook(
+      () => useSolver("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING"),
+      { wrapper }
+    );
 
     await waitFor(() => expect(result.current.error).toBeDefined());
-    expect(result.current.solver).toBeNull();
+    expect(result.current.solver).toBeUndefined();
+    expect(result.current.isLoading).toBe(false);
   });
 
-  it("returns empty state while loading", async () => {
+  it("surfaces a network failure as an error", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("Network error"));
+
+    const { result } = renderHook(
+      () => useSolver("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING"),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.error).toBeDefined());
+    expect(result.current.solver).toBeUndefined();
+  });
+
+  it("returns solver with chains when available", async () => {
+    const solverWithChains: Solver = {
+      ...mockSolver,
+      chains: ["ethereum", "polygon", "base", "arbitrum"],
+    };
+
     (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => solvers,
+      json: async () => solverWithChains,
     });
 
-    const { result } = renderHook(() => useSolver(solvers[0].address), { wrapper });
-    expect(result.current.solver).toBeNull();
-    expect(result.current.isLoading).toBe(true);
+    const { result } = renderHook(
+      () => useSolver("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING"),
+      { wrapper }
+    );
 
-    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await waitFor(() => expect(result.current.solver).toBeDefined());
+    expect(result.current.solver!.chains).toEqual(["ethereum", "polygon", "base", "arbitrum"]);
+  });
+
+  it("returns an inactive solver correctly", async () => {
+    const inactiveSolver: Solver = {
+      ...mockSolver,
+      status: "inactive",
+      fills: 0,
+    };
+
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => inactiveSolver,
+    });
+
+    const { result } = renderHook(
+      () => useSolver("GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING"),
+      { wrapper }
+    );
+
+    await waitFor(() => expect(result.current.solver).toBeDefined());
+    expect(result.current.solver!.status).toBe("inactive");
+    expect(result.current.solver!.fills).toBe(0);
+  });
+
+  it("does not fetch when address changes from a valid address to null", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockSolver,
+    });
+
+    const { result, rerender } = renderHook(
+      ({ address }: { address: string | null }) => useSolver(address),
+      { wrapper, initialProps: { address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING" } }
+    );
+
+    await waitFor(() => expect(result.current.solver).toBeDefined());
+
+    // Re-render with null — SWR stops fetching
+    rerender({ address: null });
+    expect(result.current.isLoading).toBe(false);
   });
 });
