@@ -9,6 +9,9 @@ import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { MessageKey } from "@/lib/i18n";
 
+export const DEFAULT_SLIPPAGE_PCT = 0.5;
+export const HIGH_PRICE_IMPACT_THRESHOLD_PCT = 3;
+
 const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   connecting: "swap.submit.connecting",
   building: "swap.submit.building",
@@ -23,6 +26,7 @@ export function SwapCard() {
   const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
   const [dstToken, setDstToken] = useState(DST_TOKENS[0]);
   const [srcAmount, setSrcAmount] = useState("");
+  const [slippagePct, setSlippagePct] = useState(String(DEFAULT_SLIPPAGE_PCT));
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
   const chainToggleRef = useRef<HTMLButtonElement>(null);
@@ -76,6 +80,13 @@ export function SwapCard() {
       : 0;
 
   const srcValueUSD = srcAmount ? parseFloat(srcAmount) * srcToken.priceUSD : 0;
+  const parsedSlippagePct = Math.max(0, Math.min(50, parseFloat(slippagePct) || 0));
+  const minOut = dstAmount > 0
+    ? (dstAmount * (1 - parsedSlippagePct / 100)).toFixed(dstToken.symbol === "XLM" ? 2 : 4)
+    : "0";
+  const hasHighPriceImpact = quote
+    ? quote.priceImpactPct > HIGH_PRICE_IMPACT_THRESHOLD_PCT
+    : false;
 
   const submission = useSwapSubmission();
   const isSubmitting = submission.status in SUBMISSION_LABEL_KEY;
@@ -87,7 +98,7 @@ export function SwapCard() {
       setSrcAmount("");
       return;
     }
-    submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol });
+    submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol, minOut });
   };
 
   return (
@@ -271,9 +282,52 @@ export function SwapCard() {
           </div>
         </div>
 
+        <div className="bg-vx-surface/40 rounded-xl p-3.5 space-y-2">
+          <label htmlFor="slippage-tolerance" className="flex items-center justify-between gap-3">
+            <span className="text-xs text-vx-muted">{t("swap.slippage.label")}</span>
+            <span className="num text-xs text-vx-text font-medium">
+              {t("swap.slippage.minOut", { amount: minOut, token: dstToken.symbol })}
+            </span>
+          </label>
+          <div className="flex items-center gap-2">
+            {[0.1, 0.5, 1].map(value => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setSlippagePct(String(value))}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all active:scale-[0.98]
+                  ${parsedSlippagePct === value
+                    ? "bg-vx-sage-bg text-vx-sage border-vx-sage/30"
+                    : "border-vx-border text-vx-muted hover:text-vx-text hover:border-vx-sage/30"
+                  }`}
+              >
+                {value}%
+              </button>
+            ))}
+            <input
+              id="slippage-tolerance"
+              type="number"
+              min="0"
+              max="50"
+              step="0.1"
+              value={slippagePct}
+              onChange={e => setSlippagePct(e.target.value)}
+              aria-label={t("swap.slippage.inputLabel")}
+              className="w-20 bg-vx-surface border border-vx-border rounded-lg px-2 py-1.5 text-xs text-vx-text num focus:outline-none focus:border-vx-sage/50 transition-colors"
+            />
+            <span className="text-xs text-vx-muted">%</span>
+          </div>
+        </div>
+
         {/* Quote details */}
         {quote && srcAmount && (
-          <div className="bg-vx-surface/40 rounded-xl p-3.5 space-y-2.5 animate-fade-up">
+          <div
+            className={`rounded-xl p-3.5 space-y-2.5 animate-fade-up border ${
+              hasHighPriceImpact
+                ? "bg-amber-500/10 border-amber-400/30"
+                : "bg-vx-surface/40 border-transparent"
+            }`}
+          >
             {([
               ["swap.quote.solver",       quote.solver],
               ["swap.quote.fillTime",     t("swap.quote.fillTimeValue", { seconds: quote.fillTimeSeconds })],
@@ -287,9 +341,24 @@ export function SwapCard() {
             ] as const).map(([labelKey, value]) => (
               <div key={labelKey} className="flex items-center justify-between">
                 <span className="text-xs text-vx-muted">{t(labelKey)}</span>
-                <span className="num text-xs text-vx-text font-medium">{value}</span>
+                <span
+                  className={`num text-xs font-medium ${
+                    labelKey === "swap.quote.priceImpact" && hasHighPriceImpact
+                      ? "text-amber-300"
+                      : "text-vx-text"
+                  }`}
+                >
+                  {value}
+                </span>
               </div>
             ))}
+            {hasHighPriceImpact && (
+              <p role="alert" className="text-xs text-amber-300">
+                {t("swap.quote.highPriceImpactWarning", {
+                  threshold: HIGH_PRICE_IMPACT_THRESHOLD_PCT,
+                })}
+              </p>
+            )}
           </div>
         )}
 

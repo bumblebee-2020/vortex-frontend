@@ -17,6 +17,7 @@ export type QuoteRequest = {
   srcToken: string;
   srcAmount: string;
   dstToken: string;
+  minOut?: string;
 };
 
 export type Quote = {
@@ -64,6 +65,7 @@ export type CreateIntentRequest = {
   srcToken: string;
   srcAmount: string;
   dstToken: string;
+  minOut?: string;
   dstAddress: string;
 };
 

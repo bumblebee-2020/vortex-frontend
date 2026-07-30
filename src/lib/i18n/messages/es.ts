@@ -6,11 +6,17 @@ export const es = {
   "swap.from.label": "De",
   "swap.from.amountLabel": "Cantidad a intercambiar",
   "swap.from.amountPlaceholder": "0",
+  "swap.from.selectChain": "Cadena origen, actualmente {name}",
   "swap.from.selectToken": "Seleccionar token origen, actualmente {symbol}",
   "swap.from.approxValue": "≈ ${value}",
 
   "swap.to.label": "A",
+  "swap.to.tokenGroup": "Token destino",
   "swap.to.quoteLoading": "Cargando cotización…",
+
+  "swap.slippage.label": "Tolerancia de deslizamiento",
+  "swap.slippage.inputLabel": "Porcentaje de tolerancia de deslizamiento",
+  "swap.slippage.minOut": "Mínimo recibido: {amount} {token}",
 
   "swap.quote.solver": "Mejor solver",
   "swap.quote.fillTime": "Tiempo estimado",
@@ -22,6 +28,7 @@ export const es = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Tasa",
   "swap.quote.unavailable": "Cotización en tiempo real no disponible — mostrando tasa estimada.",
+  "swap.quote.highPriceImpactWarning": "Impacto de precio alto por encima de {threshold}% — revisa antes de intercambiar.",
 
   "swap.submit.connecting": "Conectando billetera…",
   "swap.submit.building": "Preparando swap…",

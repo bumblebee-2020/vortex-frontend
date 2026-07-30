@@ -9,6 +9,7 @@ import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { useWalletStore } from "@/store/wallet";
 import { useMyLiveIntents } from "@/hooks/useMyLiveIntents";
 import { CHAINS } from "@/lib/marketData";
+import { buildIntentsCsv, downloadCsv } from "@/lib/csv";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
@@ -41,6 +42,10 @@ export default function MyIntentsPage() {
   useEffect(() => {
     if (page > pageCount) setPage(pageCount);
   }, [page, pageCount]);
+
+  const handleExportCsv = () => {
+    downloadCsv("vortex-my-intents.csv", buildIntentsCsv(filtered));
+  };
 
   return (
     <div className="min-h-screen">
@@ -108,7 +113,16 @@ export default function MyIntentsPage() {
                 </select>
               </label>
 
-              <span className="text-xs text-vx-muted ml-auto" aria-live="polite" aria-atomic="true">
+              <button
+                type="button"
+                onClick={handleExportCsv}
+                disabled={filtered.length === 0}
+                className="ml-auto px-3 py-2 rounded-lg border border-vx-border text-xs font-semibold text-vx-muted hover:text-vx-text hover:border-vx-sage/40 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-vx-border disabled:hover:text-vx-muted"
+              >
+                Export CSV
+              </button>
+
+              <span className="text-xs text-vx-muted" aria-live="polite" aria-atomic="true">
                 {filtered.length} intent{filtered.length === 1 ? "" : "s"}
               </span>
             </fieldset>
@@ -144,7 +158,7 @@ export default function MyIntentsPage() {
                   <Link
                     key={item.id}
                     href={`/explore/${item.id}`}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 transition-colors"
+                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 active:bg-vx-surface/60 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="text-sm font-medium text-vx-text truncate">

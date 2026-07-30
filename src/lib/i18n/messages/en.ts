@@ -14,6 +14,10 @@ export const en = {
   "swap.to.tokenGroup": "Destination token",
   "swap.to.quoteLoading": "Loading quote…",
 
+  "swap.slippage.label": "Slippage tolerance",
+  "swap.slippage.inputLabel": "Slippage tolerance percent",
+  "swap.slippage.minOut": "Min out: {amount} {token}",
+
   "swap.quote.solver": "Best solver",
   "swap.quote.fillTime": "Est. fill time",
   "swap.quote.fillTimeValue": "~{seconds}s",
@@ -24,6 +28,7 @@ export const en = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Rate",
   "swap.quote.unavailable": "Live quote unavailable — showing an estimated rate.",
+  "swap.quote.highPriceImpactWarning": "High price impact above {threshold}% — review before swapping.",
 
   "swap.submit.connecting": "Connecting wallet…",
   "swap.submit.building": "Preparing swap…",
