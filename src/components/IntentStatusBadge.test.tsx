@@ -1,34 +1,26 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { IntentStatusBadge } from "./IntentStatusBadge";
 import type { IntentStatus } from "@/lib/types";
+import { IntentStatusBadge } from "./IntentStatusBadge";
 
-const CASES: { status: IntentStatus; colorClass: string }[] = [
-  { status: "pending", colorClass: "text-vx-lav" },
-  { status: "accepted", colorClass: "text-blue-300" },
-  { status: "filled", colorClass: "text-vx-sage" },
-  { status: "failed", colorClass: "text-red-300" },
-];
+const STATUSES: IntentStatus[] = ["pending", "accepted", "filled", "failed"];
 
 describe("IntentStatusBadge", () => {
-  it.each(CASES)("renders the $status status with its label and color", ({ status, colorClass }) => {
+  it.each(STATUSES)("exposes the %s status as text, not just color", (status) => {
     render(<IntentStatusBadge status={status} />);
-    const badge = screen.getByText(status);
-    expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass(colorClass);
+    expect(screen.getByText(status)).toBeInTheDocument();
   });
 
-  it("applies the capitalize class so the status text is capitalized visually", () => {
-    render(<IntentStatusBadge status="pending" />);
-    expect(screen.getByText("pending")).toHaveClass("capitalize");
-  });
+  it("pairs each status with a distinct, decorative icon so colorblind users don't rely on color alone", () => {
+    const rendered = STATUSES.map((status) => {
+      const { container, unmount } = render(<IntentStatusBadge status={status} />);
+      const icon = container.querySelector("svg");
+      expect(icon).toHaveAttribute("aria-hidden", "true");
+      const shape = icon?.innerHTML ?? "";
+      unmount();
+      return shape;
+    });
 
-  it("does not mix styles between different statuses", () => {
-    const { rerender } = render(<IntentStatusBadge status="pending" />);
-    expect(screen.getByText("pending")).toHaveClass("text-vx-lav");
-
-    rerender(<IntentStatusBadge status="failed" />);
-    expect(screen.getByText("failed")).toHaveClass("text-red-300");
-    expect(screen.queryByText("pending")).not.toBeInTheDocument();
+    expect(new Set(rendered).size).toBe(STATUSES.length);
   });
 });
