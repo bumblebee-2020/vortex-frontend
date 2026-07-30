@@ -38,6 +38,7 @@ describe("useWalletStore", () => {
     expect(state.address).toBeNull();
     expect(state.network).toBeNull();
     expect(state.error).toBeNull();
+    expect(state.errorKey).toBeNull();
   });
 
   it("connects successfully and stores address + network", async () => {
@@ -53,6 +54,7 @@ describe("useWalletStore", () => {
     expect(state.address).toBe("GABC123");
     expect(state.network).toBe("TESTNET");
     expect(state.error).toBeNull();
+    expect(state.errorKey).toBeNull();
   });
 
   it("sets an error and stays disconnected when Freighter is not installed", async () => {
@@ -65,6 +67,7 @@ describe("useWalletStore", () => {
     expect(state.isConnecting).toBe(false);
     expect(state.address).toBeNull();
     expect(state.error).toMatch(/not installed/i);
+    expect(state.errorKey).toBe("wallet.error.freighterUnavailable");
   });
 
   it("sets an error when requestAccess rejects", async () => {
@@ -76,6 +79,7 @@ describe("useWalletStore", () => {
     const state = useWalletStore.getState();
     expect(state.isConnected).toBe(false);
     expect(state.error).toBe("User declined access");
+    expect(state.errorKey).toBeNull();
   });
 
   it("clears wallet state on disconnect", async () => {

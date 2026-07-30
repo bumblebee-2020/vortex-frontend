@@ -2,19 +2,23 @@
 
 import { useWalletStore } from "@/store/wallet";
 import { useToastStore } from "@/store/toast";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 function truncateAddress(address: string) {
   return `${address.slice(0, 4)}...${address.slice(-4)}`;
 }
 
 export function ConnectWalletButton({ compact = false }: { compact?: boolean }) {
-  const { address, isConnected, isConnecting, error, connect, disconnect } = useWalletStore();
+  const { t } = useTranslation();
+  const { address, isConnected, isConnecting, error, errorKey, connect, disconnect } =
+    useWalletStore();
+  const displayError = errorKey ? t(errorKey) : error;
 
   const handleConnect = async () => {
     await connect();
-    const latestError = useWalletStore.getState().error;
+    const { error: latestError, errorKey: latestErrorKey } = useWalletStore.getState();
     if (latestError) {
-      useToastStore.getState().addToast(latestError, "error");
+      useToastStore.getState().addToast(latestErrorKey ? t(latestErrorKey) : latestError, "error");
     }
   };
 
@@ -27,12 +31,14 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
       <button
         type="button"
         onClick={disconnect}
-        aria-label={`Disconnect wallet ${truncateAddress(address)}`}
+        aria-label={t("wallet.disconnect.aria", { address: truncateAddress(address) })}
         className={`${baseClass} border-vx-sage/40 text-vx-text hover:border-vx-sage/70 hover:text-red-300 focus-visible:text-red-300 group`}
       >
         <span aria-hidden="true" className="inline-block w-1.5 h-1.5 rounded-full bg-vx-sage mr-1.5 align-middle" />
         <span aria-hidden="true" className="group-hover:hidden group-focus-visible:hidden">{truncateAddress(address)}</span>
-        <span aria-hidden="true" className="hidden group-hover:inline group-focus-visible:inline">Disconnect</span>
+        <span aria-hidden="true" className="hidden group-hover:inline group-focus-visible:inline">
+          {t("wallet.disconnect.cta")}
+        </span>
       </button>
     );
   }
@@ -42,7 +48,7 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
       type="button"
       onClick={handleConnect}
       disabled={isConnecting}
-      title={error ?? undefined}
+      title={displayError ?? undefined}
       className={`${baseClass} border-vx-border text-vx-muted hover:border-vx-sage/30 hover:text-vx-text disabled:opacity-60 disabled:cursor-wait`}
     >
       {!compact && (
@@ -51,7 +57,11 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
           <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       )}
-      {isConnecting ? "Connecting..." : error ? "Retry Connection" : "Connect Freighter"}
+      {isConnecting
+        ? t("wallet.connect.connecting")
+        : error
+          ? t("wallet.connect.retry")
+          : t("wallet.connect.cta")}
     </button>
   );
 }

@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import freighterApi from "@stellar/freighter-api";
+import { DEFAULT_LOCALE, translate } from "@/lib/i18n";
+
+export type WalletErrorKey =
+  | "wallet.error.freighterUnavailable"
+  | "wallet.error.connectFailed";
 
 export type WalletState = {
   address: string | null;
@@ -8,6 +13,7 @@ export type WalletState = {
   isConnected: boolean;
   isConnecting: boolean;
   error: string | null;
+  errorKey: WalletErrorKey | null;
   connect: () => Promise<void>;
   disconnect: () => void;
   hydrate: () => Promise<void>;
@@ -21,13 +27,16 @@ export const useWalletStore = create<WalletState>()(
       isConnected: false,
       isConnecting: false,
       error: null,
+      errorKey: null,
 
       connect: async () => {
-        set({ isConnecting: true, error: null });
+        let errorKey: WalletErrorKey | null = null;
+        set({ isConnecting: true, error: null, errorKey: null });
         try {
           const isAppConnected = await freighterApi.isConnected();
           if (!isAppConnected) {
-            throw new Error("Freighter extension is not installed or enabled.");
+            errorKey = "wallet.error.freighterUnavailable";
+            throw new Error(translate(DEFAULT_LOCALE, errorKey));
           }
 
           const address = await freighterApi.requestAccess();
@@ -39,14 +48,20 @@ export const useWalletStore = create<WalletState>()(
             isConnected: true,
             isConnecting: false,
             error: null,
+            errorKey: null,
           });
         } catch (err) {
+          const externalError = err instanceof Error ? err.message : null;
+          if (!externalError) {
+            errorKey = "wallet.error.connectFailed";
+          }
           set({
             address: null,
             network: null,
             isConnected: false,
             isConnecting: false,
-            error: err instanceof Error ? err.message : "Failed to connect wallet.",
+            error: errorKey ? translate(DEFAULT_LOCALE, errorKey) : externalError,
+            errorKey,
           });
         }
       },
@@ -58,6 +73,7 @@ export const useWalletStore = create<WalletState>()(
           isConnected: false,
           isConnecting: false,
           error: null,
+          errorKey: null,
         });
       },
 
@@ -71,15 +87,15 @@ export const useWalletStore = create<WalletState>()(
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());
           if (!allowed) {
-            set({ address: null, network: null, isConnected: false, error: null });
+            set({ address: null, network: null, isConnected: false, error: null, errorKey: null });
             return;
           }
 
           const address = await freighterApi.getPublicKey();
           const network = await freighterApi.getNetwork();
-          set({ address, network, isConnected: true, error: null });
+          set({ address, network, isConnected: true, error: null, errorKey: null });
         } catch {
-          set({ address: null, network: null, isConnected: false, error: null });
+          set({ address: null, network: null, isConnected: false, error: null, errorKey: null });
         }
       },
     }),

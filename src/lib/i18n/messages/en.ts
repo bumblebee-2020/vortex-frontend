@@ -1,6 +1,14 @@
 // Source-of-truth message catalog. Keys are dot-namespaced by feature; values
 // may contain {placeholder} tokens that are filled in at render time.
 export const en = {
+  "wallet.connect.cta": "Connect Freighter",
+  "wallet.connect.connecting": "Connecting...",
+  "wallet.connect.retry": "Retry Connection",
+  "wallet.disconnect.cta": "Disconnect",
+  "wallet.disconnect.aria": "Disconnect wallet {address}",
+  "wallet.error.freighterUnavailable": "Freighter extension is not installed or enabled.",
+  "wallet.error.connectFailed": "Failed to connect wallet.",
+
   "swap.chainPicker.title": "Select source chain",
 
   "swap.from.label": "From",

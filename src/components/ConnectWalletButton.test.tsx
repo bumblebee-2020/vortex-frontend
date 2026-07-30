@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import type { Locale } from "@/lib/i18n";
 
 const { isConnectedMock, requestAccessMock, getNetworkMock, addToastMock } = vi.hoisted(() => ({
   isConnectedMock: vi.fn(),
@@ -26,6 +28,14 @@ import { ConnectWalletButton } from "./ConnectWalletButton";
 
 const initialState = useWalletStore.getState();
 
+function renderButton(locale: Locale = "en") {
+  return render(
+    <I18nProvider locale={locale}>
+      <ConnectWalletButton />
+    </I18nProvider>
+  );
+}
+
 describe("ConnectWalletButton", () => {
   beforeEach(() => {
     useWalletStore.setState(initialState, true);
@@ -37,7 +47,7 @@ describe("ConnectWalletButton", () => {
   });
 
   it("shows a Connect Freighter prompt when disconnected", () => {
-    render(<ConnectWalletButton />);
+    renderButton();
     expect(screen.getByText("Connect Freighter")).toBeInTheDocument();
   });
 
@@ -47,7 +57,7 @@ describe("ConnectWalletButton", () => {
     getNetworkMock.mockResolvedValue("TESTNET");
 
     const user = userEvent.setup();
-    render(<ConnectWalletButton />);
+    renderButton();
 
     await user.click(screen.getByText("Connect Freighter"));
 
@@ -62,7 +72,7 @@ describe("ConnectWalletButton", () => {
     getNetworkMock.mockResolvedValue("TESTNET");
 
     const user = userEvent.setup();
-    render(<ConnectWalletButton />);
+    renderButton();
     await user.click(screen.getByText("Connect Freighter"));
     await waitFor(() => screen.getByText("GABC...3456"));
 
@@ -75,12 +85,28 @@ describe("ConnectWalletButton", () => {
     isConnectedMock.mockResolvedValue(false);
 
     const user = userEvent.setup();
-    render(<ConnectWalletButton />);
+    renderButton();
     await user.click(screen.getByText("Connect Freighter"));
 
     await waitFor(() => {
       expect(addToastMock).toHaveBeenCalledWith(
         "Freighter extension is not installed or enabled.",
+        "error"
+      );
+    });
+  });
+
+  it("translates wallet controls and known wallet errors for the active locale", async () => {
+    isConnectedMock.mockResolvedValue(false);
+
+    const user = userEvent.setup();
+    renderButton("es");
+    await user.click(screen.getByText("Conectar Freighter"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Reintentar conexión")).toBeInTheDocument();
+      expect(addToastMock).toHaveBeenCalledWith(
+        "La extensión Freighter no está instalada o habilitada.",
         "error"
       );
     });
