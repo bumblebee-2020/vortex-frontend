@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { getTranslation } from "@/lib/i18n/server";
+
+export const metadata: Metadata = {
+  title: "Page Not Found",
+};
 
 export default function NotFound() {
   const { t } = getTranslation();

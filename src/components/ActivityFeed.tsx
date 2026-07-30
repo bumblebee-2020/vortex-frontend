@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
 
@@ -8,8 +9,17 @@ const CHAIN_COLOR: Record<string, string> = {
   arbitrum: "#12AAFF", optimism: "#FF0420", avalanche: "#E84142",
 };
 
+/** Maximum number of activity items shown in the feed. */
+const FEED_LIMIT = 6;
+
 export function ActivityFeed() {
   const { items, isLoading, error, isLive } = useIntentFeed();
+
+  /**
+   * Memoized slice of the most recent feed items.
+   * Avoids recreating the array on every render when `items` reference is stable.
+   */
+  const visibleItems = useMemo(() => items.slice(0, FEED_LIMIT), [items]);
 
   if (isLoading && items.length === 0) {
     return (
@@ -36,7 +46,7 @@ export function ActivityFeed() {
           No fills yet.
         </div>
       ) : null}
-      {items.slice(0, 6).map((item) => {
+      {visibleItems.map((item) => {
         const color = CHAIN_COLOR[item.srcChain] ?? "#8B8B93";
         return (
           <div key={item.id} className="flex items-center gap-3 p-3 bg-vx-surface/40 rounded-lg
