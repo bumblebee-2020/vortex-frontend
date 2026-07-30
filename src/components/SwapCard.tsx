@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuote } from "@/hooks/useQuote";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useSwapSubmission } from "@/hooks/useSwapSubmission";
+import { useToastStore } from "@/store/toast";
 import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
 import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
@@ -120,6 +121,12 @@ export function SwapCard({
       setSrcAmount("");
       return;
     }
+
+    if (quote && quoteFetchedAt && Date.now() - quoteFetchedAt > STALE_QUOTE_THRESHOLD_MS) {
+      useToastStore.getState().addToast(t("swap.quote.staleWarning"), "error");
+      return;
+    }
+
     submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol });
   };
 

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api";
 import type { Quote, QuoteRequest } from "@/lib/types";
@@ -14,6 +15,7 @@ function quoteKey(params: QuoteRequest | null): string | null {
 }
 
 export function useQuote(params: QuoteRequest | null) {
+  const [quoteFetchedAt, setQuoteFetchedAt] = useState<number | null>(null);
   const { data, error, isLoading } = useSWR<Quote>(quoteKey(params), fetcher, {
     revalidateOnFocus: false,
     onErrorRetry(error, _key, _config, revalidate, { retryCount }) {
@@ -25,5 +27,5 @@ export function useQuote(params: QuoteRequest | null) {
     },
   });
 
-  return { quote: data, isLoading, error };
+  return { quote: data, quoteFetchedAt, isLoading, error };
 }
