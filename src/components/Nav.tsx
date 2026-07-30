@@ -2,9 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { VortexLogo } from "./VortexLogo";
 import { ConnectWalletButton } from "./ConnectWalletButton";
-import { getMessage } from "@/lib/i18n";
+import { getMessage } from "@/lib/i18n-legacy";
+import { useLocale, useSetLocale } from "@/lib/i18n/I18nProvider";
+import { LOCALES, type Locale } from "@/lib/i18n";
 
 type NavProps = { variant: "home" } | { variant: "breadcrumb"; label: string };
 
@@ -13,9 +16,20 @@ const NAV_LINKS = [
   { href: "/solve", label: "becomeSolver" as const },
 ];
 
+/** Locale display names shown in the switcher. */
+const LOCALE_LABELS: Record<Locale, string> = {
+  en: "EN",
+  es: "ES",
+};
+
 export function Nav(props: NavProps) {
   const maxWidth = props.variant === "home" ? "max-w-6xl" : "max-w-5xl";
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isConnected = useWalletStore((s) => s.isConnected);
+  const pathname = usePathname();
+
+  const locale = useLocale();
+  const setLocale = useSetLocale();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-vx-border bg-vx-ink/80 backdrop-blur-md">
@@ -32,6 +46,11 @@ export function Nav(props: NavProps) {
                   {getMessage(`nav.${link.label}`)}
                 </Link>
               ))}
+              {isConnected && (
+                <Link href="/my-intents" className={`transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "hover:text-vx-text"}`}>
+                  My Intents
+                </Link>
+              )}
               <a href="https://github.com/vortex-protocol" className="hover:text-vx-text transition-colors">
                 {getMessage("nav.docs")}
               </a>
@@ -49,6 +68,26 @@ export function Nav(props: NavProps) {
         )}
 
         <div className="flex items-center gap-2">
+          {/* Locale switcher */}
+          <label htmlFor="locale-switcher" className="sr-only">
+            Switch language
+          </label>
+          <select
+            id="locale-switcher"
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as Locale)}
+            aria-label="Switch language"
+            className="bg-transparent border border-vx-border rounded-md px-2 py-1 text-xs
+                       text-vx-muted hover:text-vx-text hover:border-vx-sage/50 transition-colors
+                       cursor-pointer focus:outline-none focus:ring-2 focus:ring-vx-sage/50"
+          >
+            {LOCALES.map((loc) => (
+              <option key={loc} value={loc} className="bg-vx-ink text-vx-text">
+                {LOCALE_LABELS[loc]}
+              </option>
+            ))}
+          </select>
+
           <ConnectWalletButton compact={props.variant === "breadcrumb"} />
           {props.variant === "home" && (
             <button
@@ -57,7 +96,7 @@ export function Nav(props: NavProps) {
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
               className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
             >
-              <svg className="w-4 h-4" viewBox="0 0 16 16" fill="none">
+              <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 16 16" fill="none">
                 {mobileOpen ? (
                   <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 ) : (
@@ -81,6 +120,15 @@ export function Nav(props: NavProps) {
               {getMessage(`nav.${link.label}`)}
             </Link>
           ))}
+          {isConnected && (
+            <Link
+              href="/my-intents"
+              onClick={() => setMobileOpen(false)}
+              className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text"}`}
+            >
+              My Intents
+            </Link>
+          )}
           <a
             href="https://github.com/vortex-protocol"
             onClick={() => setMobileOpen(false)}

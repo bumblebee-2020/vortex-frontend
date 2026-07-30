@@ -10,7 +10,7 @@ import type { FeedItem } from "@/lib/types";
 // subscription keeps the underlying list fresh. When the backend adds a
 // per-address endpoint, consider a light revalidateOnFocus there.
 export function useMyIntents(address: string | null) {
-  const { data, error, isLoading } = useSWR<FeedItem[]>(
+  const { data, error, isLoading, mutate } = useSWR<FeedItem[]>(
     address ? "/intents" : null,
     fetcher,
     {
@@ -26,5 +26,5 @@ export function useMyIntents(address: string | null) {
     return true;
   });
 
-  return { intents, isLoading: address ? isLoading : false, error };
+  return { intents, isLoading: address ? isLoading : false, error, mutate };
 }

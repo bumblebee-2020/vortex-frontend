@@ -1,4 +1,4 @@
-import { createTranslator, DEFAULT_LOCALE, type Locale, type Translator } from ".";
+import { createTranslator, DEFAULT_LOCALE, type Locale, type Translator } from "./index";
 
 /**
  * Translator for server components, which cannot read the I18nProvider context
