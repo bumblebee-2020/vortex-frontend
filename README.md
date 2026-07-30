@@ -96,6 +96,16 @@ npm run dev    # http://localhost:3000
 
 ## Contributing
 
+### Issue Complexity Labels
+
+Issues on the Wave tracker use the following complexity labels with corresponding point values to help contributors find tasks that match their availability:
+
+| Label | Points | Description |
+|---|---|---|
+| Trivial | 1 | Small fix, typo, or minor change — quick to complete |
+| Medium | 3 | Feature work or bug fix requiring moderate investigation |
+| High | 5 | Significant implementation effort or architectural change |
+
 See the org-wide
 [CONTRIBUTING.md](https://github.com/stellar-vortex-protocol/.github/blob/main/CONTRIBUTING.md).
 
