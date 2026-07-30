@@ -1,6 +1,14 @@
 // Spanish (es) message catalog.
 // Keys must stay in sync with en.ts — the test suite enforces this.
 export const es = {
+  "wallet.connect.cta": "Conectar Freighter",
+  "wallet.connect.connecting": "Conectando...",
+  "wallet.connect.retry": "Reintentar conexión",
+  "wallet.disconnect.cta": "Desconectar",
+  "wallet.disconnect.aria": "Desconectar billetera {address}",
+  "wallet.error.freighterUnavailable": "La extensión Freighter no está instalada o habilitada.",
+  "wallet.error.connectFailed": "No se pudo conectar la billetera.",
+
   "swap.chainPicker.title": "Seleccionar cadena origen",
 
   "swap.from.label": "De",
@@ -11,7 +19,7 @@ export const es = {
   "swap.from.approxValue": "≈ ${value}",
 
   "swap.to.label": "A",
-  "swap.to.tokenGroup": "Token destino",
+  "swap.to.tokenGroup": "Token de destino",
   "swap.to.quoteLoading": "Cargando cotización…",
 
   "swap.slippage.label": "Tolerancia de deslizamiento",

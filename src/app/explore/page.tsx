@@ -5,17 +5,23 @@ import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { IntentListSkeleton } from "@/components/Skeleton";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
-import { buildIntentsCsv, downloadCsv } from "@/lib/csv";
-import type { IntentStatus } from "@/lib/types";
+import type { FeedItem, IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
 const SORT_OPTIONS = ["newest", "oldest", "largest"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
 
 const PAGE_SIZE = 10;
+
+function isExpiredPending(item: FeedItem): boolean {
+  if (item.status !== "pending" || !item.deadline) return false;
+  return new Date(item.deadline).getTime() <= Date.now();
+}
 
 export default function ExplorePage() {
   const { intents, isLoading, error, isLive } = useLiveIntents();
@@ -38,6 +44,8 @@ export default function ExplorePage() {
     [],
   );
 
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+
   const filtered = useMemo(() => {
     let result = intents;
 
@@ -55,7 +63,7 @@ export default function ExplorePage() {
     });
 
     return result;
-  }, [intents, statusFilter, chainFilter, sort]);
+  }, [intents, debouncedSearch, statusFilter, chainFilter, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -75,23 +83,25 @@ export default function ExplorePage() {
   return (
     <div className="min-h-screen">
       <Nav variant="breadcrumb" label="Explore" />
-
       <main id="main-content" className="max-w-5xl mx-auto px-5 py-12">
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <div className="eyebrow mb-3">Intent Explorer</div>
-            <h1 className="text-3xl font-bold text-vx-text mb-3">Browse all intents</h1>
-            <p className="text-vx-muted text-sm max-w-lg leading-relaxed">
-              Every swap intent submitted to Vortex, from open auctions to completed fills.
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1 pt-1 flex-shrink-0">
-            <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
-            {isLive ? "Live" : "Polling"}
-          </div>
+        <div className="mb-8">
+          <div className="h-3 w-24 bg-vx-surface/40 rounded animate-pulse mb-3" />
+          <div className="h-8 w-52 bg-vx-surface/40 rounded animate-pulse mb-3" />
+          <div className="h-4 w-80 bg-vx-surface/40 rounded animate-pulse" />
         </div>
 
         <div className="flex flex-wrap items-center gap-2 mb-6">
+          <label htmlFor="intent-search" className="sr-only">Search intents</label>
+          <input
+            id="intent-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by id, token, chain or solver"
+            className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text
+                       placeholder-vx-dim/60 focus:outline-none focus:border-vx-sage/50 transition-colors"
+          />
+
           <label htmlFor="status-filter" className="sr-only">Filter by status</label>
           <select
             id="status-filter"
@@ -148,11 +158,7 @@ export default function ExplorePage() {
         </div>
 
         {isLoading && intents.length === 0 ? (
-          <div className="space-y-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-            ))}
-          </div>
+          <IntentListSkeleton count={4} />
         ) : error ? (
           <div className="card p-8 text-center text-sm text-vx-muted">
             Couldn&apos;t load intents right now. Try again shortly.
@@ -239,8 +245,12 @@ export default function ExplorePage() {
           </div>
         )}
       </main>
-
       <Footer />
     </div>
-  );
+  ),
+  ssr: false,
+});
+
+export default function ExplorePage() {
+  return <ExplorePageClient />;
 }

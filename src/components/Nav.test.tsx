@@ -124,7 +124,7 @@ describe("Nav", () => {
 
       await user.click(screen.getByLabelText("Open menu"));
       const links = screen.getAllByText("Explore");
-      await user.click(links[links.length - 1]);
+      await user.click(links[links.length - 1]!);
 
       expect(screen.getByLabelText("Open menu")).toBeInTheDocument();
       expect(screen.getAllByText("Explore")).toHaveLength(1);
