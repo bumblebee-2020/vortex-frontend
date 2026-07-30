@@ -37,7 +37,7 @@ describe("useIntentFeed", () => {
   });
 
   it("prepends a live message ahead of the REST snapshot", () => {
-    const liveItem: FeedItem = { ...seedItems[0], id: "live-1", solver: "Beta" };
+    const liveItem: FeedItem = { ...seedItems[0]!, id: "live-1", solver: "Beta" };
     useActivityFeedMock.mockReturnValue({ items: seedItems, isLoading: false, error: undefined });
     useWebSocketMock.mockReturnValue({ status: "open", lastMessage: liveItem });
 
@@ -54,5 +54,29 @@ describe("useIntentFeed", () => {
     const { result } = renderHook(() => useIntentFeed());
 
     expect(result.current.isLive).toBe(false);
+  });
+
+  it("returns a partial page as-is when fewer than the max items are available", () => {
+    useActivityFeedMock.mockReturnValue({ items: seedItems, isLoading: false, error: undefined });
+    useWebSocketMock.mockReturnValue({ status: "open", lastMessage: null });
+
+    const { result } = renderHook(() => useIntentFeed());
+
+    expect(result.current.items).toHaveLength(1);
+  });
+
+  it("caps out-of-range overflow at the max item count, keeping the newest items", () => {
+    const overflowSeed: FeedItem[] = Array.from({ length: 10 }, (_, i) => ({
+      ...seedItems[0],
+      id: `seed-${i}`,
+    }));
+    useActivityFeedMock.mockReturnValue({ items: overflowSeed, isLoading: false, error: undefined });
+    useWebSocketMock.mockReturnValue({ status: "open", lastMessage: null });
+
+    const { result } = renderHook(() => useIntentFeed());
+
+    expect(result.current.items).toHaveLength(8);
+    expect(result.current.items[0].id).toBe("seed-0");
+    expect(result.current.items[7].id).toBe("seed-7");
   });
 });

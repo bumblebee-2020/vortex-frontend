@@ -1,8 +1,9 @@
 import { en } from "./messages/en";
+import { es } from "./messages/es";
 
 export const DEFAULT_LOCALE = "en";
 
-export const CATALOGS = { en };
+export const CATALOGS = { en, es };
 
 export type Locale = keyof typeof CATALOGS;
 export type MessageKey = keyof typeof en;
