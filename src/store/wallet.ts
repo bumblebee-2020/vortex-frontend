@@ -1,6 +1,11 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import freighterApi from "@stellar/freighter-api";
+import { DEFAULT_LOCALE, translate } from "@/lib/i18n";
+
+export type WalletErrorKey =
+  | "wallet.error.freighterUnavailable"
+  | "wallet.error.connectFailed";
 
 /** The network name the app expects, normalised to upper-case for comparison. */
 const EXPECTED_NETWORK = (process.env.NEXT_PUBLIC_NETWORK ?? "testnet").toUpperCase();
@@ -71,6 +76,10 @@ export const useWalletStore = create<WalletState>()(
             notInstalled: false,
           });
         } catch (err) {
+          const externalError = err instanceof Error ? err.message : null;
+          if (!externalError) {
+            errorKey = "wallet.error.connectFailed";
+          }
           set({
             address: null,
             network: null,

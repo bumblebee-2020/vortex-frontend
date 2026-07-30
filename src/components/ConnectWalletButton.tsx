@@ -2,6 +2,7 @@
 
 import { useWalletStore } from "@/store/wallet";
 import { useToastStore } from "@/store/toast";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
 
@@ -15,9 +16,9 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
 
   const handleConnect = async () => {
     await connect();
-    const latestError = useWalletStore.getState().error;
+    const { error: latestError, errorKey: latestErrorKey } = useWalletStore.getState();
     if (latestError) {
-      useToastStore.getState().addToast(latestError, "error");
+      useToastStore.getState().addToast(latestErrorKey ? t(latestErrorKey) : latestError, "error");
     }
   };
 
@@ -78,7 +79,7 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
       type="button"
       onClick={handleConnect}
       disabled={isConnecting}
-      title={error ?? undefined}
+      title={displayError ?? undefined}
       className={`${baseClass} border-vx-border text-vx-muted hover:border-vx-sage/30 hover:text-vx-text disabled:opacity-60 disabled:cursor-wait`}
     >
       {isConnecting ? (

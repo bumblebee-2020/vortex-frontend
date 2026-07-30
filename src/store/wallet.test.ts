@@ -129,6 +129,7 @@ describe("useWalletStore", () => {
     expect(state.isConnecting).toBe(false);
     expect(state.address).toBeNull();
     expect(state.error).toMatch(/not installed/i);
+    expect(state.errorKey).toBe("wallet.error.freighterUnavailable");
   });
 
   // ── Issue #2: not-installed ──────────────────────────────────────────────
@@ -162,6 +163,7 @@ describe("useWalletStore", () => {
     const state = useWalletStore.getState();
     expect(state.isConnected).toBe(false);
     expect(state.error).toBe("User declined access");
+    expect(state.errorKey).toBeNull();
   });
 
   it("clears wallet state on disconnect", async () => {
