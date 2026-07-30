@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMessage } from "./i18n";
+import { getMessage } from "./i18n-legacy";
 
 describe("i18n", () => {
   it("retrieves messages from the catalog using dot notation", () => {
