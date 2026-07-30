@@ -84,8 +84,8 @@ describe("useMyIntents", () => {
       json: async () => [intent],
     });
 
-    const { result, rerender } = renderHook(
-      ({ addr }: { addr: string | null }) => useMyIntents(addr),
+    const { result, rerender } = renderHook<ReturnType<typeof useMyIntents>, { addr: string | null }>(
+      ({ addr }) => useMyIntents(addr),
       { wrapper, initialProps: { addr: "GABC123" } },
     );
 
@@ -95,5 +95,19 @@ describe("useMyIntents", () => {
 
     expect(result.current.intents).toEqual([]);
     expect(result.current.isLoading).toBe(false);
+  });
+
+  it("returns an empty array when the endpoint returns no intents", async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [],
+    });
+
+    const { result } = renderHook(() => useMyIntents("GABC123"), { wrapper });
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    expect(result.current.intents).toEqual([]);
+    expect(result.current.error).toBeUndefined();
   });
 });

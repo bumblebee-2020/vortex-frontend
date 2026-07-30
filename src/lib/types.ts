@@ -19,6 +19,10 @@ export type QuoteRequest = {
   dstToken: string;
 };
 
+export type QuoteErrorType =
+  | { kind: "no-solver"; message?: string }
+  | { kind: "generic"; message: string };
+
 export type Quote = {
   dstAmount: string;
   solver: string;
@@ -39,6 +43,7 @@ export type FeedItem = {
   solver: string;
   status: IntentStatus;
   createdAt: string;
+  deadline?: string;
 };
 
 export type IntentDetail = FeedItem & {

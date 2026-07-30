@@ -1,4 +1,4 @@
-import { getMessage } from "@/lib/i18n";
+import { getMessage } from "@/lib/i18n-legacy";
 
 export function Footer() {
   return (
