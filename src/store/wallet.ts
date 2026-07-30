@@ -4,9 +4,11 @@ import freighterApi from "@stellar/freighter-api";
 
 export type WalletState = {
   address: string | null;
+  lastKnownAddress: string | null;
   network: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  wasSessionCleared: boolean;
   error: string | null;
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -17,9 +19,11 @@ export const useWalletStore = create<WalletState>()(
   persist(
     (set, get) => ({
       address: null,
+      lastKnownAddress: null,
       network: null,
       isConnected: false,
       isConnecting: false,
+      wasSessionCleared: false,
       error: null,
 
       connect: async () => {
@@ -35,9 +39,11 @@ export const useWalletStore = create<WalletState>()(
 
           set({
             address,
+            lastKnownAddress: address,
             network,
             isConnected: true,
             isConnecting: false,
+            wasSessionCleared: false,
             error: null,
           });
         } catch (err) {
@@ -46,6 +52,7 @@ export const useWalletStore = create<WalletState>()(
             network: null,
             isConnected: false,
             isConnecting: false,
+            wasSessionCleared: false,
             error: err instanceof Error ? err.message : "Failed to connect wallet.",
           });
         }
@@ -57,6 +64,7 @@ export const useWalletStore = create<WalletState>()(
           network: null,
           isConnected: false,
           isConnecting: false,
+          wasSessionCleared: false,
           error: null,
         });
       },
@@ -67,19 +75,34 @@ export const useWalletStore = create<WalletState>()(
       // the stale persisted session.
       hydrate: async () => {
         if (!get().isConnected) return;
+        const previousAddress = get().address ?? get().lastKnownAddress;
         try {
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());
           if (!allowed) {
-            set({ address: null, network: null, isConnected: false, error: null });
+            set({
+              address: null,
+              lastKnownAddress: previousAddress,
+              network: null,
+              isConnected: false,
+              wasSessionCleared: Boolean(previousAddress),
+              error: null,
+            });
             return;
           }
 
           const address = await freighterApi.getPublicKey();
           const network = await freighterApi.getNetwork();
-          set({ address, network, isConnected: true, error: null });
+          set({ address, lastKnownAddress: address, network, isConnected: true, wasSessionCleared: false, error: null });
         } catch {
-          set({ address: null, network: null, isConnected: false, error: null });
+          set({
+            address: null,
+            lastKnownAddress: previousAddress,
+            network: null,
+            isConnected: false,
+            wasSessionCleared: Boolean(previousAddress),
+            error: null,
+          });
         }
       },
     }),
@@ -88,6 +111,7 @@ export const useWalletStore = create<WalletState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         address: state.address,
+        lastKnownAddress: state.lastKnownAddress,
         network: state.network,
         isConnected: state.isConnected,
       }),

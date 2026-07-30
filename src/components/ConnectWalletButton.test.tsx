@@ -41,6 +41,19 @@ describe("ConnectWalletButton", () => {
     expect(screen.getByText("Connect Freighter")).toBeInTheDocument();
   });
 
+  it("shows a reconnect prompt with a truncated last-known address after a cleared session", () => {
+    useWalletStore.setState({
+      isConnected: false,
+      address: null,
+      lastKnownAddress: "GABCDEFGHIJKLMNOPQRSTUVWXYZ23456",
+      wasSessionCleared: true,
+    });
+
+    render(<ConnectWalletButton />);
+
+    expect(screen.getByText("Reconnect GABC...3456")).toBeInTheDocument();
+  });
+
   it("connects the wallet and shows the truncated address on click", async () => {
     isConnectedMock.mockResolvedValue(true);
     requestAccessMock.mockResolvedValue("GABCDEFGHIJKLMNOPQRSTUVWXYZ23456");

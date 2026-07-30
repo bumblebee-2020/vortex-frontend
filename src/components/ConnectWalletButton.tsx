@@ -8,7 +8,7 @@ function truncateAddress(address: string) {
 }
 
 export function ConnectWalletButton({ compact = false }: { compact?: boolean }) {
-  const { address, isConnected, isConnecting, error, connect, disconnect } = useWalletStore();
+  const { address, lastKnownAddress, isConnected, isConnecting, wasSessionCleared, error, connect, disconnect } = useWalletStore();
 
   const handleConnect = async () => {
     await connect();
@@ -51,7 +51,13 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
           <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       )}
-      {isConnecting ? "Connecting..." : error ? "Retry Connection" : "Connect Freighter"}
+      {isConnecting
+        ? "Connecting..."
+        : wasSessionCleared && lastKnownAddress
+          ? `Reconnect ${truncateAddress(lastKnownAddress)}`
+          : error
+            ? "Retry Connection"
+            : "Connect Freighter"}
     </button>
   );
 }

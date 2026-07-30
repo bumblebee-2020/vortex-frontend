@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { EmptyState } from "@/components/EmptyState";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
@@ -15,20 +15,14 @@ const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted
 const SORT_OPTIONS = ["newest", "oldest", "largest"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
 
-/** Height of a single intent row in pixels (matches the p-4 + border row). */
-const ROW_HEIGHT = 64;
-
-/** Height of the virtualized scroll container. */
-const LIST_HEIGHT = 480;
+const PAGE_SIZE = 10;
 
 export default function ExplorePage() {
   const { intents, isLoading, error, isLive } = useLiveIntents();
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortOption>("newest");
-
-  // Reset scroll to top whenever filters change.
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(1);
 
   /**
    * Stable callbacks for filter controls. Prevents unnecessary re-renders of
@@ -67,21 +61,12 @@ export default function ExplorePage() {
     return result;
   }, [intents, statusFilter, chainFilter, sort]);
 
-  // Scroll back to top when filtered list changes.
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = 0;
-    }
+    setPage(1);
   }, [statusFilter, chainFilter, sort]);
 
-  const virtualizer = useVirtualizer({
-    count: filtered.length,
-    getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_HEIGHT,
-    overscan: 5,
-  });
-
-  const virtualItems = virtualizer.getVirtualItems();
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="min-h-screen">
@@ -158,13 +143,9 @@ export default function ExplorePage() {
             ))}
           </div>
         ) : error ? (
-          <div className="card p-8 text-center text-sm text-vx-muted">
-            Couldn&apos;t load intents right now. Try again shortly.
-          </div>
+          <EmptyState title="Couldn't load intents" message="Try again shortly." />
         ) : filtered.length === 0 ? (
-          <div className="card p-8 text-center text-sm text-vx-muted">
-            No intents match your filters.
-          </div>
+          <EmptyState title="No intents found" message="No intents match your filters." />
         ) : (
           <>
             <div role="row" className="flex items-center gap-4 px-4 pb-2 text-[10px] uppercase tracking-wide text-vx-dim">
@@ -211,10 +192,37 @@ export default function ExplorePage() {
                       {item.srcChain} · via {item.solver}
                     </div>
                   </div>
-                );
-              })}
+                  <IntentStatusBadge status={item.status} />
+                  <div className="w-16 flex-shrink-0 text-right text-xs text-vx-muted">
+                    {timeAgo(item.createdAt)}
+                  </div>
+                </Link>
+              ))}
             </div>
-          </div>
+            {totalPages > 1 && (
+              <div className="mt-4 flex items-center justify-between text-sm text-vx-muted">
+                <button
+                  type="button"
+                  onClick={() => setPage((value) => Math.max(1, value - 1))}
+                  disabled={page === 1}
+                  className="rounded-lg border border-vx-border px-3 py-1.5 disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
+                  disabled={page === totalPages}
+                  className="rounded-lg border border-vx-border px-3 py-1.5 disabled:opacity-50"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
 
