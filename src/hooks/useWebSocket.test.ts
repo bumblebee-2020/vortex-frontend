@@ -42,14 +42,14 @@ describe("useWebSocket", () => {
     const { result } = renderHook(() => useWebSocket("ws://localhost:4000/ws"));
     expect(result.current.status).toBe("connecting");
 
-    MockWebSocket.instances[0].onopen?.();
+    MockWebSocket.instances[0]!.onopen?.();
 
     await waitFor(() => expect(result.current.status).toBe("open"));
   });
 
   it("parses incoming JSON messages into lastMessage", async () => {
     const { result } = renderHook(() => useWebSocket<{ hello: string }>("ws://localhost:4000/ws"));
-    MockWebSocket.instances[0].onmessage?.({ data: JSON.stringify({ hello: "world" }) });
+    MockWebSocket.instances[0]!.onmessage?.({ data: JSON.stringify({ hello: "world" }) });
 
     await waitFor(() => expect(result.current.lastMessage).toEqual({ hello: "world" }));
   });
@@ -57,7 +57,7 @@ describe("useWebSocket", () => {
   it("ignores malformed message frames instead of throwing", () => {
     const { result } = renderHook(() => useWebSocket("ws://localhost:4000/ws"));
     expect(() => {
-      MockWebSocket.instances[0].onmessage?.({ data: "not json" });
+      MockWebSocket.instances[0]!.onmessage?.({ data: "not json" });
     }).not.toThrow();
     expect(result.current.lastMessage).toBeNull();
   });
@@ -112,7 +112,7 @@ describe("useWebSocket", () => {
 
   it("closes the socket on unmount", () => {
     const { unmount } = renderHook(() => useWebSocket("ws://localhost:4000/ws"));
-    const socket = MockWebSocket.instances[0];
+    const socket = MockWebSocket.instances[0]!;
     unmount();
     expect(socket.closed).toBe(true);
   });

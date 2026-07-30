@@ -210,7 +210,7 @@ export function SwapCard({
 
           {showTokenPicker && (
             <div className="pt-2 border-t border-vx-line space-y-1">
-              {SRC_TOKENS[srcChain].map(token => (
+              {(SRC_TOKENS[srcChain] ?? []).map(token => (
                 <button
                   key={token.symbol}
                   type="button"
@@ -340,7 +340,7 @@ export function SwapCard({
               <svg aria-hidden="true" className="w-4 h-4 animate-spin-slow" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" />
               </svg>
-              {t(SUBMISSION_LABEL_KEY[submission.status])}
+              {t(SUBMISSION_LABEL_KEY[submission.status]!)}
             </span>
           ) : submission.status === "success" ? (
             t("swap.submit.success")
