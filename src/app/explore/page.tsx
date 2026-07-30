@@ -8,6 +8,7 @@ import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { IntentListSkeleton } from "@/components/Skeleton";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
 import type { IntentStatus } from "@/lib/types";
@@ -49,6 +50,8 @@ export default function ExplorePage() {
     [],
   );
 
+  const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+
   const filtered = useMemo(() => {
     let result = intents;
 
@@ -66,7 +69,7 @@ export default function ExplorePage() {
     });
 
     return result;
-  }, [intents, statusFilter, chainFilter, sort]);
+  }, [intents, debouncedSearch, statusFilter, chainFilter, sort]);
 
   // Scroll back to top when filtered list changes.
   useEffect(() => {
@@ -96,6 +99,17 @@ export default function ExplorePage() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
+          <label htmlFor="intent-search" className="sr-only">Search intents</label>
+          <input
+            id="intent-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by id, token, chain or solver"
+            className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text
+                       placeholder-vx-dim/60 focus:outline-none focus:border-vx-sage/50 transition-colors"
+          />
+
           <label htmlFor="status-filter" className="sr-only">Filter by status</label>
           <select
             id="status-filter"
