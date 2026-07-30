@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
@@ -93,14 +94,23 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
 
             {intent.txHash && (
               <div className="pt-2 border-t border-vx-line">
-                <a
-                  href={`https://stellar.expert/explorer/${NETWORK}/tx/${intent.txHash}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-vx-sage hover:underline num"
-                >
-                  View settlement tx on stellar.expert →
-                </a>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-xs text-vx-muted num">{truncateAddress(intent.txHash)}</span>
+                  <button
+                    onClick={() => copy(intent.txHash)}
+                    className="text-xs text-vx-sage hover:underline"
+                  >
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                  <a
+                    href={`https://stellar.expert/explorer/${NETWORK}/tx/${intent.txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-vx-sage hover:underline"
+                  >
+                    View on stellar.expert →
+                  </a>
+                </div>
               </div>
             )}
           </div>

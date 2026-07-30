@@ -59,6 +59,26 @@ npm run dev    # http://localhost:3000
 | `npm run lint` | `next lint` |
 | `npm test` | Run the Vitest suite |
 
+## Troubleshooting
+
+### Freighter not detected
+
+- Make sure the [Freighter](https://freighter.app/) extension is installed and unlocked.
+- On Firefox, ensure the extension is enabled for the current container or profile.
+- If you see "Freighter extension is not installed or enabled", try reloading the page after unlocking the extension.
+
+### Backend relay not running or `.env.local` misconfigured
+
+- Confirm `vortex-backend` is running and the relay is reachable.
+- Verify `NEXT_PUBLIC_API_URL` in `.env/local` points to the correct backend origin.
+- If `NEXT_PUBLIC_WS_URL` is missing, live feeds will silently fall back to polling only.
+- Restart the dev server after changing `.env.local`.
+
+### Wrong Node version
+
+- This project requires **Node.js 20+**. Confirm with `node -v`.
+- If you use `nvm` or `fnm`, run `nvm install && nvm use` (or the equivalent) from the repo root.
+
 ---
 
 ## Roadmap
