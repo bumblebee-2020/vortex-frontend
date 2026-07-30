@@ -58,6 +58,64 @@ describe("SwapCard", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
+  it("exposes a descriptive accessible name on the source chain select control", () => {
+    renderSwapCard();
+    const toggle = screen.getByRole("button", { name: "Source chain, currently Ethereum" });
+    expect(toggle.tagName).toBe("BUTTON");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("exposes a descriptive group label on the destination token select control", () => {
+    renderSwapCard();
+    const group = screen.getByRole("group", { name: "Destination token" });
+    expect(group).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "XLM" })).toHaveAttribute("aria-pressed");
+  });
+
+  it("opening the chain picker with the keyboard moves focus into it, not into the hidden card behind it", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    const chainToggle = screen.getByRole("button", { name: "Source chain, currently Ethereum" });
+    chainToggle.focus();
+    await user.keyboard("{Enter}");
+
+    const dialog = screen.getByRole("dialog", { name: "Select source chain" });
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
+
+    const mainCard = screen.getByLabelText("Amount to swap").closest(".card");
+    expect(mainCard).toHaveAttribute("aria-hidden", "true");
+  });
+
+  it("closes the chain picker with Escape and returns focus to the toggle button", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    const chainToggle = screen.getByRole("button", { name: "Source chain, currently Ethereum" });
+    await user.click(chainToggle);
+    expect(screen.getByRole("dialog", { name: "Select source chain" })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(chainToggle).toHaveFocus();
+  });
+
+  it("selecting a chain via keyboard closes the picker and returns focus to the toggle button", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    const chainToggle = screen.getByRole("button", { name: "Source chain, currently Ethereum" });
+    await user.click(chainToggle);
+
+    const baseOption = screen.getByRole("button", { name: "Base" });
+    baseOption.focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Source chain, currently Base" })).toHaveFocus();
+  });
+
   it("fetches and renders a live quote after the debounced amount settles", async () => {
     const quote: Quote = {
       dstAmount: "497.1234",
