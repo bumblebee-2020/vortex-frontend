@@ -6,10 +6,12 @@ export const en = {
   "swap.from.label": "From",
   "swap.from.amountLabel": "Amount to swap",
   "swap.from.amountPlaceholder": "0",
+  "swap.from.selectChain": "Source chain, currently {name}",
   "swap.from.selectToken": "Select source token, currently {symbol}",
   "swap.from.approxValue": "≈ ${value}",
 
   "swap.to.label": "To",
+  "swap.to.tokenGroup": "Destination token",
   "swap.to.quoteLoading": "Loading quote…",
 
   "swap.quote.solver": "Best solver",
