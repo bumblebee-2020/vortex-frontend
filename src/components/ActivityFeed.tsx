@@ -1,63 +1,29 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useMemo } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
+import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
   ethereum: "#627EEA", base: "#0052FF", polygon: "#8247E5",
   arbitrum: "#12AAFF", optimism: "#FF0420", avalanche: "#E84142",
 };
 
-// Batches new-item announcements instead of firing one per item, so a burst
-// of fills on a high-frequency feed reads as one summary (e.g. "3 new fills").
-const ANNOUNCE_DEBOUNCE_MS = 1500;
+/** Maximum number of activity items shown in the feed. */
+const FEED_LIMIT = 6;
 
 export function ActivityFeed() {
   const { items, isLoading, error, isLive } = useIntentFeed();
 
-  const [announcement, setAnnouncement] = useState("");
-  const seenIdsRef = useRef<Set<string> | null>(null);
-  const pendingCountRef = useRef(0);
-  const announceTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
-  useEffect(() => {
-    const currentIds = new Set(items.map((item) => item.id));
-
-    // First render just seeds the seen set — the initial snapshot isn't a "new" arrival.
-    if (seenIdsRef.current === null) {
-      seenIdsRef.current = currentIds;
-      return;
-    }
-
-    const newCount = items.reduce(
-      (count, item) => (seenIdsRef.current!.has(item.id) ? count : count + 1),
-      0
-    );
-    seenIdsRef.current = currentIds;
-    if (newCount === 0) return;
-
-    pendingCountRef.current += newCount;
-    clearTimeout(announceTimeoutRef.current);
-    announceTimeoutRef.current = setTimeout(() => {
-      const total = pendingCountRef.current;
-      pendingCountRef.current = 0;
-      setAnnouncement(total === 1 ? "1 new fill" : `${total} new fills`);
-    }, ANNOUNCE_DEBOUNCE_MS);
-  }, [items]);
-
-  useEffect(() => {
-    return () => clearTimeout(announceTimeoutRef.current);
-  }, []);
+  /**
+   * Memoized slice of the most recent feed items.
+   * Avoids recreating the array on every render when `items` reference is stable.
+   */
+  const visibleItems = useMemo(() => items.slice(0, FEED_LIMIT), [items]);
 
   if (isLoading && items.length === 0) {
-    return (
-      <div className="space-y-2">
-        {[0, 1, 2].map((i) => (
-          <div key={i} className="h-[52px] bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-        ))}
-      </div>
-    );
+    return <FeedSkeleton count={3} />;
   }
 
   return (
@@ -76,7 +42,7 @@ export function ActivityFeed() {
           No fills yet.
         </div>
       ) : null}
-      {items.slice(0, 6).map((item) => {
+      {visibleItems.map((item) => {
         const color = CHAIN_COLOR[item.srcChain] ?? "#8B8B93";
         return (
           <div key={item.id} className="flex items-center gap-3 p-3 bg-vx-surface/40 rounded-lg
@@ -102,4 +68,8 @@ export function ActivityFeed() {
       })}
     </div>
   );
+}
+
+export function ActivityFeed() {
+  return <ActivityFeedView {...useIntentFeed()} />;
 }

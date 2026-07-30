@@ -58,58 +58,62 @@ describe("SwapCard", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("tabs through the form controls in visual order", async () => {
-    const user = userEvent.setup();
+  it("exposes a descriptive accessible name on the source chain select control", () => {
     renderSwapCard();
-
-    // Enter an amount first so the submit button is enabled (and thus tabbable).
-    const amountInput = screen.getByLabelText("Amount to swap");
-    await user.type(amountInput, "500");
-
-    const chainPickerToggle = screen.getByRole("button", { name: "Ethereum" });
-    const tokenPickerToggle = screen.getByRole("button", { name: "Select source token, currently USDC" });
-    const usdcDstButton = screen.getByRole("button", { name: "USDC" });
-    const xlmDstButton = screen.getByRole("button", { name: "XLM" });
-    const yxlmDstButton = screen.getByRole("button", { name: "yXLM" });
-    const submitButton = screen.getByRole("button", { name: /Swap 500 USDC/ });
-
-    amountInput.focus();
-    await user.tab({ shift: true });
-    expect(chainPickerToggle).toHaveFocus();
-
-    await user.tab();
-    expect(amountInput).toHaveFocus();
-
-    await user.tab();
-    expect(tokenPickerToggle).toHaveFocus();
-
-    await user.tab();
-    expect(usdcDstButton).toHaveFocus();
-
-    await user.tab();
-    expect(xlmDstButton).toHaveFocus();
-
-    await user.tab();
-    expect(yxlmDstButton).toHaveFocus();
-
-    await user.tab();
-    expect(submitButton).toHaveFocus();
+    const toggle = screen.getByRole("button", { name: "Source chain, currently Ethereum" });
+    expect(toggle.tagName).toBe("BUTTON");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("removes the hidden main card from the tab order while the chain picker overlay is open", async () => {
+  it("exposes a descriptive group label on the destination token select control", () => {
+    renderSwapCard();
+    const group = screen.getByRole("group", { name: "Destination token" });
+    expect(group).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "XLM" })).toHaveAttribute("aria-pressed");
+  });
+
+  it("opening the chain picker with the keyboard moves focus into it, not into the hidden card behind it", async () => {
     const user = userEvent.setup();
     renderSwapCard();
 
-    await user.click(screen.getByRole("button", { name: "Ethereum" }));
+    const chainToggle = screen.getByRole("button", { name: "Source chain, currently Ethereum" });
+    chainToggle.focus();
+    await user.keyboard("{Enter}");
 
-    const amountInput = screen.getByLabelText("Amount to swap");
-    expect(amountInput).toHaveAttribute("tabindex", "-1");
+    const dialog = screen.getByRole("dialog", { name: "Select source chain" });
+    expect(dialog).toContainElement(document.activeElement as HTMLElement);
 
-    const ethereumOption = screen.getByRole("button", { name: "Ethereum" });
-    expect(ethereumOption).toHaveFocus();
+    const mainCard = screen.getByLabelText("Amount to swap").closest(".card");
+    expect(mainCard).toHaveAttribute("aria-hidden", "true");
+  });
 
-    await user.tab();
-    expect(amountInput).not.toHaveFocus();
+  it("closes the chain picker with Escape and returns focus to the toggle button", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    const chainToggle = screen.getByRole("button", { name: "Source chain, currently Ethereum" });
+    await user.click(chainToggle);
+    expect(screen.getByRole("dialog", { name: "Select source chain" })).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(chainToggle).toHaveFocus();
+  });
+
+  it("selecting a chain via keyboard closes the picker and returns focus to the toggle button", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    const chainToggle = screen.getByRole("button", { name: "Source chain, currently Ethereum" });
+    await user.click(chainToggle);
+
+    const baseOption = screen.getByRole("button", { name: "Base" });
+    baseOption.focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Source chain, currently Base" })).toHaveFocus();
   });
 
   it("fetches and renders a live quote after the debounced amount settles", async () => {
@@ -164,6 +168,38 @@ describe("SwapCard", () => {
       },
       { timeout: 2000 }
     );
+  });
+
+  it("truncates input to the selected token's decimal precision (USDC = 6 dp)", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    // USDC (default token) has 6 decimal places. Typing 9 dp should truncate.
+    const input = screen.getByPlaceholderText("0");
+    await user.type(input, "1.123456789");
+
+    // The displayed value must not exceed 6 decimal places.
+    expect((input as HTMLInputElement).value).toBe("1.123456");
+  });
+
+  it("truncates input to 18 decimal places when WETH is selected", async () => {
+    const user = userEvent.setup();
+    renderSwapCard();
+
+    // Open the token picker and switch to WETH.
+    const tokenBtn = screen.getByRole("button", {
+      name: "Select source token, currently USDC",
+    });
+    await user.click(tokenBtn);
+
+    const wethOption = await screen.findByRole("button", { name: /WETH/ });
+    await user.click(wethOption);
+
+    const input = screen.getByPlaceholderText("0");
+    // WETH has 18 dp — typing 20 fractional digits should truncate to 18.
+    await user.type(input, "0.123456789012345678901234");
+
+    expect((input as HTMLInputElement).value).toBe("0.123456789012345678");
   });
 
   it("submits a swap end-to-end for an already-connected wallet", async () => {

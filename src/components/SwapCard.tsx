@@ -8,6 +8,7 @@ import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
 import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { MessageKey } from "@/lib/i18n";
+import type { Quote, QuoteRequest } from "@/lib/types";
 
 const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   connecting: "swap.submit.connecting",
@@ -16,25 +17,70 @@ const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   submitting: "swap.submit.submitting",
 };
 
-export function SwapCard() {
+export type SwapCardProps = {
+  initialAmount?: string;
+  previewQuote?: Quote;
+  onPreviewSubmit?: (request: QuoteRequest) => void;
+};
+
+export function SwapCard({
+  initialAmount = "",
+  previewQuote,
+  onPreviewSubmit,
+}: SwapCardProps = {}) {
   const { t } = useTranslation();
 
   const [srcChain, setSrcChain] = useState("ethereum");
   const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
   const [dstToken, setDstToken] = useState(DST_TOKENS[0]);
-  const [srcAmount, setSrcAmount] = useState("");
+  const [srcAmount, setSrcAmount] = useState(initialAmount);
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
+  const chainToggleRef = useRef<HTMLButtonElement>(null);
+  const chainPickerRef = useRef<HTMLDivElement>(null);
 
   const chain = CHAINS.find(c => c.id === srcChain)!;
 
+  const closeChainPicker = () => {
+    setShowChainPicker(false);
+    chainToggleRef.current?.focus();
+  };
+
+  useEffect(() => {
+    if (showChainPicker) {
+      chainPickerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    }
+  }, [showChainPicker]);
+
+  const handleChainPickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeChainPicker();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusable = chainPickerRef.current?.querySelectorAll<HTMLButtonElement>("button");
+    if (!focusable || focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
   const debouncedAmount = useDebouncedValue(srcAmount, 500);
   const hasAmount = Boolean(debouncedAmount) && parseFloat(debouncedAmount) > 0;
-  const { quote, isLoading: quoting, error: quoteError } = useQuote(
-    hasAmount
+  const { quote: fetchedQuote, isLoading: quoteIsLoading, error: quoteError } = useQuote(
+    hasAmount && !previewQuote
       ? { srcChain, srcToken: srcToken.symbol, srcAmount: debouncedAmount, dstToken: dstToken.symbol }
       : null
   );
+  const quote = previewQuote ?? fetchedQuote;
+  const quoting = previewQuote ? false : quoteIsLoading;
 
   const dstAmount = quote
     ? parseFloat(quote.dstAmount)
@@ -48,7 +94,27 @@ export function SwapCard() {
   const isSubmitting = submission.status in SUBMISSION_LABEL_KEY;
   const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting;
 
+  /** Truncate a raw amount string to at most `decimals` decimal places. */
+  function truncateToDecimals(value: string, decimals: number): string {
+    const dotIndex = value.indexOf(".");
+    if (dotIndex === -1 || decimals === 0) return value.split(".")[0];
+    return value.slice(0, dotIndex + 1 + decimals);
+  }
+
+  const handleAmountChange = (raw: string) => {
+    setSrcAmount(truncateToDecimals(raw, srcToken.decimals));
+  };
+
   const handleSubmit = () => {
+    if (onPreviewSubmit) {
+      onPreviewSubmit({
+        srcChain,
+        srcToken: srcToken.symbol,
+        srcAmount,
+        dstToken: dstToken.symbol,
+      });
+      return;
+    }
     if (submission.status === "success") {
       submission.reset();
       setSrcAmount("");
@@ -90,7 +156,14 @@ export function SwapCard() {
     <div className="relative">
       {/* Chain picker dropdown */}
       {showChainPicker && (
-        <div ref={chainPickerRef} className="absolute top-0 left-0 right-0 z-20 bg-vx-card border border-vx-border rounded-xl p-3 shadow-2xl animate-fade-up">
+        <div
+          ref={chainPickerRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("swap.chainPicker.title")}
+          onKeyDown={handleChainPickerKeyDown}
+          className="absolute top-0 left-0 right-0 z-20 bg-vx-card border border-vx-border rounded-xl p-3 shadow-2xl animate-fade-up"
+        >
           <div className="eyebrow mb-3 px-1">{t("swap.chainPicker.title")}</div>
           <div className="grid grid-cols-2 gap-2">
             {CHAINS.map(c => (
@@ -137,6 +210,7 @@ export function SwapCard() {
               onClick={() => setShowChainPicker(true)}
               aria-haspopup="true"
               aria-expanded={showChainPicker}
+              aria-label={t("swap.from.selectChain", { name: chain.name })}
               className="chain-badge cursor-pointer hover:bg-vx-lav/15 transition-colors"
             >
               <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full" style={{ background: chain.color }} />
@@ -154,7 +228,7 @@ export function SwapCard() {
               type="number"
               tabIndex={hiddenTabIndex}
               value={srcAmount}
-              onChange={e => setSrcAmount(e.target.value)}
+              onChange={e => handleAmountChange(e.target.value)}
               placeholder={t("swap.from.amountPlaceholder")}
               className="input-swap flex-1"
             />
@@ -179,7 +253,7 @@ export function SwapCard() {
 
           {showTokenPicker && (
             <div className="pt-2 border-t border-vx-line space-y-1">
-              {SRC_TOKENS[srcChain].map(token => (
+              {(SRC_TOKENS[srcChain] ?? []).map(token => (
                 <button
                   key={token.symbol}
                   type="button"
@@ -188,8 +262,6 @@ export function SwapCard() {
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
                     ${token.symbol === srcToken.symbol ? "bg-vx-lav-bg text-vx-lav" : "hover:bg-vx-surface text-vx-muted hover:text-vx-text"}`}
                 >
-                  <span className="font-medium">{t.symbol}</span>
-                  <span className="num text-xs">{formatCurrency(t.priceUSD)}</span>
                   <span className="font-medium">{token.symbol}</span>
                   <span className="num text-xs">${token.priceUSD.toLocaleString()}</span>
                 </button>
@@ -199,7 +271,6 @@ export function SwapCard() {
 
           {srcValueUSD > 0 && (
             <div className="num text-xs text-vx-muted">
-              ≈ {formatCurrency(srcValueUSD, undefined, { maximumFractionDigits: 2 })}
               {/* Number formatting stays locale-hardcoded here; issue #63 owns making it locale-aware. */}
               {t("swap.from.approxValue", {
                 value: srcValueUSD.toLocaleString("en-US", { maximumFractionDigits: 2 }),
@@ -246,7 +317,7 @@ export function SwapCard() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
+            <div role="group" aria-label={t("swap.to.tokenGroup")} className="flex gap-2">
               {DST_TOKENS.map(token => (
                 <button
                   key={token.symbol}
@@ -315,7 +386,7 @@ export function SwapCard() {
               <svg aria-hidden="true" className="w-4 h-4 animate-spin-slow" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" />
               </svg>
-              {t(SUBMISSION_LABEL_KEY[submission.status])}
+              {t(SUBMISSION_LABEL_KEY[submission.status]!)}
             </span>
           ) : submission.status === "success" ? (
             t("swap.submit.success")
