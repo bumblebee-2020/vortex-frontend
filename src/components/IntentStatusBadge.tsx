@@ -1,10 +1,10 @@
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_STYLES: Record<IntentStatus, string> = {
-  pending: "bg-vx-lav-bg text-vx-lav border-vx-lav/30",
-  accepted: "bg-blue-500/10 text-blue-300 border-blue-500/30",
-  filled: "bg-vx-sage-bg text-vx-sage border-vx-sage/30",
-  failed: "bg-red-500/10 text-red-300 border-red-500/30",
+  pending: "bg-vx-lav-bg text-vx-lav border-vx-lav/60",
+  accepted: "bg-blue-500/10 text-blue-300 border-blue-500/80",
+  filled: "bg-vx-sage-bg text-vx-sage border-vx-sage/50",
+  failed: "bg-red-500/10 text-red-300 border-red-500/80",
 };
 
 // Distinct icon shapes per status so the badge doesn't rely on color/background

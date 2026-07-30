@@ -1,21 +1,25 @@
 // Spanish (es) message catalog.
 // Keys must stay in sync with en.ts — the test suite enforces this.
 export const es = {
-  "activityFeed.status.live": "En vivo",
-  "activityFeed.status.polling": "Actualizando",
-  "activityFeed.error.unavailable": "El feed en vivo no está disponible en este momento.",
-  "activityFeed.empty": "Aún no hay llenados.",
-  "activityFeed.item.route": "{chain} · vía {solver}",
+  "wallet.connect.cta": "Conectar Freighter",
+  "wallet.connect.connecting": "Conectando...",
+  "wallet.connect.retry": "Reintentar conexión",
+  "wallet.disconnect.cta": "Desconectar",
+  "wallet.disconnect.aria": "Desconectar billetera {address}",
+  "wallet.error.freighterUnavailable": "La extensión Freighter no está instalada o habilitada.",
+  "wallet.error.connectFailed": "No se pudo conectar la billetera.",
 
   "swap.chainPicker.title": "Seleccionar cadena origen",
 
   "swap.from.label": "De",
   "swap.from.amountLabel": "Cantidad a intercambiar",
   "swap.from.amountPlaceholder": "0",
+  "swap.from.selectChain": "Cadena origen, actualmente {name}",
   "swap.from.selectToken": "Seleccionar token origen, actualmente {symbol}",
   "swap.from.approxValue": "≈ ${value}",
 
   "swap.to.label": "A",
+  "swap.to.tokenGroup": "Token de destino",
   "swap.to.quoteLoading": "Cargando cotización…",
 
   "swap.quote.solver": "Mejor solver",

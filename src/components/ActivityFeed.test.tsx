@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import type { FeedItem } from "@/lib/types";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import type { Locale } from "@/lib/i18n";
@@ -73,11 +73,69 @@ describe("ActivityFeed", () => {
     expect(screen.queryByText("Live feed unavailable right now.")).not.toBeInTheDocument();
   });
 
-  it("renders feed copy in the active locale", () => {
-    useIntentFeedMock.mockReturnValue({ items: [item], isLoading: false, isLive: true });
-    renderFeed("es");
+  describe("live region announcements", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
 
-    expect(screen.getByText("En vivo")).toBeInTheDocument();
-    expect(screen.getByText(/ethereum · vía Alpha/)).toBeInTheDocument();
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("does not announce the initial snapshot", () => {
+      useIntentFeedMock.mockReturnValue({ items: [item], isLoading: false, isLive: true });
+      render(<ActivityFeed />);
+
+      expect(screen.getByRole("status")).toHaveTextContent("");
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+      expect(screen.getByRole("status")).toHaveTextContent("");
+    });
+
+    it("announces a debounced summary once new items arrive over the socket", () => {
+      useIntentFeedMock.mockReturnValue({ items: [item], isLoading: false, isLive: true });
+      const { rerender } = render(<ActivityFeed />);
+
+      const secondItem: FeedItem = { ...item, id: "2" };
+      useIntentFeedMock.mockReturnValue({ items: [secondItem, item], isLoading: false, isLive: true });
+      rerender(<ActivityFeed />);
+
+      // Still debouncing — no announcement yet.
+      expect(screen.getByRole("status")).toHaveTextContent("");
+
+      act(() => {
+        vi.advanceTimersByTime(1499);
+      });
+      expect(screen.getByRole("status")).toHaveTextContent("");
+
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(screen.getByRole("status")).toHaveTextContent("1 new fill");
+    });
+
+    it("coalesces a burst of arrivals into a single summary announcement", () => {
+      useIntentFeedMock.mockReturnValue({ items: [item], isLoading: false, isLive: true });
+      const { rerender } = render(<ActivityFeed />);
+
+      const secondItem: FeedItem = { ...item, id: "2" };
+      useIntentFeedMock.mockReturnValue({ items: [secondItem, item], isLoading: false, isLive: true });
+      rerender(<ActivityFeed />);
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      const thirdItem: FeedItem = { ...item, id: "3" };
+      useIntentFeedMock.mockReturnValue({ items: [thirdItem, secondItem, item], isLoading: false, isLive: true });
+      rerender(<ActivityFeed />);
+
+      act(() => {
+        vi.advanceTimersByTime(1500);
+      });
+
+      expect(screen.getByRole("status")).toHaveTextContent("2 new fills");
+    });
   });
 });

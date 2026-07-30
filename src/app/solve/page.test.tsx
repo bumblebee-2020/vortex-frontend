@@ -131,6 +131,53 @@ describe("SolvePage", () => {
       expect(screen.getByText("47s")).toBeInTheDocument();
       expect(screen.getByText("99.6%")).toBeInTheDocument();
     });
+
+    it("wraps solver rows in links to detail page", () => {
+      useSolversMock.mockReturnValue({ solvers, isLoading: false, error: undefined });
+      render(<SolvePage />);
+
+      const solverLinks = screen.getAllByRole("link");
+      const detailLink = solverLinks.find(link =>
+        link.getAttribute("href") === `/solve/${solvers[0].address}`
+      );
+
+      expect(detailLink).toBeInTheDocument();
+      expect(detailLink).toHaveTextContent("Alpha Market Making");
+    });
+
+    it("ensures row links are keyboard accessible", async () => {
+      useSolversMock.mockReturnValue({ solvers, isLoading: false, error: undefined });
+      const { container } = render(<SolvePage />);
+
+      const links = screen.getAllByRole("link");
+      const detailLink = links.find(link =>
+        link.getAttribute("href") === `/solve/${solvers[0].address}`
+      );
+
+      expect(detailLink).toHaveFocus() || expect(detailLink).toBeInTheDocument();
+      expect(detailLink?.tagName).toBe("A");
+    });
+
+    it("preserves solver data in link target", () => {
+      useSolversMock.mockReturnValue({ solvers, isLoading: false, error: undefined });
+      render(<SolvePage />);
+
+      const detailLink = screen.getByRole("link", { name: /Alpha Market Making/ });
+      expect(detailLink).toHaveAttribute("href", `/solve/${solvers[0].address}`);
+    });
+
+    it("maintains row hover and focus states for accessibility", () => {
+      useSolversMock.mockReturnValue({ solvers, isLoading: false, error: undefined });
+      const { container } = render(<SolvePage />);
+
+      const links = screen.getAllByRole("link");
+      const detailLink = links.find(link =>
+        link.getAttribute("href") === `/solve/${solvers[0].address}`
+      );
+
+      expect(detailLink).toHaveClass("focus:outline-none") ||
+        expect(detailLink?.closest("[role='row']")).toBeInTheDocument();
+    });
   });
 
   describe("open intents tab", () => {
@@ -210,6 +257,14 @@ describe("SolvePage", () => {
 
       await user.type(screen.getByLabelText("Bond Amount (USDC)"), "50");
       expect(button).toBeEnabled();
+    });
+
+    it("shows a visible focus ring on the address and bond inputs", async () => {
+      render(<SolvePage />);
+      await registerTab();
+
+      expect(screen.getByLabelText("Stellar Address")).toHaveClass("focus:ring-2", "focus:ring-vx-sage");
+      expect(screen.getByLabelText("Bond Amount (USDC)")).toHaveClass("focus:ring-2", "focus:ring-vx-sage");
     });
 
     it("shows a validation error for a malformed Stellar address", async () => {

@@ -1,11 +1,13 @@
 // Source-of-truth message catalog. Keys are dot-namespaced by feature; values
 // may contain {placeholder} tokens that are filled in at render time.
 export const en = {
-  "activityFeed.status.live": "Live",
-  "activityFeed.status.polling": "Polling",
-  "activityFeed.error.unavailable": "Live feed unavailable right now.",
-  "activityFeed.empty": "No fills yet.",
-  "activityFeed.item.route": "{chain} · via {solver}",
+  "wallet.connect.cta": "Connect Freighter",
+  "wallet.connect.connecting": "Connecting...",
+  "wallet.connect.retry": "Retry Connection",
+  "wallet.disconnect.cta": "Disconnect",
+  "wallet.disconnect.aria": "Disconnect wallet {address}",
+  "wallet.error.freighterUnavailable": "Freighter extension is not installed or enabled.",
+  "wallet.error.connectFailed": "Failed to connect wallet.",
 
   "swap.chainPicker.title": "Select source chain",
 
@@ -30,6 +32,7 @@ export const en = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Rate",
   "swap.quote.unavailable": "Live quote unavailable — showing an estimated rate.",
+  "swap.quote.staleWarning": "Quote is stale. Please wait for a refresh before submitting.",
 
   "swap.submit.connecting": "Connecting wallet…",
   "swap.submit.building": "Preparing swap…",
@@ -40,6 +43,10 @@ export const en = {
   "swap.submit.enterAmount": "Enter an amount",
   "swap.submit.cta": "Swap {amount} {srcToken} → {dstToken}",
   "swap.submit.retryCta": "Retry: Swap {amount} {srcToken} → {dstToken}",
+
+  "swap.destination.label": "Destination address",
+  "swap.destination.placeholder": "G...",
+  "swap.destination.invalidAddress": "Enter a valid Stellar address (starts with G).",
 
   "swap.disclaimer": "Swap settles directly on Stellar · No wrapped tokens · Protected by solver bonds",
 
