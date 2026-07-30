@@ -1,132 +1,103 @@
+/**
+ * Skeleton – reusable loading placeholder components.
+ *
+ * Usage:
+ *   <SkeletonBlock className="h-6 w-1/2" />
+ *   <SkeletonText lines={3} />
+ *   <SkeletonCard rows={4} rowHeight="h-14" />
+ */
+
 import { clsx } from "clsx";
 
-// ── Base ──────────────────────────────────────────────────────────────────────
+// ─── SkeletonBlock ─────────────────────────────────────────────────────────────
+// A single rectangular animated pulse placeholder.
 
-interface SkeletonProps {
+interface SkeletonBlockProps {
   className?: string;
 }
 
-/**
- * Base skeleton block — a pulse-animated, surface-tinted rectangle.
- * All variant components are built on top of this.
- */
-export function Skeleton({ className }: SkeletonProps) {
+export function SkeletonBlock({ className }: SkeletonBlockProps) {
   return (
     <div
       aria-hidden="true"
       className={clsx(
-        "animate-pulse bg-vx-surface/40 rounded-lg border border-vx-line",
-        className
+        "bg-vx-surface/40 rounded-lg animate-pulse",
+        className,
       )}
     />
   );
 }
 
-// ── Variants ──────────────────────────────────────────────────────────────────
+// ─── SkeletonText ──────────────────────────────────────────────────────────────
+// A stack of text-line skeletons (mimics a paragraph or label group).
 
-/**
- * Matches a single row in the ActivityFeed (h-[52px] with icon + two text lines).
- */
-export function FeedItemSkeleton() {
+interface SkeletonTextProps {
+  lines?: number;
+  className?: string;
+}
+
+export function SkeletonText({ lines = 2, className }: SkeletonTextProps) {
+  const widths = ["w-full", "w-5/6", "w-4/6", "w-3/4", "w-2/3"];
   return (
-    <div
-      aria-hidden="true"
-      className="flex items-center gap-3 px-3 h-[52px] bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse"
-    >
-      {/* chain colour dot */}
-      <div className="w-6 h-6 rounded-full bg-vx-line flex-shrink-0" />
-      {/* text lines */}
-      <div className="flex-1 space-y-1.5">
-        <div className="h-2.5 w-2/3 bg-vx-line rounded" />
-        <div className="h-2 w-1/3 bg-vx-line/60 rounded" />
-      </div>
-      {/* timestamp */}
-      <div className="h-2 w-8 bg-vx-line/60 rounded flex-shrink-0" />
+    <div aria-hidden="true" className={clsx("space-y-2", className)}>
+      {Array.from({ length: lines }).map((_, i) => (
+        <div
+          // eslint-disable-next-line react/no-array-index-key
+          key={i}
+          className={clsx("h-4 bg-vx-surface/40 rounded animate-pulse", widths[i % widths.length])}
+        />
+      ))}
     </div>
   );
 }
 
-/**
- * Matches a single row in the intent list on /explore and /solve → intents tab
- * (h-14 with amount + badge + timestamp).
- */
-export function IntentRowSkeleton() {
+// ─── SkeletonCard ──────────────────────────────────────────────────────────────
+// A list of full-width row skeletons — used for table/feed loading states.
+
+interface SkeletonCardProps {
+  /** Number of skeleton rows to show */
+  rows?: number;
+  /** Tailwind height class for each row, e.g. "h-14" */
+  rowHeight?: string;
+  className?: string;
+}
+
+export function SkeletonCard({ rows = 3, rowHeight = "h-14", className }: SkeletonCardProps) {
   return (
-    <div
-      aria-hidden="true"
-      className="flex items-center gap-4 px-4 h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse"
-    >
-      {/* main text block */}
-      <div className="flex-1 space-y-1.5">
-        <div className="h-2.5 w-1/2 bg-vx-line rounded" />
-        <div className="h-2 w-1/3 bg-vx-line/60 rounded" />
-      </div>
-      {/* status badge placeholder */}
-      <div className="h-5 w-14 bg-vx-line/60 rounded-full flex-shrink-0" />
-      {/* timestamp */}
-      <div className="h-2 w-10 bg-vx-line/60 rounded flex-shrink-0" />
+    <div aria-hidden="true" className={clsx("space-y-2", className)}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <SkeletonBlock
+          // eslint-disable-next-line react/no-array-index-key
+          key={i}
+          className={clsx(rowHeight, "border border-vx-line")}
+        />
+      ))}
     </div>
   );
 }
 
-/**
- * Matches a single row in the solver leaderboard (h-16 with rank + name/address
- * + stats grid).
- */
-export function SolverRowSkeleton() {
+// ─── SkeletonDetailCard ────────────────────────────────────────────────────────
+// Skeleton for a detail card (e.g. intent detail, solver detail header).
+
+export function SkeletonDetailCard() {
   return (
-    <div
-      aria-hidden="true"
-      className="flex items-center gap-3 px-5 h-16 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse"
-    >
-      {/* rank number */}
-      <div className="h-5 w-6 bg-vx-line rounded flex-shrink-0" />
-      {/* name + address */}
-      <div className="flex-1 space-y-1.5">
-        <div className="h-2.5 w-1/3 bg-vx-line rounded" />
-        <div className="h-2 w-1/2 bg-vx-line/60 rounded" />
+    <div aria-hidden="true" className="card p-6 space-y-4 animate-pulse">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2 flex-1">
+          <SkeletonBlock className="h-4 w-16" />
+          <SkeletonBlock className="h-7 w-2/3" />
+        </div>
+        <SkeletonBlock className="h-6 w-20 rounded-full" />
       </div>
-      {/* stat pills */}
-      <div className="hidden sm:flex gap-4 flex-shrink-0">
-        {[40, 48, 36, 32].map((w, i) => (
-          <div key={i} className={`h-2 bg-vx-line/60 rounded`} style={{ width: w }} />
+      <div className="grid sm:grid-cols-2 gap-4">
+        {Array.from({ length: 6 }).map((_, i) => (
+          // eslint-disable-next-line react/no-array-index-key
+          <div key={i} className="bg-vx-surface/40 rounded-lg p-3 space-y-2">
+            <SkeletonBlock className="h-3 w-1/3" />
+            <SkeletonBlock className="h-4 w-2/3" />
+          </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-// ── Convenience list components ───────────────────────────────────────────────
-
-/** 3-item ActivityFeed placeholder (mirrors the real feed's initial render). */
-export function FeedSkeleton({ count = 3 }: { count?: number }) {
-  return (
-    <div className="space-y-2" aria-busy="true" aria-label="Loading feed…">
-      {Array.from({ length: count }, (_, i) => (
-        <FeedItemSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
-
-/** N-item intent list placeholder. */
-export function IntentListSkeleton({ count = 4 }: { count?: number }) {
-  return (
-    <div className="space-y-2" aria-busy="true" aria-label="Loading intents…">
-      {Array.from({ length: count }, (_, i) => (
-        <IntentRowSkeleton key={i} />
-      ))}
-    </div>
-  );
-}
-
-/** N-item solver leaderboard placeholder. */
-export function SolverListSkeleton({ count = 3 }: { count?: number }) {
-  return (
-    <div className="space-y-3" aria-busy="true" aria-label="Loading leaderboard…">
-      {Array.from({ length: count }, (_, i) => (
-        <SolverRowSkeleton key={i} />
-      ))}
     </div>
   );
 }
