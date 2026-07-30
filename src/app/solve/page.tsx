@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Nav } from "@/components/Nav";
+import { Footer } from "@/components/Footer";
 import { useSolvers } from "@/hooks/useSolvers";
 import { useOpenIntents } from "@/hooks/useOpenIntents";
 import { useAcceptIntent } from "@/hooks/useAcceptIntent";
@@ -75,39 +76,34 @@ export default function SolvePage() {
           </p>
         </div>
 
-        {/* ── How it works ── */}
-        <section aria-labelledby="how-it-works-heading" className="mb-8 sm:mb-10">
-          <h2 id="how-it-works-heading" className="sr-only">
-            How solvers earn
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-            {[
-              {
-                n: getMessage("solve.steps.registerBond.number"),
-                title: getMessage("solve.steps.registerBond.title"),
-                body: getMessage("solve.steps.registerBond.body"),
-              },
-              {
-                n: getMessage("solve.steps.watchIntentFeed.number"),
-                title: getMessage("solve.steps.watchIntentFeed.title"),
-                body: getMessage("solve.steps.watchIntentFeed.body"),
-              },
-              {
-                n: getMessage("solve.steps.fillAndEarn.number"),
-                title: getMessage("solve.steps.fillAndEarn.title"),
-                body: getMessage("solve.steps.fillAndEarn.body"),
-              },
-            ].map((item) => (
-              <div key={item.n} className="card p-4 sm:p-5">
-                <div className="font-mono text-xs text-vx-sage mb-2 sm:mb-3">{item.n}</div>
-                <h3 className="text-xs sm:text-sm font-semibold text-vx-text mb-2">{item.title}</h3>
-                <p className="text-xs text-vx-muted leading-relaxed">{item.body}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        {/* How solver earns */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-10">
+          {[
+            {
+              n: getMessage("solve.steps.registerBond.number"),
+              title: getMessage("solve.steps.registerBond.title"),
+              body: getMessage("solve.steps.registerBond.body"),
+            },
+            {
+              n: getMessage("solve.steps.watchIntentFeed.number"),
+              title: getMessage("solve.steps.watchIntentFeed.title"),
+              body: getMessage("solve.steps.watchIntentFeed.body"),
+            },
+            {
+              n: getMessage("solve.steps.fillAndEarn.number"),
+              title: getMessage("solve.steps.fillAndEarn.title"),
+              body: getMessage("solve.steps.fillAndEarn.body"),
+            },
+          ].map((item) => (
+            <div key={item.n} className="card p-4 sm:p-5">
+              <div className="font-mono text-xs text-vx-sage mb-2 sm:mb-3">{item.n}</div>
+              <h3 className="text-xs sm:text-sm font-semibold text-vx-text mb-2">{item.title}</h3>
+              <p className="text-xs text-vx-muted leading-relaxed">{item.body}</p>
+            </div>
+          ))}
+        </div>
 
-        {/* ── Tabs ── */}
+        {/* Tabs */}
         <div
           role="tablist"
           aria-label={getMessage("solve.tabs.ariaLabel")}
@@ -141,23 +137,23 @@ export default function SolvePage() {
             aria-labelledby="tab-leaderboard"
             className="card overflow-hidden"
           >
-            <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30">
+            <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30">
               <span className="text-sm font-semibold text-vx-text">
                 {getMessage("solve.leaderboard.title")}
               </span>
             </div>
             {solversLoading && solvers.length === 0 ? (
-              <div className="p-5 space-y-3">
+              <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="h-16 bg-vx-surface/40 rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : solversError ? (
-              <div className="p-8 text-center text-sm text-vx-muted">
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.leaderboard.error")}
               </div>
             ) : solvers.length === 0 ? (
-              <div className="p-8 text-center text-sm text-vx-muted">
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.leaderboard.empty")}
               </div>
             ) : (
@@ -189,7 +185,9 @@ export default function SolvePage() {
                       </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-6">
                         <div>
-                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">{s.fills}</div>
+                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">
+                            {s.fills}
+                          </div>
                           <div className="eyebrow text-[10px] sm:text-xs">
                             {getMessage("solve.leaderboard.fills")}
                           </div>
@@ -239,7 +237,7 @@ export default function SolvePage() {
             aria-labelledby="tab-intents"
             className="card overflow-hidden"
           >
-            <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30 flex items-center justify-between">
+            <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30 flex items-center justify-between">
               <span className="text-sm font-semibold text-vx-text">
                 {getMessage("solve.intents.title")}
               </span>
@@ -256,17 +254,17 @@ export default function SolvePage() {
             )}
 
             {intentsLoading && openIntents.length === 0 ? (
-              <div className="p-5 space-y-3">
+              <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
                   <div key={i} className="h-14 bg-vx-surface/40 rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : intentsError ? (
-              <div className="p-8 text-center text-sm text-vx-muted">
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.intents.error")}
               </div>
             ) : openIntents.length === 0 ? (
-              <div className="p-8 text-center text-sm text-vx-muted">
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
                 {getMessage("solve.intents.empty")}
               </div>
             ) : (
@@ -321,14 +319,14 @@ export default function SolvePage() {
           >
             <div className="card p-4 sm:p-6 space-y-4 sm:space-y-5">
               <div>
-                <h2 className="text-base font-semibold text-vx-text mb-1">
+                <h3 className="text-base font-semibold text-vx-text mb-1">
                   {getMessage("solve.register.title")}
-                </h2>
+                </h3>
                 <p className="text-xs text-vx-muted">{getMessage("solve.register.description")}</p>
               </div>
 
               <div>
-                <label htmlFor="solver-address" className="eyebrow block mb-2">
+                <label htmlFor="solver-address" className="eyebrow block mb-2 text-xs">
                   {getMessage("solve.register.addressLabel")}
                 </label>
                 <input
@@ -351,7 +349,7 @@ export default function SolvePage() {
               </div>
 
               <div>
-                <label htmlFor="solver-bond" className="eyebrow block mb-2">
+                <label htmlFor="solver-bond" className="eyebrow block mb-2 text-xs">
                   {getMessage("solve.register.bondLabel")}
                 </label>
                 <input
@@ -402,6 +400,8 @@ export default function SolvePage() {
           </div>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

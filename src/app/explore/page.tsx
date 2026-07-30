@@ -166,51 +166,50 @@ export default function ExplorePage() {
             No intents match your filters.
           </div>
         ) : (
-          /* Virtualized list */
-          <div
-            ref={scrollRef}
-            style={{ height: LIST_HEIGHT }}
-            className="overflow-y-auto rounded-lg"
-            aria-label="Intent list"
-          >
-            {/* Total height spacer so the scrollbar reflects the full list */}
-            <div
-              style={{ height: virtualizer.getTotalSize(), position: "relative" }}
-            >
-              {virtualItems.map((virtualRow) => {
-                const item = filtered[virtualRow.index];
-                return (
-                  <div
-                    key={virtualRow.key}
-                    data-index={virtualRow.index}
-                    ref={virtualizer.measureElement}
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      transform: `translateY(${virtualRow.start}px)`,
-                    }}
-                    className="pb-2"
-                  >
-                    <Link
-                      href={`/explore/${item.id}`}
-                      className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line
-                                 hover:border-vx-border transition-colors"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-vx-text truncate">
-                          {item.srcAmount} {item.srcToken} → {item.dstToken}
-                        </div>
-                        <div className="text-xs text-vx-muted capitalize">
-                          {item.srcChain} · via {item.solver}
-                        </div>
-                      </div>
-                      <IntentStatusBadge status={item.status} />
-                      <span className="text-xs text-vx-muted num flex-shrink-0 w-16 text-right">
-                        {timeAgo(item.createdAt)}
-                      </span>
-                    </Link>
+          <>
+            <div role="row" className="flex items-center gap-4 px-4 pb-2 text-[10px] uppercase tracking-wide text-vx-dim">
+              <div role="columnheader" aria-sort={sort === "largest" ? "descending" : "none"} className="flex-1 min-w-0">
+                <button
+                  type="button"
+                  onClick={() => setSort("largest")}
+                  className="flex items-center gap-1 text-left hover:text-vx-text transition-colors"
+                >
+                  Amount
+                  {sort === "largest" && <span aria-hidden="true">↓</span>}
+                </button>
+              </div>
+              <div
+                role="columnheader"
+                aria-sort={sort === "newest" ? "descending" : sort === "oldest" ? "ascending" : "none"}
+                className="w-16 flex-shrink-0"
+              >
+                <button
+                  type="button"
+                  onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
+                  className="flex items-center justify-end gap-1 w-full text-right hover:text-vx-text transition-colors"
+                >
+                  Time
+                  {sort === "newest" && <span aria-hidden="true">↓</span>}
+                  {sort === "oldest" && <span aria-hidden="true">↑</span>}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {paginated.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/explore/${item.id}`}
+                  className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line
+                             hover:border-vx-border transition-colors"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-vx-text truncate">
+                      {item.srcAmount} {item.srcToken} → {item.dstToken}
+                    </div>
+                    <div className="text-xs text-vx-muted capitalize">
+                      {item.srcChain} · via {item.solver}
+                    </div>
                   </div>
                 );
               })}
