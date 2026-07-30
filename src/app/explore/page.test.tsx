@@ -52,6 +52,12 @@ function makeIntents(count: number): FeedItem[] {
 }
 
 describe("ExplorePage", () => {
+  beforeEach(() => {
+    useSearchParamsMock.mockReturnValue(new URLSearchParams());
+    routerReplaceMock.mockClear();
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
+  });
+
   it("shows a loading skeleton before the first fetch resolves", () => {
     useLiveIntentsMock.mockReturnValue({ intents: [], isLoading: true, error: undefined, isLive: false });
     const { container } = render(<ExplorePage />);
@@ -95,6 +101,26 @@ describe("ExplorePage", () => {
     expect(screen.getByText("0.14 WETH → USDC")).toBeInTheDocument();
     expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
     expect(screen.getByText("1 intent")).toBeInTheDocument();
+  });
+
+  it("initializes filters from URL query parameters", () => {
+    useSearchParamsMock.mockReturnValue(new URLSearchParams("status=pending&chain=base&sort=oldest"));
+    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
+    render(<ExplorePage />);
+
+    expect(screen.getByLabelText("Filter by status")).toHaveValue("pending");
+    expect(screen.getByLabelText("Filter by chain")).toHaveValue("base");
+    expect(screen.getByLabelText("Sort order")).toHaveValue("oldest");
+  });
+
+  it("updates the URL when a filter changes", async () => {
+    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
+    const user = userEvent.setup();
+    render(<ExplorePage />);
+
+    await user.selectOptions(screen.getByLabelText("Filter by status"), "pending");
+
+    expect(routerReplaceMock).toHaveBeenCalledWith("?status=pending", { scroll: false });
   });
 
   it("filters by chain, via its accessible label", async () => {
@@ -176,6 +202,19 @@ describe("ExplorePage", () => {
     useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
     render(<ExplorePage />);
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
+  });
+
+  it("shows a back-to-top control after scrolling and returns to the top", async () => {
+    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 401 });
+    const user = userEvent.setup();
+    render(<ExplorePage />);
+
+    fireEvent.scroll(window);
+    await user.click(screen.getByRole("button", { name: "Back to top" }));
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
   });
 
   it("links each row to its intent detail page", () => {

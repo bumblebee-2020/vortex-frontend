@@ -31,17 +31,27 @@ export default function ExplorePage() {
   const [page, setPage] = useState(1);
 
   const handleStatusChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) =>
-      setStatusFilter(e.target.value as IntentStatus | "all"),
-    [],
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const value = e.target.value as IntentStatus | "all";
+      setStatusFilter(value);
+      updateUrl("status", value, "all");
+    },
+    [updateUrl],
   );
   const handleChainChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => setChainFilter(e.target.value),
-    [],
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setChainFilter(e.target.value);
+      updateUrl("chain", e.target.value, "all");
+    },
+    [updateUrl],
   );
   const handleSortChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => setSort(e.target.value as SortOption),
-    [],
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const value = e.target.value as SortOption;
+      setSort(value);
+      updateUrl("sort", value, "newest");
+    },
+    [updateUrl],
   );
 
   const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
