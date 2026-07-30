@@ -8,6 +8,7 @@ import { CHAINS, SRC_TOKENS, DST_TOKENS } from "@/lib/marketData";
 import { formatCurrency, formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { MessageKey } from "@/lib/i18n";
+import type { Quote, QuoteRequest } from "@/lib/types";
 
 const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   connecting: "swap.submit.connecting",
@@ -16,13 +17,23 @@ const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   submitting: "swap.submit.submitting",
 };
 
-export function SwapCard() {
+export type SwapCardProps = {
+  initialAmount?: string;
+  previewQuote?: Quote;
+  onPreviewSubmit?: (request: QuoteRequest) => void;
+};
+
+export function SwapCard({
+  initialAmount = "",
+  previewQuote,
+  onPreviewSubmit,
+}: SwapCardProps = {}) {
   const { t } = useTranslation();
 
   const [srcChain, setSrcChain] = useState("ethereum");
   const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
   const [dstToken, setDstToken] = useState(DST_TOKENS[0]);
-  const [srcAmount, setSrcAmount] = useState("");
+  const [srcAmount, setSrcAmount] = useState(initialAmount);
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
   const chainToggleRef = useRef<HTMLButtonElement>(null);
@@ -63,11 +74,13 @@ export function SwapCard() {
 
   const debouncedAmount = useDebouncedValue(srcAmount, 500);
   const hasAmount = Boolean(debouncedAmount) && parseFloat(debouncedAmount) > 0;
-  const { quote, isLoading: quoting, error: quoteError } = useQuote(
-    hasAmount
+  const { quote: fetchedQuote, isLoading: quoteIsLoading, error: quoteError } = useQuote(
+    hasAmount && !previewQuote
       ? { srcChain, srcToken: srcToken.symbol, srcAmount: debouncedAmount, dstToken: dstToken.symbol }
       : null
   );
+  const quote = previewQuote ?? fetchedQuote;
+  const quoting = previewQuote ? false : quoteIsLoading;
 
   const dstAmount = quote
     ? parseFloat(quote.dstAmount)
@@ -82,6 +95,15 @@ export function SwapCard() {
   const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting;
 
   const handleSubmit = () => {
+    if (onPreviewSubmit) {
+      onPreviewSubmit({
+        srcChain,
+        srcToken: srcToken.symbol,
+        srcAmount,
+        dstToken: dstToken.symbol,
+      });
+      return;
+    }
     if (submission.status === "success") {
       submission.reset();
       setSrcAmount("");

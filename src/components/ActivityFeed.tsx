@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
+import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
   ethereum: "#627EEA", base: "#0052FF", polygon: "#8247E5",
@@ -72,4 +73,8 @@ export function ActivityFeed() {
       })}
     </div>
   );
+}
+
+export function ActivityFeed() {
+  return <ActivityFeedView {...useIntentFeed()} />;
 }
