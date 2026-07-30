@@ -370,7 +370,9 @@ export function SwapCard({
         {/* Quote error — falls back to an estimated rate above */}
         {quoteError && hasAmount && !quoting && (
           <p role="status" className="text-center text-[11px] text-amber-400/90 px-1">
-            {t("swap.quote.unavailable")}
+            {quoteErrorType?.kind === "no-solver"
+              ? t("swap.quote.noSolver")
+              : t("swap.quote.unavailable")}
           </p>
         )}
 

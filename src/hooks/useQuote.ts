@@ -1,7 +1,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api";
-import type { Quote, QuoteRequest } from "@/lib/types";
+import type { Quote, QuoteRequest, QuoteErrorType } from "@/lib/types";
 
 function quoteKey(params: QuoteRequest | null): string | null {
   if (!params || !params.srcAmount || parseFloat(params.srcAmount) <= 0) return null;
@@ -12,6 +12,16 @@ function quoteKey(params: QuoteRequest | null): string | null {
     dstToken: params.dstToken,
   });
   return `/quote?${search.toString()}`;
+}
+
+function classifyQuoteError(err: unknown): QuoteErrorType {
+  if (err instanceof Error) {
+    const body = err.message.toLowerCase();
+    if (body.includes("no solver available") || body.includes("no_solver_available") || body.includes("no solver found")) {
+      return { kind: "no-solver", message: err.message };
+    }
+  }
+  return { kind: "generic", message: err instanceof Error ? err.message : "Failed to fetch quote." };
 }
 
 export function useQuote(params: QuoteRequest | null) {
