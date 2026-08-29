@@ -3,16 +3,25 @@
 import { useWalletStore } from "@/store/wallet";
 import { useToastStore } from "@/store/toast";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
+import { truncateAddress } from "@/lib/stellarAddress";
 
 const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
 
-function truncateAddress(address: string) {
-  return `${address.slice(0, 4)}...${address.slice(-4)}`;
-}
-
 export function ConnectWalletButton({ compact = false }: { compact?: boolean }) {
-  const { address, isConnected, isConnecting, error, networkMismatch, notInstalled, connect, disconnect } =
-    useWalletStore();
+  const {
+    address,
+    lastKnownAddress,
+    isConnected,
+    isConnecting,
+    wasSessionCleared,
+    error,
+    errorKey,
+    networkMismatch,
+    notInstalled,
+    connect,
+    disconnect,
+  } = useWalletStore();
+  const { t } = useTranslation();
 
   const handleConnect = async () => {
     await connect();
@@ -21,6 +30,10 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
       useToastStore.getState().addToast(latestErrorKey ? t(latestErrorKey) : latestError, "error");
     }
   };
+
+  // Tooltip carries the underlying failure text; the button label itself only
+  // switches between "Connect" and "Retry".
+  const displayError = errorKey ? t(errorKey) : error;
 
   const baseClass = compact
     ? "px-3 py-1.5 text-xs rounded-lg border transition-all"
@@ -114,7 +127,11 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
               <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           )}
-          {error ? "Retry Connection" : "Connect Freighter"}
+          {wasSessionCleared && lastKnownAddress
+            ? `Reconnect ${truncateAddress(lastKnownAddress)}`
+            : error
+              ? "Retry Connection"
+              : "Connect Freighter"}
         </>
       )}
     </button>

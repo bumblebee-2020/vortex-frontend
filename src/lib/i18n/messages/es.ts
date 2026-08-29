@@ -77,6 +77,10 @@ export const es = {
   "home.chains.title": "Cadenas soportadas",
   "home.chains.stellarDestination": "Stellar (dest.)",
 
+  "footer.copyright": "© 2025 Vortex Protocol · Licencia MIT",
+  "footer.github": "GitHub",
+  "footer.discord": "Discord",
+
   "notFound.breadcrumb": "No Encontrado",
   "notFound.eyebrow": "404",
   "notFound.title": "Página no encontrada",

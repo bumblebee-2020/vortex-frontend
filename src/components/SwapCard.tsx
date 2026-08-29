@@ -94,10 +94,10 @@ export function SwapCard({
   const dstAmount = quote
     ? parseFloat(quote.dstAmount)
     : srcAmount
-      ? (parseFloat(srcAmount) * srcToken.priceUSD) / dstToken.priceUSD * 0.998
+      ? (parseFloat(srcAmount) * srcToken.priceUsd) / dstToken.priceUsd * 0.998
       : 0;
 
-  const srcValueUSD = srcAmount ? parseFloat(srcAmount) * srcToken.priceUSD : 0;
+  const srcValueUSD = srcAmount ? parseFloat(srcAmount) * srcToken.priceUsd : 0;
   const parsedSlippagePct = Math.max(0, Math.min(50, parseFloat(slippagePct) || 0));
   const minOut = dstAmount > 0
     ? (dstAmount * (1 - parsedSlippagePct / 100)).toFixed(dstToken.symbol === "XLM" ? 2 : 4)
@@ -285,7 +285,7 @@ export function SwapCard({
                     ${token.symbol === srcToken.symbol ? "bg-vx-lav-bg text-vx-lav" : "hover:bg-vx-surface text-vx-muted hover:text-vx-text"}`}
                 >
                   <span className="font-medium">{token.symbol}</span>
-                  <span className="num text-xs">${token.priceUSD.toLocaleString()}</span>
+                  <span className="num text-xs">${token.priceUsd.toLocaleString()}</span>
                 </button>
               ))}
             </div>
