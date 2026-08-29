@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { mutate } from "swr";
-import freighterApi from "@stellar/freighter-api";
+import { walletAdapter } from "@/lib/wallet";
 import { registerSolver, submitSolverRegistration } from "@/lib/api";
 import { ApiError } from "@/lib/api";
 import { useWalletStore } from "@/store/wallet";
@@ -62,7 +62,7 @@ export function useSolverRegistration() {
       const { registrationId, unsignedXdr } = await registerSolver({ address, bondUsd });
 
       setStatus("awaiting-signature");
-      const signedXdr = await freighterApi.signTransaction(unsignedXdr, {
+      const signedXdr = await walletAdapter.signTransaction(unsignedXdr, {
         network: wallet.network ?? undefined,
       });
 

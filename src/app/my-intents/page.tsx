@@ -8,6 +8,7 @@ import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { useWalletStore } from "@/store/wallet";
 import { useMyLiveIntents } from "@/hooks/useMyLiveIntents";
+import { useIntent } from "@/hooks/useIntent";
 import { CHAINS } from "@/lib/marketData";
 import { SkeletonCard } from "@/components/Skeleton";
 import type { IntentStatus } from "@/lib/types";
@@ -24,6 +25,9 @@ export default function MyIntentsPage() {
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const { intent: expandedIntent, isLoading: expandedLoading, error: expandedError } = useIntent(expandedId);
 
   const filtered = useMemo(() => {
     let result = intents;
@@ -154,26 +158,85 @@ export default function MyIntentsPage() {
               </div>
             ) : (
               <div data-address={address} data-testid="intents-list" className="space-y-2" role="list">
-                {filtered.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/explore/${item.id}`}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 active:bg-vx-surface/60 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-vx-text truncate">
-                        {item.srcAmount} {item.srcToken} → {item.dstToken}
+                {filtered.map((item) => {
+                  const isExpanded = expandedId === item.id;
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 transition-colors"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4">
+                        <Link
+                          href={`/explore/${item.id}`}
+                          className="flex-1 min-w-0 active:opacity-80 transition-opacity"
+                        >
+                          <div className="text-sm font-medium text-vx-text truncate">
+                            {item.srcAmount} {item.srcToken} → {item.dstToken}
+                          </div>
+                          <div className="text-xs text-vx-muted capitalize">
+                            {item.srcChain} · via {item.solver}
+                          </div>
+                          <IntentStatusBadge status={item.status} />
+                        </Link>
+                        <div className="self-start sm:self-center flex items-center gap-3">
+                          <IntentStatusBadge status={item.status} />
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                            aria-expanded={isExpanded}
+                            aria-controls={`intent-details-${item.id}`}
+                            aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                            className="p-1.5 rounded-md text-vx-muted hover:text-vx-text hover:bg-vx-surface transition-colors"
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`inline-block transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                            >
+                              ▾
+                            </span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-xs text-vx-muted capitalize">
-                        {item.srcChain} · via {item.solver}
-                      </div>
-                      <IntentStatusBadge status={item.status} />
+
+                      {isExpanded && (
+                        <div
+                          id={`intent-details-${item.id}`}
+                          className="px-4 pb-4 pt-0 border-t border-vx-line/60 text-sm space-y-3"
+                        >
+                          {expandedLoading ? (
+                            <div className="text-xs text-vx-muted pt-3">Loading details…</div>
+                          ) : expandedError ? (
+                            <div role="alert" className="text-xs text-vx-muted pt-3">
+                              Couldn&apos;t load details right now.
+                            </div>
+                          ) : expandedIntent ? (
+                            <div className="grid sm:grid-cols-2 gap-3 pt-3">
+                              <div className="bg-vx-surface/40 rounded-lg p-3">
+                                <div className="eyebrow mb-1">Minimum out</div>
+                                <div className="text-xs text-vx-text num">
+                                  {expandedIntent.minOut} {expandedIntent.dstToken}
+                                </div>
+                              </div>
+                              <div className="bg-vx-surface/40 rounded-lg p-3">
+                                <div className="eyebrow mb-1">Destination address</div>
+                                <div className="text-xs text-vx-text num truncate">{expandedIntent.dstAddress}</div>
+                              </div>
+                              {expandedIntent.txHash && (
+                                <div className="bg-vx-surface/40 rounded-lg p-3 sm:col-span-2">
+                                  <div className="eyebrow mb-1">Transaction hash</div>
+                                  <div className="text-xs text-vx-text num truncate">{expandedIntent.txHash}</div>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                          <Link href={`/explore/${item.id}`} className="inline-block text-xs text-vx-sage hover:underline">
+                            View full details →
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                    <div className="self-start sm:self-center">
-                      <IntentStatusBadge status={item.status} />
-                    </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
