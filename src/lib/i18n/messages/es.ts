@@ -36,6 +36,7 @@ export const es = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Tasa",
   "swap.quote.unavailable": "Cotización en tiempo real no disponible — mostrando tasa estimada.",
+  "swap.quote.staleWarning": "La cotización está desactualizada. Espera a que se actualice antes de enviar.",
   "swap.quote.highPriceImpactWarning": "Impacto de precio alto por encima de {threshold}% — revisa antes de intercambiar.",
 
   "swap.submit.connecting": "Conectando billetera…",
@@ -47,6 +48,10 @@ export const es = {
   "swap.submit.enterAmount": "Ingresa un monto",
   "swap.submit.cta": "Intercambiar {amount} {srcToken} → {dstToken}",
   "swap.submit.retryCta": "Reintentar: Intercambiar {amount} {srcToken} → {dstToken}",
+
+  "swap.destination.label": "Dirección de destino",
+  "swap.destination.placeholder": "G...",
+  "swap.destination.invalidAddress": "Ingresa una dirección de Stellar válida (empieza con G).",
 
   "swap.disclaimer": "El swap se liquida directamente en Stellar · Sin tokens envueltos · Protegido por bonos de solver",
 

@@ -157,7 +157,7 @@ describe("Nav", () => {
       renderNav({ variant: "home" });
 
       await user.click(screen.getByLabelText("Open menu"));
-      const mobileMyIntentsLink = screen.getAllByRole("link", { name: "My Intents" })[1];
+      const mobileMyIntentsLink = screen.getAllByRole("link", { name: "My Intents" })[1]!;
       await user.click(mobileMyIntentsLink);
 
       expect(screen.getByLabelText("Open menu")).toBeInTheDocument();

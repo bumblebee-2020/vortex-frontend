@@ -1,17 +1,13 @@
-/**
- * /solve — dynamically imported to keep it out of the initial homepage
- * bundle. Heavy dependencies (SWR hooks for solvers + open intents,
- * registration form) only load when the user navigates here.
- */
-import dynamic from "next/dynamic";
-import { SkeletonCard } from "@/components/Skeleton";
+"use client";
+
+import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { useSolvers } from "@/hooks/useSolvers";
 import { useOpenIntents } from "@/hooks/useOpenIntents";
 import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
-import { IntentListSkeleton, SolverListSkeleton } from "@/components/Skeleton";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { getMessage } from "@/i18n/messages";
@@ -34,16 +30,11 @@ const REGISTRATION_LABEL: Record<string, string> = {
 };
 
 export default function SolvePage() {
-  const [tab, setTab] = useState<"leaderboard" | "intents" | "register">(
-    "leaderboard"
-  );
-  const { solvers, isLoading: solversLoading, error: solversError } =
-    useSolvers();
-  const {
-    intents: openIntents,
-    isLoading: intentsLoading,
-    error: intentsError,
-  } = useOpenIntents();
+  const [tab, setTab] = useState<"leaderboard" | "intents" | "register">("leaderboard");
+  const [solverSort, setSolverSort] = useState<SolverSort>("volumeUsd");
+  const [solverSortAscending, setSolverSortAscending] = useState(false);
+  const { solvers, isLoading: solversLoading, error: solversError } = useSolvers();
+  const { intents: openIntents, isLoading: intentsLoading, error: intentsError } = useOpenIntents();
   const { accept, acceptingId, error: acceptError } = useAcceptIntent();
 
   const [address, setAddress] = useState("");
@@ -129,12 +120,8 @@ export default function SolvePage() {
             },
           ].map((item) => (
             <div key={item.n} className="card p-4 sm:p-5">
-              <div className="font-mono text-xs text-vx-sage mb-2 sm:mb-3">
-                {item.n}
-              </div>
-              <h3 className="text-xs sm:text-sm font-semibold text-vx-text mb-2">
-                {item.title}
-              </h3>
+              <div className="font-mono text-xs text-vx-sage mb-2 sm:mb-3">{item.n}</div>
+              <h3 className="text-xs sm:text-sm font-semibold text-vx-text mb-2">{item.title}</h3>
               <p className="text-xs text-vx-muted leading-relaxed">{item.body}</p>
             </div>
           ))}
@@ -182,10 +169,7 @@ export default function SolvePage() {
             {solversLoading && solvers.length === 0 ? (
               <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-16 bg-vx-surface/40 rounded-lg animate-pulse"
-                  />
+                  <div key={i} className="h-16 bg-vx-surface/40 rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : solversError ? (
@@ -223,9 +207,10 @@ export default function SolvePage() {
                 </div>
                 <div className="divide-y divide-vx-line">
                 {sortedSolvers.map((s, i) => (
-                  <div
+                  <Link
                     key={s.address}
-                    className="px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors"
+                    href={`/solve/${s.address}`}
+                    className="block px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-inset"
                   >
                     <div className="flex flex-col gap-3">
                       <div className="flex items-start gap-3 min-w-0">
@@ -233,12 +218,8 @@ export default function SolvePage() {
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-vx-text truncate">
-                            {s.name}
-                          </div>
-                          <div className="num text-xs text-vx-muted truncate">
-                            {s.address}
-                          </div>
+                          <div className="text-sm font-semibold text-vx-text truncate">{s.name}</div>
+                          <div className="num text-xs text-vx-muted truncate">{s.address}</div>
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {s.chains.map((c) => (
                               <span
@@ -290,7 +271,7 @@ export default function SolvePage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
                 </div>
               </>
@@ -312,9 +293,7 @@ export default function SolvePage() {
               </span>
               <span className="chip bg-vx-sage-bg text-vx-sage text-[10px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-vx-sage animate-pulse" />
-                {getMessage("solve.intents.available", {
-                  count: openIntents.length,
-                })}
+                {getMessage("solve.intents.available", { count: openIntents.length })}
               </span>
             </div>
 
@@ -327,10 +306,7 @@ export default function SolvePage() {
             {intentsLoading && openIntents.length === 0 ? (
               <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-14 bg-vx-surface/40 rounded-lg animate-pulse"
-                  />
+                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : intentsError ? (
@@ -410,12 +386,10 @@ export default function SolvePage() {
                   onChange={(e) => setAddress(e.target.value.trim())}
                   placeholder={getMessage("solve.register.addressPlaceholder")}
                   aria-invalid={Boolean(addressError)}
-                  aria-describedby={
-                    addressError ? "solver-address-error" : undefined
-                  }
+                  aria-describedby={addressError ? "solver-address-error" : undefined}
                   className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
                              text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none
-                             focus:border-vx-sage/50 focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-card transition-colors"
+                             focus:border-vx-sage/50 transition-colors"
                 />
                 {addressError && (
                   <p id="solver-address-error" role="alert" className="text-xs text-red-400 mt-1.5">
@@ -438,7 +412,7 @@ export default function SolvePage() {
                   aria-describedby={bondError ? "solver-bond-error" : undefined}
                   className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
                              text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none
-                             focus:border-vx-sage/50 focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-card transition-colors"
+                             focus:border-vx-sage/50 transition-colors"
                 />
                 {bondError && (
                   <p id="solver-bond-error" role="alert" className="text-xs text-red-400 mt-1.5">
@@ -479,10 +453,5 @@ export default function SolvePage() {
 
       <Footer />
     </div>
-  ),
-  ssr: false,
-});
-
-export default function SolvePage() {
-  return <SolvePageClient />;
+  );
 }

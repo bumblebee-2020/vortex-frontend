@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
-import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
   ethereum: "#627EEA", base: "#0052FF", polygon: "#8247E5",
@@ -14,7 +13,6 @@ const CHAIN_COLOR: Record<string, string> = {
 const FEED_LIMIT = 6;
 
 export function ActivityFeed() {
-  const { t } = useTranslation();
   const { items, isLoading, error, isLive } = useIntentFeed();
 
   /**
@@ -24,23 +22,28 @@ export function ActivityFeed() {
   const visibleItems = useMemo(() => items.slice(0, FEED_LIMIT), [items]);
 
   if (isLoading && items.length === 0) {
-    return <FeedSkeleton count={3} />;
+    return (
+      <div className="space-y-2">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-[52px] bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
+        ))}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
-      <div role="status" className="sr-only">{announcement}</div>
       <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1">
         <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
-        {isLive ? t("activityFeed.status.live") : t("activityFeed.status.polling")}
+        {isLive ? "Live" : "Polling"}
       </div>
       {error && items.length === 0 ? (
         <div className="p-4 text-center text-xs text-vx-muted bg-vx-surface/40 rounded-lg border border-vx-line">
-          {t("activityFeed.error.unavailable")}
+          Live feed unavailable right now.
         </div>
       ) : items.length === 0 ? (
         <div className="p-4 text-center text-xs text-vx-muted bg-vx-surface/40 rounded-lg border border-vx-line">
-          {t("activityFeed.empty")}
+          No fills yet.
         </div>
       ) : null}
       {visibleItems.map((item) => {
@@ -57,10 +60,7 @@ export function ActivityFeed() {
                 {item.srcAmount} {item.srcToken} → {item.dstToken}
               </div>
               <div className="text-[10px] text-vx-muted capitalize">
-                {t("activityFeed.item.route", {
-                  chain: item.srcChain,
-                  solver: item.solver,
-                })}
+                {item.srcChain} · via {item.solver}
               </div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -78,8 +78,4 @@ export function ActivityFeed() {
       })}
     </div>
   );
-}
-
-export function ActivityFeed() {
-  return <ActivityFeedView {...useIntentFeed()} />;
 }

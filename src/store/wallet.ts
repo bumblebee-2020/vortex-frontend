@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import freighterApi from "@stellar/freighter-api";
-import { DEFAULT_LOCALE, translate } from "@/lib/i18n";
 
 export type WalletErrorKey =
   | "wallet.error.freighterUnavailable"
@@ -16,8 +15,21 @@ export type WalletState = {
   network: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  /**
+   * `true` when a previously-persisted session could not be silently restored
+   * on load (the extension no longer recognises this site). The UI uses it to
+   * show a "reconnect" prompt with the last-known address rather than a plain
+   * connect CTA.
+   */
+  wasSessionCleared: boolean;
   /** Generic connection error message (e.g. user declined access). */
   error: string | null;
+  /**
+   * Stable i18n key for the connection error, when one applies (currently only
+   * the "Freighter not installed" case). `null` for generic/unknown failures,
+   * where `error` carries the raw message instead.
+   */
+  errorKey: WalletErrorKey | null;
   /**
    * `true` when the wallet is connected but on a different network than the
    * one configured via NEXT_PUBLIC_NETWORK. The wallet is still treated as
@@ -46,11 +58,12 @@ export const useWalletStore = create<WalletState>()(
       isConnecting: false,
       wasSessionCleared: false,
       error: null,
+      errorKey: null,
       networkMismatch: false,
       notInstalled: false,
 
       connect: async () => {
-        set({ isConnecting: true, error: null, networkMismatch: false, notInstalled: false });
+        set({ isConnecting: true, error: null, errorKey: null, networkMismatch: false, notInstalled: false });
         try {
           const isAppConnected = await freighterApi.isConnected();
           if (!isAppConnected) {
@@ -60,6 +73,7 @@ export const useWalletStore = create<WalletState>()(
               isConnected: false,
               isConnecting: false,
               error: "Freighter extension is not installed or enabled.",
+              errorKey: "wallet.error.freighterUnavailable",
               notInstalled: true,
             });
             return;
@@ -77,14 +91,11 @@ export const useWalletStore = create<WalletState>()(
             isConnecting: false,
             wasSessionCleared: false,
             error: null,
+            errorKey: null,
             networkMismatch: mismatch,
             notInstalled: false,
           });
         } catch (err) {
-          const externalError = err instanceof Error ? err.message : null;
-          if (!externalError) {
-            errorKey = "wallet.error.connectFailed";
-          }
           set({
             address: null,
             network: null,
@@ -92,6 +103,7 @@ export const useWalletStore = create<WalletState>()(
             isConnecting: false,
             wasSessionCleared: false,
             error: err instanceof Error ? err.message : "Failed to connect wallet.",
+            errorKey: null,
             networkMismatch: false,
             notInstalled: false,
           });
@@ -106,7 +118,9 @@ export const useWalletStore = create<WalletState>()(
           isConnecting: false,
           wasSessionCleared: false,
           error: null,
+          errorKey: null,
           networkMismatch: false,
+          notInstalled: false,
         });
       },
 
@@ -121,7 +135,17 @@ export const useWalletStore = create<WalletState>()(
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());
           if (!allowed) {
-            set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false, notInstalled: false });
+            set({
+              address: null,
+              lastKnownAddress: previousAddress,
+              network: null,
+              isConnected: false,
+              wasSessionCleared: Boolean(previousAddress),
+              error: null,
+              errorKey: null,
+              networkMismatch: false,
+              notInstalled: false,
+            });
             return;
           }
 
@@ -129,9 +153,29 @@ export const useWalletStore = create<WalletState>()(
           const network = await freighterApi.getNetwork();
           const mismatch = network.toUpperCase() !== EXPECTED_NETWORK;
 
-          set({ address, network, isConnected: true, error: null, networkMismatch: mismatch, notInstalled: false });
+          set({
+            address,
+            lastKnownAddress: address,
+            network,
+            isConnected: true,
+            wasSessionCleared: false,
+            error: null,
+            errorKey: null,
+            networkMismatch: mismatch,
+            notInstalled: false,
+          });
         } catch {
-          set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false, notInstalled: false });
+          set({
+            address: null,
+            lastKnownAddress: previousAddress,
+            network: null,
+            isConnected: false,
+            wasSessionCleared: Boolean(previousAddress),
+            error: null,
+            errorKey: null,
+            networkMismatch: false,
+            notInstalled: false,
+          });
         }
       },
     }),
