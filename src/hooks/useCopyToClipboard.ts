@@ -1,13 +1,15 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useToastStore } from "@/store/toast";
 
 export function useCopyToClipboard() {
   const addToast = useToastStore((s) => s.addToast);
+  const [copied, setCopied] = useState(false);
 
   const copy = useCallback(
     async (text: string, successMessage = "Copied to clipboard") => {
       try {
         await navigator.clipboard.writeText(text);
+        setCopied(true);
         addToast(successMessage, "success");
         return true;
       } catch {
@@ -18,5 +20,5 @@ export function useCopyToClipboard() {
     [addToast]
   );
 
-  return { copy };
+  return { copy, copied };
 }

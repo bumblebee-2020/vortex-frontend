@@ -4,10 +4,13 @@ import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { CopyButton } from "@/components/CopyButton";
+import { SkeletonCard } from "@/components/Skeleton";
 import { useSolver } from "@/hooks/useSolver";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
+import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 
 function truncateAddress(address: string) {
   if (address.length <= 12) return address;

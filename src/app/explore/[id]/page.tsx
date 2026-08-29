@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
-import { Nav } from "@/components/Nav";
+import { CopyButton } from "@/components/CopyButton";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { Nav } from "@/components/Nav";
 import { SkeletonDetailCard } from "@/components/Skeleton";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { useIntent } from "@/hooks/useIntent";
 import { timeAgo } from "@/lib/time";
 
@@ -27,6 +28,9 @@ function deadlineLabel(deadline: string) {
 
 export default function IntentDetailPage({ params }: { params: { id: string } }) {
   const { intent, isLoading, error } = useIntent(params.id);
+  const { copy } = useCopyToClipboard();
+  const [txHashCopied, setTxHashCopied] = useState(false);
+
   const isExpired = useMemo(() => {
     if (!intent || intent.status !== "pending" || !intent.deadline) return false;
     return new Date(intent.deadline).getTime() <= Date.now();
@@ -97,10 +101,18 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-xs text-vx-muted num">{truncateAddress(intent.txHash)}</span>
                   <button
-                    onClick={() => copy(intent.txHash)}
+                    onClick={async () => {
+                      const txHash = intent.txHash;
+                      if (!txHash) return;
+                      const didCopy = await copy(txHash);
+                      setTxHashCopied(didCopy);
+                      if (didCopy) {
+                        window.setTimeout(() => setTxHashCopied(false), 1200);
+                      }
+                    }}
                     className="text-xs text-vx-sage hover:underline"
                   >
-                    {copied ? "Copied" : "Copy"}
+                    {txHashCopied ? "Copied" : "Copy"}
                   </button>
                   <a
                     href={`https://stellar.expert/explorer/${NETWORK}/tx/${intent.txHash}`}

@@ -16,8 +16,10 @@ export type WalletState = {
   network: string | null;
   isConnected: boolean;
   isConnecting: boolean;
+  wasSessionCleared: boolean;
   /** Generic connection error message (e.g. user declined access). */
   error: string | null;
+  errorKey: WalletErrorKey | null;
   /**
    * `true` when the wallet is connected but on a different network than the
    * one configured via NEXT_PUBLIC_NETWORK. The wallet is still treated as
@@ -46,11 +48,18 @@ export const useWalletStore = create<WalletState>()(
       isConnecting: false,
       wasSessionCleared: false,
       error: null,
+      errorKey: null,
       networkMismatch: false,
       notInstalled: false,
 
       connect: async () => {
-        set({ isConnecting: true, error: null, networkMismatch: false, notInstalled: false });
+        set({
+          isConnecting: true,
+          error: null,
+          errorKey: null,
+          networkMismatch: false,
+          notInstalled: false,
+        });
         try {
           const isAppConnected = await freighterApi.isConnected();
           if (!isAppConnected) {
@@ -59,7 +68,9 @@ export const useWalletStore = create<WalletState>()(
               network: null,
               isConnected: false,
               isConnecting: false,
+              wasSessionCleared: false,
               error: "Freighter extension is not installed or enabled.",
+              errorKey: "wallet.error.freighterUnavailable",
               notInstalled: true,
             });
             return;
@@ -77,21 +88,21 @@ export const useWalletStore = create<WalletState>()(
             isConnecting: false,
             wasSessionCleared: false,
             error: null,
+            errorKey: null,
             networkMismatch: mismatch,
             notInstalled: false,
           });
         } catch (err) {
           const externalError = err instanceof Error ? err.message : null;
-          if (!externalError) {
-            errorKey = "wallet.error.connectFailed";
-          }
+          const message = externalError ?? "Failed to connect wallet.";
           set({
             address: null,
             network: null,
             isConnected: false,
             isConnecting: false,
             wasSessionCleared: false,
-            error: err instanceof Error ? err.message : "Failed to connect wallet.",
+            error: message,
+            errorKey: externalError ? null : "wallet.error.connectFailed",
             networkMismatch: false,
             notInstalled: false,
           });
@@ -106,6 +117,7 @@ export const useWalletStore = create<WalletState>()(
           isConnecting: false,
           wasSessionCleared: false,
           error: null,
+          errorKey: null,
           networkMismatch: false,
         });
       },
@@ -121,7 +133,16 @@ export const useWalletStore = create<WalletState>()(
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());
           if (!allowed) {
-            set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false, notInstalled: false });
+            set({
+              address: null,
+              network: null,
+              isConnected: false,
+              wasSessionCleared: true,
+              error: null,
+              errorKey: null,
+              networkMismatch: false,
+              notInstalled: false,
+            });
             return;
           }
 
@@ -129,9 +150,27 @@ export const useWalletStore = create<WalletState>()(
           const network = await freighterApi.getNetwork();
           const mismatch = network.toUpperCase() !== EXPECTED_NETWORK;
 
-          set({ address, network, isConnected: true, error: null, networkMismatch: mismatch, notInstalled: false });
+          set({
+            address,
+            network,
+            isConnected: true,
+            wasSessionCleared: false,
+            error: null,
+            errorKey: null,
+            networkMismatch: mismatch,
+            notInstalled: false,
+          });
         } catch {
-          set({ address: null, network: null, isConnected: false, error: null, networkMismatch: false, notInstalled: false });
+          set({
+            address: null,
+            network: null,
+            isConnected: false,
+            wasSessionCleared: false,
+            error: null,
+            errorKey: null,
+            networkMismatch: false,
+            notInstalled: false,
+          });
         }
       },
     }),
