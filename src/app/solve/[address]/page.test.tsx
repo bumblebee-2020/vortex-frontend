@@ -550,4 +550,4 @@ describe("SolverDetailPage", () => {
     const skeletons = screen.queryAllByTestId("skeleton");
     expect(skeletons.length).toBe(0);
   });
-});
+});});

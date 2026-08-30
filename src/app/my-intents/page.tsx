@@ -10,10 +10,26 @@ import { useWalletStore } from "@/store/wallet";
 import { useMyLiveIntents } from "@/hooks/useMyLiveIntents";
 import { CHAINS } from "@/lib/marketData";
 import { SkeletonCard } from "@/components/Skeleton";
-import type { IntentStatus } from "@/lib/types";
+import { buildIntentsCsv, downloadCsv } from "@/lib/csv";
+import type { FeedItem, IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
 const PAGE_SIZE = 10;
+
+/**
+ * Build a homepage URL that pre-fills SwapCard with an intent's parameters.
+ * Destination address is intentionally NOT carried over (stale/unintended
+ * destination risk — the user must enter it fresh).
+ */
+function swapAgainHref(item: FeedItem): string {
+  const params = new URLSearchParams({
+    srcChain: item.srcChain,
+    srcToken: item.srcToken,
+    amount: item.srcAmount,
+    dstToken: item.dstToken,
+  });
+  return `/?${params.toString()}`;
+}
 
 export default function MyIntentsPage() {
   const address = useWalletStore((s) => s.address);
@@ -153,27 +169,104 @@ export default function MyIntentsPage() {
                 No intents match your filters.
               </div>
             ) : (
-              <div data-address={address} data-testid="intents-list" className="space-y-2" role="list">
-                {filtered.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/explore/${item.id}`}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 active:bg-vx-surface/60 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-vx-text truncate">
-                        {item.srcAmount} {item.srcToken} → {item.dstToken}
-                      </div>
-                      <div className="text-xs text-vx-muted capitalize">
-                        {item.srcChain} · via {item.solver}
-                      </div>
-                      <IntentStatusBadge status={item.status} />
-                    </div>
-                    <div className="self-start sm:self-center">
-                      <IntentStatusBadge status={item.status} />
-                    </div>
-                  </Link>
-                ))}
+              /*
+                Native <table> so screen readers announce column headers and allow
+                table-navigation mode. Visual design is unchanged — cells use the
+                same spacing and colours as the previous card-stack layout.
+              */
+              <div className="overflow-x-auto rounded-lg border border-vx-line">
+                <table
+                  data-address={address}
+                  data-testid="intents-list"
+                  className="w-full border-collapse"
+                >
+                  <thead>
+                    <tr className="bg-vx-surface/50 border-b border-vx-line">
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-vx-muted uppercase tracking-wide">
+                        Swap
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-vx-muted uppercase tracking-wide">
+                        Chain · Solver
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-vx-muted uppercase tracking-wide">
+                        Status
+                      </th>
+                      <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-vx-muted uppercase tracking-wide">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-vx-line">
+                    {paginated.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="bg-vx-surface/40 hover:bg-vx-surface/60 transition-colors"
+                      >
+                        <td className="px-4 py-4">
+                          <Link
+                            href={`/explore/${item.id}`}
+                            className="block text-sm font-medium text-vx-text truncate max-w-[220px]
+                                       focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2
+                                       focus:ring-offset-vx-ink rounded"
+                          >
+                            {item.srcAmount} {item.srcToken} → {item.dstToken}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-4 text-xs text-vx-muted capitalize whitespace-nowrap">
+                          {item.srcChain} · via {item.solver}
+                        </td>
+                        <td className="px-4 py-4">
+                          <IntentStatusBadge status={item.status} />
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          {/* Swap again — carries source chain/token/amount + dst token;
+                              destination address is intentionally left blank so the user
+                              must enter a fresh one (never reuse a stale destination). */}
+                          <Link
+                            href={swapAgainHref(item)}
+                            data-testid="swap-again-link"
+                            aria-label={`Swap again: ${item.srcAmount} ${item.srcToken} to ${item.dstToken}`}
+                            className="inline-block px-2.5 py-1 rounded-lg border border-vx-sage/30 text-vx-sage
+                                       text-[11px] font-semibold hover:bg-vx-sage/10 active:bg-vx-sage/20
+                                       transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage
+                                       focus:ring-offset-2 focus:ring-offset-vx-ink whitespace-nowrap"
+                          >
+                            Swap again
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {pageCount > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-vx-border text-vx-muted
+                             hover:text-vx-text hover:border-vx-sage/30 disabled:opacity-40
+                             disabled:cursor-not-allowed transition-all"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-vx-muted num">
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={page === pageCount}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-vx-border text-vx-muted
+                             hover:text-vx-text hover:border-vx-sage/30 disabled:opacity-40
+                             disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                </button>
               </div>
             )}
           </>

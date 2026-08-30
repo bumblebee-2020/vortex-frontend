@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { SkeletonCard } from "@/components/Skeleton";
 import { useSolvers } from "@/hooks/useSolvers";
 import { useOpenIntents } from "@/hooks/useOpenIntents";
 import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
+import { useLocalStorageDraft } from "@/hooks/useLocalStorageDraft";
+import { useWalletStore } from "@/store/wallet";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { getMessage } from "@/i18n/messages";
@@ -21,6 +23,12 @@ const usdCompact = (value: number) =>
 
 const MIN_BOND_USD = 50;
 
+/** Shape of the persisted registration draft. */
+type RegistrationDraft = {
+  address: string;
+  bond: string;
+};
+
 const REGISTRATION_LABEL: Record<string, string> = {
   connecting: getMessage("solve.register.states.connecting"),
   building: getMessage("solve.register.states.building"),
@@ -34,10 +42,36 @@ export default function SolvePageClient() {
   const { intents: openIntents, isLoading: intentsLoading, error: intentsError } = useOpenIntents();
   const { accept, acceptingId, error: acceptError } = useAcceptIntent();
 
-  const [address, setAddress] = useState("");
-  const [bond, setBond] = useState("");
+  // Draft persistence — scoped to the currently connected wallet so that
+  // switching wallets never silently restores the wrong address.
+  const connectedAddress = useWalletStore((s) => s.address);
+  const [draft, setDraft, clearDraft] = useLocalStorageDraft<RegistrationDraft>(
+    "vortex:solver-registration-draft",
+    connectedAddress ?? null,
+  );
+
+  const [address, setAddress] = useState(draft?.address ?? "");
+  const [bond, setBond] = useState(draft?.bond ?? "");
+
+  // Sync form fields into the draft whenever they change.
+  const handleAddressChange = (value: string) => {
+    setAddress(value);
+    setDraft({ address: value, bond });
+  };
+  const handleBondChange = (value: string) => {
+    setBond(value);
+    setDraft({ address, bond: value });
+  };
+
   const registration = useSolverRegistration();
   const isRegistering = registration.status in REGISTRATION_LABEL;
+
+  // Clear draft after successful submission.
+  useEffect(() => {
+    if (registration.status === "success") {
+      clearDraft();
+    }
+  }, [registration.status, clearDraft]);
 
   const addressError =
     address && !isValidStellarPublicKey(address)
@@ -55,6 +89,7 @@ export default function SolvePageClient() {
       registration.reset();
       setAddress("");
       setBond("");
+      clearDraft();
       return;
     }
     if (!canRegister) return;
@@ -330,7 +365,7 @@ export default function SolvePageClient() {
                   id="solver-address"
                   type="text"
                   value={address}
-                  onChange={(e) => setAddress(e.target.value.trim())}
+                  onChange={(e) => handleAddressChange(e.target.value.trim())}
                   placeholder={getMessage("solve.register.addressPlaceholder")}
                   aria-invalid={Boolean(addressError)}
                   aria-describedby={addressError ? "solver-address-error" : undefined}
@@ -353,7 +388,7 @@ export default function SolvePageClient() {
                   id="solver-bond"
                   type="number"
                   value={bond}
-                  onChange={(e) => setBond(e.target.value)}
+                  onChange={(e) => handleBondChange(e.target.value)}
                   placeholder={getMessage("solve.register.bondPlaceholder")}
                   aria-invalid={Boolean(bondError)}
                   aria-describedby={bondError ? "solver-bond-error" : undefined}

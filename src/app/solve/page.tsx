@@ -479,10 +479,5 @@ export default function SolvePage() {
 
       <Footer />
     </div>
-  ),
-  ssr: false,
-});
-
-export default function SolvePage() {
-  return <SolvePageClient />;
+  );
 }

@@ -24,20 +24,51 @@ const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
 
 export type SwapCardProps = {
   initialAmount?: string;
+  /** Pre-select the source chain (must be a valid CHAINS id; falls back to "ethereum"). */
+  initialChain?: string;
+  /** Pre-select the source token symbol on the given chain (falls back to that chain's first token). */
+  initialSrcToken?: string;
+  /** Pre-select the destination token symbol (must be in DST_TOKENS; falls back to the first). */
+  initialDstToken?: string;
   previewQuote?: Quote;
   onPreviewSubmit?: (request: QuoteRequest) => void;
 };
 
+/** Resolve a chain id from an untrusted string, falling back to "ethereum". */
+function resolveChain(raw: string | undefined): string {
+  if (!raw) return "ethereum";
+  const found = CHAINS.find(c => c.id === raw);
+  return found ? found.id : "ethereum";
+}
+
+/** Resolve a src token for a given chain, falling back to the chain's first token. */
+function resolveSrcToken(chainId: string, symbol: string | undefined) {
+  const tokens = SRC_TOKENS[chainId] ?? SRC_TOKENS["ethereum"] ?? [];
+  const first = tokens[0] ?? SRC_TOKENS["ethereum"]![0]!;
+  if (!symbol) return first;
+  return tokens.find(t => t.symbol === symbol) ?? first;
+}
+
+/** Resolve a dst token, falling back to the first available. */
+function resolveDstToken(symbol: string | undefined) {
+  if (!symbol) return DST_TOKENS[0];
+  return DST_TOKENS.find(t => t.symbol === symbol) ?? DST_TOKENS[0];
+}
+
 export function SwapCard({
   initialAmount = "",
+  initialChain,
+  initialSrcToken,
+  initialDstToken,
   previewQuote,
   onPreviewSubmit,
 }: SwapCardProps = {}) {
   const { t } = useTranslation();
 
-  const [srcChain, setSrcChain] = useState("ethereum");
-  const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
-  const [dstToken, setDstToken] = useState(DST_TOKENS[0]);
+  const resolvedChain = resolveChain(initialChain);
+  const [srcChain, setSrcChain] = useState(resolvedChain);
+  const [srcToken, setSrcToken] = useState(() => resolveSrcToken(resolvedChain, initialSrcToken));
+  const [dstToken, setDstToken] = useState(() => resolveDstToken(initialDstToken));
   const [srcAmount, setSrcAmount] = useState(initialAmount);
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);

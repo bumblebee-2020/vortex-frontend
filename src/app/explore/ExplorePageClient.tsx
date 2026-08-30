@@ -132,28 +132,59 @@ export default function ExplorePageClient() {
           </div>
         ) : (
           <>
-            <div className="space-y-2">
-              {paginated.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/explore/${item.id}`}
-                  className="flex items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line
-                             hover:border-vx-border transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-vx-text truncate">
-                      {item.srcAmount} {item.srcToken} → {item.dstToken}
-                    </div>
-                    <div className="text-xs text-vx-muted capitalize">
-                      {item.srcChain} · via {item.solver}
-                    </div>
-                  </div>
-                  <IntentStatusBadge status={item.status} />
-                  <span className="text-xs text-vx-muted num flex-shrink-0 w-16 text-right">
-                    {timeAgo(item.createdAt)}
-                  </span>
-                </Link>
-              ))}
+            {/*
+              Native <table> so screen readers announce column headers, row/column
+              counts, and allow table-navigation mode.
+              Visual layout is preserved via display:block tricks on narrow viewports
+              if needed, but the semantic structure stays table-based.
+            */}
+            <div className="overflow-x-auto rounded-lg border border-vx-line">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-vx-surface/50 border-b border-vx-line">
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-vx-muted uppercase tracking-wide">
+                      Swap
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-vx-muted uppercase tracking-wide">
+                      Chain · Solver
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-semibold text-vx-muted uppercase tracking-wide">
+                      Status
+                    </th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-semibold text-vx-muted uppercase tracking-wide">
+                      Age
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-vx-line">
+                  {paginated.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="bg-vx-surface/40 hover:bg-vx-surface/60 transition-colors"
+                    >
+                      <td className="px-4 py-4">
+                        <Link
+                          href={`/explore/${item.id}`}
+                          className="block text-sm font-medium text-vx-text truncate max-w-[200px]
+                                     focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2
+                                     focus:ring-offset-vx-ink rounded"
+                        >
+                          {item.srcAmount} {item.srcToken} → {item.dstToken}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-4 text-xs text-vx-muted capitalize whitespace-nowrap">
+                        {item.srcChain} · via {item.solver}
+                      </td>
+                      <td className="px-4 py-4">
+                        <IntentStatusBadge status={item.status} />
+                      </td>
+                      <td className="px-4 py-4 text-xs text-vx-muted num text-right whitespace-nowrap">
+                        {timeAgo(item.createdAt)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
             {pageCount > 1 && (
