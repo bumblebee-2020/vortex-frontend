@@ -551,3 +551,4 @@ describe("SolverDetailPage", () => {
     expect(skeletons.length).toBe(0);
   });
 });
+});

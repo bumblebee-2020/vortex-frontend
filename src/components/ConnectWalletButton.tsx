@@ -3,6 +3,7 @@
 import { useWalletStore } from "@/store/wallet";
 import { useToastStore } from "@/store/toast";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
+import { QrCode } from "./QrCode";
 
 const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
 
@@ -39,6 +40,12 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
           <span aria-hidden="true" className="group-hover:hidden group-focus-visible:hidden">{truncateAddress(address)}</span>
           <span aria-hidden="true" className="hidden group-hover:inline group-focus-visible:inline">Disconnect</span>
         </button>
+
+        <QrCode
+          value={address}
+          label={`QR code for wallet address ${truncateAddress(address)}`}
+          size={160}
+        />
 
         {networkMismatch && (
           <p

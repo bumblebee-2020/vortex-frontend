@@ -21,6 +21,32 @@ const usdCompact = (value: number) =>
 
 const MIN_BOND_USD = 50;
 
+type SortKey = "fills" | "volumeUsd" | "avgFillTimeSeconds" | "successRatePct";
+type SortDir = "asc" | "desc" | "none";
+
+function SortIcon({ direction }: { direction: SortDir }) {
+  return (
+    <svg aria-hidden="true" className="w-3 h-3 flex-shrink-0" viewBox="0 0 12 12" fill="none">
+      {/* Up arrow */}
+      <path
+        d="M6 2L4 5h4L6 2z"
+        fill={direction === "asc" ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth={direction === "asc" ? 0 : 1}
+        opacity={direction === "asc" ? 1 : 0.3}
+      />
+      {/* Down arrow */}
+      <path
+        d="M6 10L4 7h4L6 10z"
+        fill={direction === "desc" ? "currentColor" : "none"}
+        stroke="currentColor"
+        strokeWidth={direction === "desc" ? 0 : 1}
+        opacity={direction === "desc" ? 1 : 0.3}
+      />
+    </svg>
+  );
+}
+
 const REGISTRATION_LABEL: Record<string, string> = {
   connecting: getMessage("solve.register.states.connecting"),
   building: getMessage("solve.register.states.building"),
@@ -33,6 +59,9 @@ export default function SolvePageClient() {
   const { solvers, isLoading: solversLoading, error: solversError } = useSolvers();
   const { intents: openIntents, isLoading: intentsLoading, error: intentsError } = useOpenIntents();
   const { accept, acceptingId, error: acceptError } = useAcceptIntent();
+
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("none");
 
   const [address, setAddress] = useState("");
   const [bond, setBond] = useState("");
@@ -49,6 +78,31 @@ export default function SolvePageClient() {
       : null;
   const canRegister =
     Boolean(address) && Boolean(bond) && !addressError && !bondError && !isRegistering;
+
+  const sortedSolvers = [...solvers].sort((a, b) => {
+    if (!sortKey || sortDir === "none") return 0;
+    const aVal = a[sortKey];
+    const bVal = b[sortKey];
+    // Stable numeric comparison
+    if (typeof aVal === "number" && typeof bVal === "number") {
+      return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+    }
+    return 0;
+  });
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey !== key) {
+      setSortKey(key);
+      setSortDir("asc");
+    } else if (sortDir === "asc") {
+      setSortDir("desc");
+    } else if (sortDir === "desc") {
+      setSortDir("none");
+      setSortKey(null);
+    } else {
+      setSortDir("asc");
+    }
+  };
 
   const handleRegister = () => {
     if (registration.status === "success") {
@@ -138,10 +192,80 @@ export default function SolvePageClient() {
             aria-labelledby="tab-leaderboard"
             className="card overflow-hidden"
           >
-            <div className="px-5 py-3.5 border-b border-vx-border bg-vx-surface/30">
-              <span className="text-sm font-semibold text-vx-text">
-                {getMessage("solve.leaderboard.title")}
-              </span>
+            <div className="px-3 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-vx-text">
+                  {getMessage("solve.leaderboard.title")}
+                </span>
+                <div className="hidden sm:flex items-center gap-1" role="group" aria-label="Sort leaderboard">
+                  {([
+                    ["fills",                "Fills"],
+                    ["volumeUsd",            "Volume"],
+                    ["avgFillTimeSeconds",   "Avg Time"],
+                    ["successRatePct",       "Success %"],
+                  ] as [SortKey, string][]).map(([key, label]) => {
+                    const isActive = sortKey === key && sortDir !== "none";
+                    const ariaSortValue: "ascending" | "descending" | "none" =
+                      sortKey === key && sortDir !== "none"
+                        ? sortDir === "asc" ? "ascending" : "descending"
+                        : "none";
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => handleSort(key)}
+                        aria-sort={ariaSortValue}
+                        aria-label={`Sort by ${label}${
+                          sortKey === key && sortDir !== "none"
+                            ? sortDir === "asc" ? ", ascending" : ", descending"
+                            : ""
+                        }`}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] transition-colors
+                          ${
+                            isActive
+                              ? "bg-vx-sage-bg text-vx-sage border border-vx-sage/30"
+                              : "text-vx-muted hover:text-vx-text border border-transparent hover:border-vx-border"
+                          }`}
+                      >
+                        {label}
+                        <SortIcon direction={sortKey === key ? sortDir : "none"} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {/* Mobile sort: compact dropdown alternative */}
+              <div className="flex sm:hidden items-center gap-1 mt-2 flex-wrap" role="group" aria-label="Sort leaderboard">
+                {([
+                  ["fills",                "Fills"],
+                  ["volumeUsd",            "Volume"],
+                  ["avgFillTimeSeconds",   "Avg Time"],
+                  ["successRatePct",       "Success %"],
+                ] as [SortKey, string][]).map(([key, label]) => {
+                  const isActive = sortKey === key && sortDir !== "none";
+                  const ariaSortValue: "ascending" | "descending" | "none" =
+                    sortKey === key && sortDir !== "none"
+                      ? sortDir === "asc" ? "ascending" : "descending"
+                      : "none";
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => handleSort(key)}
+                      aria-sort={ariaSortValue}
+                      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] transition-colors
+                        ${
+                          isActive
+                            ? "bg-vx-sage-bg text-vx-sage border border-vx-sage/30"
+                            : "text-vx-muted hover:text-vx-text border border-transparent hover:border-vx-border"
+                        }`}
+                    >
+                      {label}
+                      <SortIcon direction={sortKey === key ? sortDir : "none"} />
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {solversLoading && solvers.length === 0 ? (
@@ -158,7 +282,7 @@ export default function SolvePageClient() {
               </div>
             ) : (
               <div className="divide-y divide-vx-line">
-                {solvers.map((s, i) => (
+                {sortedSolvers.map((s, i) => (
                   <Link
                     key={s.address}
                     href={`/solve/${s.address}`}

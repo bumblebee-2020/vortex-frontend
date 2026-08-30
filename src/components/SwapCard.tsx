@@ -41,8 +41,11 @@ export function SwapCard({
   const [srcAmount, setSrcAmount] = useState(initialAmount);
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const chainToggleRef = useRef<HTMLButtonElement>(null);
   const chainPickerRef = useRef<HTMLDivElement>(null);
+  const errorSummaryRef = useRef<HTMLDivElement>(null);
+  const dstAddressInputRef = useRef<HTMLInputElement>(null);
 
   const chain = CHAINS.find(c => c.id === srcChain)!;
 
@@ -56,6 +59,12 @@ export function SwapCard({
       chainPickerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
     }
   }, [showChainPicker]);
+
+  useEffect(() => {
+    if (hasAttemptedSubmit && dstAddressError && errorSummaryRef.current) {
+      errorSummaryRef.current.focus();
+    }
+  }, [hasAttemptedSubmit, dstAddressError]);
 
   const handleChainPickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
@@ -122,6 +131,7 @@ export function SwapCard({
   };
 
   const handleSubmit = () => {
+    setHasAttemptedSubmit(true);
     if (onPreviewSubmit) {
       onPreviewSubmit({
         srcChain,
@@ -142,6 +152,7 @@ export function SwapCard({
       return;
     }
 
+    if (dstAddressError) return;
     submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol });
   };
 
@@ -175,7 +186,7 @@ export function SwapCard({
   }, [showChainPicker]);
 
   return (
-    <div className="relative">
+    <div className="relative pb-20 md:pb-0">
       {/* Chain picker dropdown */}
       {showChainPicker && (
         <div
@@ -369,6 +380,7 @@ export function SwapCard({
           <input
             id="dst-address"
             type="text"
+            ref={dstAddressInputRef}
             value={dstAddress}
             onChange={e => setDstAddress(e.target.value.trim())}
             placeholder={t("swap.destination.placeholder")}
@@ -380,6 +392,36 @@ export function SwapCard({
             <p id="dst-address-error" role="alert" className="text-[11px] text-red-400">{dstAddressError}</p>
           )}
         </div>
+
+        {/* Validation error summary — only shown after a submit attempt */}
+        {hasAttemptedSubmit && dstAddressError && (
+          <div
+            ref={errorSummaryRef}
+            role="alert"
+            tabIndex={-1}
+            aria-label="Form errors"
+            className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 space-y-1.5
+                       focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2
+                       focus-visible:ring-offset-vx-card"
+          >
+            <p className="text-xs font-semibold text-red-400">Please fix the following errors before swapping:</p>
+            <ul className="space-y-1" role="list">
+              {dstAddressError && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => dstAddressInputRef.current?.focus()}
+                    className="text-xs text-red-300 underline underline-offset-2 hover:text-red-200
+                               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400
+                               focus-visible:ring-offset-1 focus-visible:ring-offset-vx-card"
+                  >
+                    Destination address: {dstAddressError}
+                  </button>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
 
         {/* Quote details */}
         {quote && srcAmount && (
@@ -438,11 +480,11 @@ export function SwapCard({
           <p role="alert" className="text-center text-[11px] text-red-400 px-1">{submission.error}</p>
         )}
 
-        {/* Submit */}
+        {/* Submit — desktop (hidden on mobile, shown md+) */}
         <button
           type="button"
           tabIndex={hiddenTabIndex}
-          className="btn-swap"
+          className="btn-swap hidden md:block"
           disabled={!canSwap && submission.status !== "success"}
           aria-busy={isSubmitting}
           onClick={handleSubmit}
@@ -477,6 +519,51 @@ export function SwapCard({
         <p className="text-center text-[11px] text-vx-muted/70">
           {t("swap.disclaimer")}
         </p>
+      </div>
+
+      {/* Mobile sticky action bar — only visible below md breakpoint */}
+      <div
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30
+                   bg-vx-card/95 backdrop-blur-sm
+                   border-t border-vx-border
+                   px-4 pt-3 pb-safe"
+        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        aria-hidden={showChainPicker}
+      >
+        <button
+          type="button"
+          tabIndex={showChainPicker ? -1 : undefined}
+          className="btn-swap"
+          disabled={!canSwap && submission.status !== "success"}
+          aria-busy={isSubmitting}
+          onClick={handleSubmit}
+        >
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg aria-hidden="true" className="w-4 h-4 animate-spin-slow" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" />
+              </svg>
+              {t(SUBMISSION_LABEL_KEY[submission.status]!)}
+            </span>
+          ) : submission.status === "success" ? (
+            t("swap.submit.success")
+          ) : quoting ? (
+            <span className="flex items-center justify-center gap-2">
+              <svg aria-hidden="true" className="w-4 h-4 animate-spin-slow" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" />
+              </svg>
+              {t("swap.submit.findingRoute")}
+            </span>
+          ) : canSwap ? (
+            t(submission.status === "error" ? "swap.submit.retryCta" : "swap.submit.cta", {
+              amount: srcAmount,
+              srcToken: srcToken.symbol,
+              dstToken: dstToken.symbol,
+            })
+          ) : (
+            t("swap.submit.enterAmount")
+          )}
+        </button>
       </div>
     </div>
   );

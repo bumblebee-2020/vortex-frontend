@@ -252,11 +252,8 @@ export default function ExplorePage() {
         )}
       </main>
       <Footer />
-    </div>Merge
-  ),
-  ssr: false,
-});
-
-export default function ExplorePage() {
-  return <ExplorePageClient />;
+    </div>
+  );
 }
+
+

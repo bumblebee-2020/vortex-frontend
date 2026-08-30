@@ -8,6 +8,7 @@ import { useSolver } from "@/hooks/useSolver";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
+import { QrCode } from "@/components/QrCode";
 
 function truncateAddress(address: string) {
   if (address.length <= 12) return address;
@@ -78,9 +79,14 @@ export default function SolverDetailPage({ params }: { params: { address: string
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-vx-muted font-mono break-all">
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm text-vx-muted font-mono break-all">
                 <span>Address: {params.address}</span>
                 <CopyButton value={params.address} label="Copy solver address" />
+                <QrCode
+                  value={params.address}
+                  label={`QR code for solver address ${params.address}`}
+                  size={160}
+                />
               </div>
 
               {/* Metrics grid */}
