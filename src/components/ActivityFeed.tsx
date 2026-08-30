@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
+import { sanitizeDisplayText } from "@/lib/textSafety";
 import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
@@ -59,7 +60,7 @@ export function ActivityFeed() {
               <div className="text-[10px] text-vx-muted capitalize">
                 {t("activityFeed.item.route", {
                   chain: item.srcChain,
-                  solver: item.solver,
+                  solver: sanitizeDisplayText(item.solver),
                 })}
               </div>
             </div>

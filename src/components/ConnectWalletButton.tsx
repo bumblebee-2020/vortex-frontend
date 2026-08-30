@@ -3,11 +3,13 @@
 import { useWalletStore } from "@/store/wallet";
 import { useToastStore } from "@/store/toast";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
+import { sanitizeDisplayText } from "@/lib/textSafety";
 
 const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
 
 function truncateAddress(address: string) {
-  return `${address.slice(0, 4)}...${address.slice(-4)}`;
+  const safe = sanitizeDisplayText(address);
+  return `${safe.slice(0, 4)}...${safe.slice(-4)}`;
 }
 
 export function ConnectWalletButton({ compact = false }: { compact?: boolean }) {
