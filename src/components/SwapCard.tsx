@@ -14,6 +14,7 @@ import type { Quote, QuoteRequest } from "@/lib/types";
 
 export const DEFAULT_SLIPPAGE_PCT = 0.5;
 export const HIGH_PRICE_IMPACT_THRESHOLD_PCT = 3;
+const STALE_QUOTE_THRESHOLD_MS = 30_000;
 
 const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
   connecting: "swap.submit.connecting",
@@ -36,27 +37,36 @@ export function SwapCard({
   const { t } = useTranslation();
 
   const [srcChain, setSrcChain] = useState("ethereum");
-  const [srcToken, setSrcToken] = useState(SRC_TOKENS["ethereum"][0]);
-  const [dstToken, setDstToken] = useState(DST_TOKENS[0]);
+  const [srcToken, setSrcToken] = useState((SRC_TOKENS["ethereum"] ?? [])[0]!);
+  const [dstToken, setDstToken] = useState(DST_TOKENS[0]!);
   const [srcAmount, setSrcAmount] = useState(initialAmount);
+  const [dstAddress, setDstAddress] = useState("");
+  const [slippagePct, setSlippagePct] = useState(String(DEFAULT_SLIPPAGE_PCT));
   const [showChainPicker, setShowChainPicker] = useState(false);
   const [showTokenPicker, setShowTokenPicker] = useState(false);
+  const [quoteFetchedAt, setQuoteFetchedAt] = useState<number | null>(null);
+
+  // ── Refs ──────────────────────────────────────────────────────────────────
   const chainToggleRef = useRef<HTMLButtonElement>(null);
   const chainPickerRef = useRef<HTMLDivElement>(null);
+  const tokenToggleRef = useRef<HTMLButtonElement>(null);
+  const tokenPickerRef = useRef<HTMLDivElement>(null);
 
   const chain = CHAINS.find(c => c.id === srcChain)!;
 
+  // ── Chain picker helpers ───────────────────────────────────────────────────
   const closeChainPicker = () => {
     setShowChainPicker(false);
     chainToggleRef.current?.focus();
   };
 
+  // Move focus into the chain-picker overlay when it opens.
   useEffect(() => {
-    if (showChainPicker) {
-      chainPickerRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    }
+    if (!showChainPicker) return;
+    chainPickerRef.current?.querySelector<HTMLElement>("button")?.focus();
   }, [showChainPicker]);
 
+  // Trap Tab focus inside the chain picker; Escape closes it.
   const handleChainPickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -66,8 +76,8 @@ export function SwapCard({
     if (e.key !== "Tab") return;
     const focusable = chainPickerRef.current?.querySelectorAll<HTMLButtonElement>("button");
     if (!focusable || focusable.length === 0) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
     if (e.shiftKey && document.activeElement === first) {
       e.preventDefault();
       last.focus();
@@ -77,6 +87,40 @@ export function SwapCard({
     }
   };
 
+  // ── Token picker helpers ────────────────────────────────────────────────────
+  const closeTokenPicker = () => {
+    setShowTokenPicker(false);
+    tokenToggleRef.current?.focus();
+  };
+
+  // Move focus into the token-picker when it opens.
+  useEffect(() => {
+    if (!showTokenPicker) return;
+    tokenPickerRef.current?.querySelector<HTMLElement>("button")?.focus();
+  }, [showTokenPicker]);
+
+  // Trap Tab focus inside the token picker; Escape closes it.
+  const handleTokenPickerKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeTokenPicker();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusable = tokenPickerRef.current?.querySelectorAll<HTMLButtonElement>("button");
+    if (!focusable || focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
+  // ── Quote ─────────────────────────────────────────────────────────────────
   const debouncedAmount = useDebouncedValue(srcAmount, 500);
   const hasAmount = Boolean(debouncedAmount) && parseFloat(debouncedAmount) > 0;
   const { quote: fetchedQuote, isLoading: quoteIsLoading, error: quoteError } = useQuote(
@@ -87,10 +131,17 @@ export function SwapCard({
   const quote = previewQuote ?? fetchedQuote;
   const quoting = previewQuote ? false : quoteIsLoading;
 
+  // Track when a live quote arrives so we can warn on stale submissions.
+  useEffect(() => {
+    if (fetchedQuote) setQuoteFetchedAt(Date.now());
+  }, [fetchedQuote]);
+
+  // ── Validation ─────────────────────────────────────────────────────────────
   const dstAddressError = dstAddress && !isValidStellarPublicKey(dstAddress)
     ? t("swap.destination.invalidAddress")
     : null;
 
+  // ── Derived display values ─────────────────────────────────────────────────
   const dstAmount = quote
     ? parseFloat(quote.dstAmount)
     : srcAmount
@@ -106,6 +157,9 @@ export function SwapCard({
     ? quote.priceImpactPct > HIGH_PRICE_IMPACT_THRESHOLD_PCT
     : false;
 
+  const quoteErrorType = quoteError as { kind?: string } | null | undefined;
+
+  // ── Submission ─────────────────────────────────────────────────────────────
   const submission = useSwapSubmission();
   const isSubmitting = submission.status in SUBMISSION_LABEL_KEY;
   const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting && !dstAddressError;
@@ -113,7 +167,7 @@ export function SwapCard({
   /** Truncate a raw amount string to at most `decimals` decimal places. */
   function truncateToDecimals(value: string, decimals: number): string {
     const dotIndex = value.indexOf(".");
-    if (dotIndex === -1 || decimals === 0) return value.split(".")[0];
+    if (dotIndex === -1 || decimals === 0) return value.split(".")[0] ?? value;
     return value.slice(0, dotIndex + 1 + decimals);
   }
 
@@ -145,38 +199,17 @@ export function SwapCard({
     submission.submit({ srcChain, srcToken: srcToken.symbol, srcAmount, dstToken: dstToken.symbol });
   };
 
+  // ── Tab-index gating ───────────────────────────────────────────────────────
   // While the chain picker overlay is open, the main card sits behind it
   // (opacity-0, pointer-events-none) — keep its controls out of the tab
   // order too, or keyboard users tab through invisible fields.
-  const hiddenTabIndex = showChainPicker ? -1 : undefined;
-
-  const chainPickerRef = useRef<HTMLDivElement>(null);
-  const chainToggleRef = useRef<HTMLButtonElement>(null);
-
-  const closeChainPicker = () => {
-    setShowChainPicker(false);
-    chainToggleRef.current?.focus();
-  };
-
-  // Moves focus into the overlay when it opens, since its trigger becomes
-  // aria-hidden/untabbable the moment the main card is hidden behind it.
-  useEffect(() => {
-    if (!showChainPicker) return;
-    chainPickerRef.current?.querySelector<HTMLElement>("button")?.focus();
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeChainPicker();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [showChainPicker]);
+  // Same applies when the token picker inline overlay is open.
+  const overlayOpen = showChainPicker || showTokenPicker;
+  const hiddenTabIndex = overlayOpen ? -1 : undefined;
 
   return (
     <div className="relative">
-      {/* Chain picker dropdown */}
+      {/* ── Chain picker overlay ── */}
       {showChainPicker && (
         <div
           ref={chainPickerRef}
@@ -194,7 +227,7 @@ export function SwapCard({
                 type="button"
                 onClick={() => {
                   setSrcChain(c.id);
-                  setSrcToken(SRC_TOKENS[c.id][0]);
+                  setSrcToken(SRC_TOKENS[c.id]![0]!);
                   closeChainPicker();
                 }}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-all
@@ -215,7 +248,7 @@ export function SwapCard({
         </div>
       )}
 
-      {/* Main card */}
+      {/* ── Main card ── */}
       <div
         aria-hidden={showChainPicker}
         className={`card p-5 space-y-2 ${showChainPicker ? "opacity-0 pointer-events-none" : ""}`}
@@ -230,7 +263,7 @@ export function SwapCard({
               type="button"
               tabIndex={hiddenTabIndex}
               onClick={() => setShowChainPicker(true)}
-              aria-haspopup="true"
+              aria-haspopup="dialog"
               aria-expanded={showChainPicker}
               aria-label={t("swap.from.selectChain", { name: chain.name })}
               className="chain-badge cursor-pointer hover:bg-vx-lav/15 transition-colors"
@@ -254,12 +287,14 @@ export function SwapCard({
               placeholder={t("swap.from.amountPlaceholder")}
               className="input-swap flex-1"
             />
+            {/* ── Token picker toggle ── */}
             <button
+              ref={tokenToggleRef}
               type="button"
               tabIndex={hiddenTabIndex}
               className="token-btn"
-              onClick={() => setShowTokenPicker(!showTokenPicker)}
-              aria-haspopup="true"
+              onClick={() => setShowTokenPicker(prev => !prev)}
+              aria-haspopup="listbox"
               aria-expanded={showTokenPicker}
               aria-label={t("swap.from.selectToken", { symbol: srcToken.symbol })}
             >
@@ -273,14 +308,22 @@ export function SwapCard({
             </button>
           </div>
 
+          {/* ── Token picker inline overlay ── */}
           {showTokenPicker && (
-            <div className="pt-2 border-t border-vx-line space-y-1">
+            <div
+              ref={tokenPickerRef}
+              role="listbox"
+              aria-label={t("swap.from.selectToken", { symbol: srcToken.symbol })}
+              onKeyDown={handleTokenPickerKeyDown}
+              className="pt-2 border-t border-vx-line space-y-1"
+            >
               {(SRC_TOKENS[srcChain] ?? []).map(token => (
                 <button
                   key={token.symbol}
                   type="button"
-                  tabIndex={hiddenTabIndex}
-                  onClick={() => { setSrcToken(token); setShowTokenPicker(false); }}
+                  role="option"
+                  aria-selected={token.symbol === srcToken.symbol}
+                  onClick={() => { setSrcToken(token); closeTokenPicker(); }}
                   className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors
                     ${token.symbol === srcToken.symbol ? "bg-vx-lav-bg text-vx-lav" : "hover:bg-vx-surface text-vx-muted hover:text-vx-text"}`}
                 >
@@ -369,6 +412,7 @@ export function SwapCard({
           <input
             id="dst-address"
             type="text"
+            tabIndex={hiddenTabIndex}
             value={dstAddress}
             onChange={e => setDstAddress(e.target.value.trim())}
             placeholder={t("swap.destination.placeholder")}

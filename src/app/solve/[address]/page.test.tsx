@@ -495,6 +495,8 @@ describe("SolverDetailPage", () => {
       expect(statusBadge).toHaveClass("flex-shrink-0");
       expect(statusBadge).toHaveClass("whitespace-nowrap");
     });
+  });
+
   // Issue #45: Loading skeleton
   it("renders loading skeleton while fetching solver details", () => {
     const { useSolversModule } = vi.hoisted(() => ({

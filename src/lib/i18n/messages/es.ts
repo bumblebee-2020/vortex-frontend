@@ -36,7 +36,9 @@ export const es = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Tasa",
   "swap.quote.unavailable": "Cotización en tiempo real no disponible — mostrando tasa estimada.",
+  "swap.quote.staleWarning": "La cotización está desactualizada. Espera una actualización antes de enviar.",
   "swap.quote.highPriceImpactWarning": "Impacto de precio alto por encima de {threshold}% — revisa antes de intercambiar.",
+  "swap.quote.noSolver": "No se encontró un solver para esta ruta ahora mismo.",
 
   "swap.submit.connecting": "Conectando billetera…",
   "swap.submit.building": "Preparando swap…",
@@ -49,6 +51,10 @@ export const es = {
   "swap.submit.retryCta": "Reintentar: Intercambiar {amount} {srcToken} → {dstToken}",
 
   "swap.disclaimer": "El swap se liquida directamente en Stellar · Sin tokens envueltos · Protegido por bonos de solver",
+
+  "swap.destination.label": "Dirección de destino",
+  "swap.destination.placeholder": "G...",
+  "swap.destination.invalidAddress": "Ingresa una dirección Stellar válida (empieza con G).",
 
   "home.hero.eyebrow": "Stellar Agentic Hackathon 2025",
   "home.hero.titleLine1": "Intercambia desde cualquier cadena",
@@ -82,4 +88,39 @@ export const es = {
   "notFound.title": "Página no encontrada",
   "notFound.body": "La página que buscas no existe o puede haber sido movida.",
   "notFound.backHome": "← Volver a Vortex",
+
+  // ── Estados vacíos ─────────────────────────────────────────────────────────
+
+  // /explore — filtros sin resultados
+  "explore.empty.title": "Ninguna intención coincide con tus filtros",
+  "explore.empty.message": "Intenta ajustar o borrar los filtros de estado y cadena para ver más resultados.",
+  "explore.empty.clearFilters": "Limpiar filtros",
+
+  // /explore — error al cargar
+  "explore.error.title": "No se pudieron cargar las intenciones",
+  "explore.error.message": "Algo salió mal al obtener las intenciones. Verifica tu conexión e inténtalo de nuevo.",
+
+  // /my-intents — sin intenciones aún
+  "myIntents.empty.title": "Sin swaps aún",
+  "myIntents.empty.message": "No has enviado ningún swap desde esta billetera. Haz tu primer swap para empezar.",
+  "myIntents.empty.cta": "Hacer mi primer swap →",
+
+  // /my-intents — filtros sin resultados
+  "myIntents.filterEmpty.title": "Ninguna intención coincide con tus filtros",
+  "myIntents.filterEmpty.message": "Prueba con un filtro de estado o cadena diferente, o limpia todos los filtros para ver todo.",
+  "myIntents.filterEmpty.clearFilters": "Limpiar filtros",
+
+  // ActivityFeed — vacío en despliegue nuevo
+  "activityFeed.empty.title": "Sin actividad aún",
+  "activityFeed.empty.message": "Esperando las primeras intenciones de swap. Envía un swap para comenzar.",
+  "activityFeed.empty.cta": "Hacer swap ahora →",
+
+  "activityFeed.status.live": "En vivo",
+  "activityFeed.status.polling": "Consultando",
+  "activityFeed.error.unavailable": "Feed en vivo no disponible ahora mismo.",
+  "activityFeed.item.route": "{chain} · vía {solver}",
+
+  // solve/[address] — historial de llenados vacío
+  "solverDetail.fillHistory.empty.title": "Sin llenados aún",
+  "solverDetail.fillHistory.empty.message": "Una vez que este solver empiece a aceptar y llenar intenciones, su historial aparecerá aquí.",
 } as const;

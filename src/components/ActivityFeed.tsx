@@ -1,17 +1,35 @@
 "use client";
 
 import { useMemo } from "react";
+import Link from "next/link";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 import { timeAgo } from "@/lib/time";
-import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
-  ethereum: "#627EEA", base: "#0052FF", polygon: "#8247E5",
-  arbitrum: "#12AAFF", optimism: "#FF0420", avalanche: "#E84142",
+  ethereum: "#627EEA",
+  base: "#0052FF",
+  polygon: "#8247E5",
+  arbitrum: "#12AAFF",
+  optimism: "#FF0420",
+  avalanche: "#E84142",
 };
 
 /** Maximum number of activity items shown in the feed. */
 const FEED_LIMIT = 6;
+
+function FeedSkeleton({ count }: { count: number }) {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: count }, (_, i) => (
+        <div
+          key={i}
+          className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse"
+        />
+      ))}
+    </div>
+  );
+}
 
 export function ActivityFeed() {
   const { t } = useTranslation();
@@ -29,27 +47,50 @@ export function ActivityFeed() {
 
   return (
     <div className="space-y-2">
-      <div role="status" className="sr-only">{announcement}</div>
       <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1">
         <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
         {isLive ? t("activityFeed.status.live") : t("activityFeed.status.polling")}
       </div>
-      {error && items.length === 0 ? (
+
+      {/* Error state */}
+      {error && items.length === 0 && (
         <div className="p-4 text-center text-xs text-vx-muted bg-vx-surface/40 rounded-lg border border-vx-line">
           {t("activityFeed.error.unavailable")}
         </div>
-      ) : items.length === 0 ? (
-        <div className="p-4 text-center text-xs text-vx-muted bg-vx-surface/40 rounded-lg border border-vx-line">
-          {t("activityFeed.empty")}
+      )}
+
+      {/* Actionable empty state */}
+      {!error && items.length === 0 && (
+        <div className="p-5 text-center bg-vx-surface/40 rounded-lg border border-vx-line">
+          <p className="text-xs font-medium text-vx-text mb-1">
+            {t("activityFeed.empty.title")}
+          </p>
+          <p className="text-[10px] text-vx-muted mb-3">
+            {t("activityFeed.empty.message")}
+          </p>
+          <Link
+            href="/"
+            className="inline-block px-3 py-1.5 rounded-lg border border-vx-sage/40 text-vx-sage text-[10px] font-semibold hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink"
+          >
+            {t("activityFeed.empty.cta")}
+          </Link>
         </div>
-      ) : null}
+      )}
+
+      {/* Feed items */}
       {visibleItems.map((item) => {
         const color = CHAIN_COLOR[item.srcChain] ?? "#8B8B93";
         return (
-          <div key={item.id} className="flex items-center gap-3 p-3 bg-vx-surface/40 rounded-lg
-                                  border border-vx-line hover:border-vx-border transition-colors">
-            <div aria-hidden="true" className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
-                 style={{ background: `${color}20`, border: `1px solid ${color}30` }}>
+          <div
+            key={item.id}
+            className="flex items-center gap-3 p-3 bg-vx-surface/40 rounded-lg
+                       border border-vx-line hover:border-vx-border transition-colors"
+          >
+            <div
+              aria-hidden="true"
+              className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"
+              style={{ background: `${color}20`, border: `1px solid ${color}30` }}
+            >
               <div className="w-2 h-2 rounded-full" style={{ background: color }} />
             </div>
             <div className="flex-1 min-w-0">
@@ -68,7 +109,6 @@ export function ActivityFeed() {
               <span
                 className="text-[10px] text-vx-muted"
                 title={new Date(item.createdAt).toLocaleString()}
-                tabIndex={0}
               >
                 {timeAgo(item.createdAt)}
               </span>
@@ -80,6 +120,5 @@ export function ActivityFeed() {
   );
 }
 
-export function ActivityFeed() {
-  return <ActivityFeedView {...useIntentFeed()} />;
-}
+/** @deprecated Use ActivityFeed directly. Kept for Storybook story compatibility. */
+export const ActivityFeedView = ActivityFeed;

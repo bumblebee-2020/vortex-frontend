@@ -18,11 +18,60 @@ const NAV_LINKS = [
   { href: "/solve", label: "becomeSolver" as const },
 ];
 
+const LOCALE_LABELS: Record<Locale, string> = {
+  en: "EN",
+  es: "ES",
+};
+
 export function Nav(props: NavProps) {
   const maxWidth = props.variant === "home" ? "max-w-6xl" : "max-w-5xl";
   const [mobileOpen, setMobileOpen] = useState(false);
   const isConnected = useWalletStore((s) => s.isConnected);
   const pathname = usePathname();
+  const locale = useLocale();
+  const setLocale = useSetLocale();
+
+  // Refs for focus management in the mobile menu
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Move focus into the mobile menu panel when it opens.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    // Focus the first focusable element inside the panel.
+    const firstFocusable = panelRef.current?.querySelector<HTMLElement>(
+      "a, button, [tabindex]:not([tabindex='-1'])"
+    );
+    firstFocusable?.focus();
+  }, [mobileOpen]);
+
+  const closeMobileMenu = () => {
+    setMobileOpen(false);
+    toggleRef.current?.focus();
+  };
+
+  // Trap Tab focus inside mobile menu; Escape closes it.
+  const handleMobilePanelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      closeMobileMenu();
+      return;
+    }
+    if (e.key !== "Tab") return;
+    const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
+      "a, button, [tabindex]:not([tabindex='-1'])"
+    );
+    if (!focusable || focusable.length === 0) return;
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-50 border-b border-vx-border bg-vx-ink/80 backdrop-blur-md">
@@ -61,32 +110,14 @@ export function Nav(props: NavProps) {
         )}
 
         <div className="flex items-center gap-2">
-          {/* Locale switcher */}
-          <label htmlFor="locale-switcher" className="sr-only">
-            Switch language
-          </label>
-          <select
-            id="locale-switcher"
-            value={locale}
-            onChange={(e) => setLocale(e.target.value as Locale)}
-            aria-label="Switch language"
-            className="bg-transparent border border-vx-border rounded-md px-2 py-1 text-xs
-                       text-vx-muted hover:text-vx-text hover:border-vx-sage/50 active:text-vx-sage transition-colors
-                       cursor-pointer focus:outline-none focus:ring-2 focus:ring-vx-sage/50"
-          >
-            {LOCALES.map((loc) => (
-              <option key={loc} value={loc} className="bg-vx-ink text-vx-text">
-                {LOCALE_LABELS[loc]}
-              </option>
-            ))}
-          </select>
-
+          <SettingsPanel />
           <ConnectWalletButton compact={props.variant === "breadcrumb"} />
           {props.variant === "home" && (
             <button
               ref={toggleRef}
               onClick={() => (mobileOpen ? closeMobileMenu() : setMobileOpen(true))}
               aria-expanded={mobileOpen}
+              aria-controls="mobile-nav-panel"
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
               className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text active:text-vx-sage transition-colors"
             >
@@ -103,7 +134,15 @@ export function Nav(props: NavProps) {
       </div>
 
       {props.variant === "home" && mobileOpen && (
-        <div ref={panelRef} className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1">
+        <div
+          id="mobile-nav-panel"
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
+          onKeyDown={handleMobilePanelKeyDown}
+          className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1"
+        >
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
@@ -117,7 +156,7 @@ export function Nav(props: NavProps) {
           {isConnected && (
             <Link
               href="/my-intents"
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobileMenu}
               className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text active:text-vx-sage"}`}
             >
               My Intents
