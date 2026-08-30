@@ -6,15 +6,18 @@ import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { CopyButton } from "@/components/CopyButton";
 import { SkeletonDetailCard } from "@/components/Skeleton";
 import { useIntent } from "@/hooks/useIntent";
 import { timeAgo } from "@/lib/time";
+import { sanitizeDisplayText } from "@/lib/textSafety";
 
 const NETWORK = process.env.NEXT_PUBLIC_NETWORK ?? "testnet";
 
 function truncateAddress(address: string) {
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-6)}`;
+  const safe = sanitizeDisplayText(address);
+  if (safe.length <= 12) return safe;
+  return `${safe.slice(0, 6)}...${safe.slice(-6)}`;
 }
 
 function deadlineLabel(deadline: string) {
@@ -73,7 +76,7 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
             <div className="grid sm:grid-cols-2 gap-4">
               {[
                 ["Source chain", intent.srcChain],
-                ["Solver", intent.solver],
+                ["Solver", sanitizeDisplayText(intent.solver)],
                 ["Minimum out", `${intent.minOut} ${intent.dstToken}`],
                 ["Submitted", timeAgo(intent.createdAt)],
                 ["Deadline", deadlineLabel(intent.deadline)],

@@ -4,14 +4,19 @@ import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
+import { CopyButton } from "@/components/CopyButton";
+import { SkeletonCard } from "@/components/Skeleton";
 import { useSolver } from "@/hooks/useSolver";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
+import { isValidStellarPublicKey } from "@/lib/stellarAddress";
+import { sanitizeDisplayText } from "@/lib/textSafety";
 
 function truncateAddress(address: string) {
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-6)}`;
+  const safe = sanitizeDisplayText(address);
+  if (safe.length <= 12) return safe;
+  return `${safe.slice(0, 6)}...${safe.slice(-6)}`;
 }
 
 const usdCompact = new Intl.NumberFormat("en-US", {
@@ -63,7 +68,7 @@ export default function SolverDetailPage({ params }: { params: { address: string
                 <div>
                   <div className="eyebrow mb-1 sm:mb-2 text-xs">Solver</div>
                   <h1 className="text-lg sm:text-2xl font-bold text-vx-text break-words">
-                    {solver.name}
+                    {sanitizeDisplayText(solver.name)}
                   </h1>
                 </div>
                 <div 

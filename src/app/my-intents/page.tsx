@@ -10,6 +10,7 @@ import { useWalletStore } from "@/store/wallet";
 import { useMyLiveIntents } from "@/hooks/useMyLiveIntents";
 import { CHAINS } from "@/lib/marketData";
 import { SkeletonCard } from "@/components/Skeleton";
+import { sanitizeDisplayText } from "@/lib/textSafety";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
@@ -165,7 +166,7 @@ export default function MyIntentsPage() {
                         {item.srcAmount} {item.srcToken} → {item.dstToken}
                       </div>
                       <div className="text-xs text-vx-muted capitalize">
-                        {item.srcChain} · via {item.solver}
+                        {item.srcChain} · via {sanitizeDisplayText(item.solver)}
                       </div>
                       <IntentStatusBadge status={item.status} />
                     </div>
