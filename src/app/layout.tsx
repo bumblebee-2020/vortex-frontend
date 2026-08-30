@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { WalletHydrator } from "@/components/WalletHydrator";
 import { ToastViewport } from "@/components/ToastViewport";
+import { GlobalErrorCapture } from "@/components/GlobalErrorCapture";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { DEFAULT_LOCALE } from "@/lib/i18n";
 
@@ -92,6 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <I18nProvider locale={DEFAULT_LOCALE}>
+          <GlobalErrorCapture />
           <WalletHydrator />
           {children}
           <ToastViewport />
