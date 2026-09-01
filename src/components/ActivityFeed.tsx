@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
-import { useTranslation } from "@/lib/i18n/I18nProvider";
+import { FeedSkeleton } from "@/components/Skeleton";
 import { timeAgo } from "@/lib/time";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { FeedItem } from "@/lib/types";
 import { SkeletonCard } from "./Skeleton";
 
@@ -15,28 +16,14 @@ const CHAIN_COLOR: Record<string, string> = {
 /** Maximum number of activity items shown in the feed. */
 const FEED_LIMIT = 6;
 
-/** Debounce delay in ms before announcing new items to assistive technology. */
-const ANNOUNCE_DELAY_MS = 1500;
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-function FeedSkeleton({ count = 3 }: { count?: number }) {
-  return <SkeletonCard rows={count} rowHeight="h-14" />;
-}
-
-// ─── ActivityFeedView ─────────────────────────────────────────────────────────
-// Pure-presentational component that receives already-fetched data.
-// Exported so Storybook stories and tests can drive it directly.
-
-export interface ActivityFeedViewProps {
-  items: FeedItem[];
-  isLoading: boolean;
-  error?: Error | null;
-  isLive: boolean;
-}
+type ActivityFeedViewProps = ReturnType<typeof useIntentFeed>;
 
 export function ActivityFeedView({ items, isLoading, error, isLive }: ActivityFeedViewProps) {
   const { t } = useTranslation();
+  const [announcement, setAnnouncement] = useState("");
+  const previousCount = useRef(items.length);
+  const pendingCount = useRef(0);
+  const announcementTimer = useRef<number | null>(null);
 
   // ── Screen-reader announcement ────────────────────────────────────────────
   // We track how many items were present on the *previous* render so we can
@@ -76,31 +63,50 @@ export function ActivityFeedView({ items, isLoading, error, isLive }: ActivityFe
   // ── Visible items ─────────────────────────────────────────────────────────
   const visibleItems = useMemo(() => items.slice(0, FEED_LIMIT), [items]);
 
+  useEffect(() => {
+    if (items.length > previousCount.current && previousCount.current > 0) {
+      pendingCount.current += items.length - previousCount.current;
+      if (announcementTimer.current !== null) {
+        window.clearTimeout(announcementTimer.current);
+      }
+      announcementTimer.current = window.setTimeout(() => {
+        const newCount = pendingCount.current;
+        pendingCount.current = 0;
+        announcementTimer.current = null;
+        setAnnouncement(`${newCount} new fill${newCount === 1 ? "" : "s"}`);
+      }, 1500);
+      previousCount.current = items.length;
+      return undefined;
+    }
+    previousCount.current = items.length;
+    return undefined;
+  }, [items.length]);
+
   if (isLoading && items.length === 0) {
-    return <FeedSkeleton count={3} />;
+    return (
+      <div className="space-y-2">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-[52px] bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
+        ))}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
-      {/* Live region: assistive technology reads this when the text changes. */}
-      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
-        {announcement}
-      </div>
-
-      {/* Live / Polling indicator */}
       <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1">
         <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
-        {isLive ? t("activityFeed.status.live") : t("activityFeed.status.polling")}
+        {isLive ? "Live" : "Polling"}
       </div>
 
       {/* Error / empty states */}
       {error && items.length === 0 ? (
         <div className="p-4 text-center text-xs text-vx-muted bg-vx-surface/40 rounded-lg border border-vx-line">
-          {t("activityFeed.error.unavailable")}
+          Live feed unavailable right now.
         </div>
       ) : items.length === 0 ? (
         <div className="p-4 text-center text-xs text-vx-muted bg-vx-surface/40 rounded-lg border border-vx-line">
-          {t("activityFeed.empty")}
+          No fills yet.
         </div>
       ) : null}
 
@@ -125,10 +131,7 @@ export function ActivityFeedView({ items, isLoading, error, isLive }: ActivityFe
                 {item.srcAmount} {item.srcToken} → {item.dstToken}
               </div>
               <div className="text-[10px] text-vx-muted capitalize">
-                {t("activityFeed.item.route", {
-                  chain: item.srcChain,
-                  solver: item.solver,
-                })}
+                {item.srcChain} · via {item.solver}
               </div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -146,12 +149,4 @@ export function ActivityFeedView({ items, isLoading, error, isLive }: ActivityFe
       })}
     </div>
   );
-}
-
-// ─── ActivityFeed ─────────────────────────────────────────────────────────────
-// Connected component — wires up the data hook and delegates rendering to the
-// pure ActivityFeedView above.
-
-export function ActivityFeed() {
-  return <ActivityFeedView {...useIntentFeed()} />;
 }

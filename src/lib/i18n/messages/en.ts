@@ -11,6 +11,12 @@ export const en = {
 
   "swap.chainPicker.title": "Select source chain",
 
+  "activityFeed.status.live": "Live",
+  "activityFeed.status.polling": "Polling",
+  "activityFeed.error.unavailable": "Live feed unavailable right now.",
+  "activityFeed.empty": "No fills yet.",
+  "activityFeed.item.route": "{chain} · via {solver}",
+
   "swap.from.label": "From",
   "swap.from.amountLabel": "Amount to swap",
   "swap.from.amountPlaceholder": "0",
@@ -36,6 +42,8 @@ export const en = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Rate",
   "swap.quote.unavailable": "Live quote unavailable — showing an estimated rate.",
+  "swap.quote.noSolver": "No solver is available for this route right now.",
+  "swap.quote.highPriceImpactWarning": "High price impact above {threshold}% — review before swapping.",
   "swap.quote.staleWarning": "Quote is stale. Please wait for a refresh before submitting.",
   "swap.quote.highPriceImpactWarning": "High price impact above {threshold}% — review before swapping.",
 
@@ -53,7 +61,41 @@ export const en = {
   "swap.destination.placeholder": "G...",
   "swap.destination.invalidAddress": "Enter a valid Stellar address (starts with G).",
 
+  "swap.destination.label": "Destination address",
+  "swap.destination.placeholder": "G...",
+  "swap.destination.invalidAddress": "Enter a valid Stellar address (starts with G).",
+
   "swap.disclaimer": "Swap settles directly on Stellar · No wrapped tokens · Protected by solver bonds",
+
+  "solve.nav.label": "Solve",
+
+  "solve.hero.eyebrow": "Vortex Solver Dashboard",
+  "solve.hero.title": "Register & compete to solve intents",
+  "solve.hero.description": "Become a solver, post a bond, and earn fills by finding the best routes across chains.",
+
+  "solve.register.states.connecting": "Connecting wallet…",
+  "solve.register.states.building": "Building transaction…",
+  "solve.register.states.submitting": "Submitting…",
+
+  "solve.register.title": "Register as a Solver",
+  "solve.register.description": "To compete and earn fills, register your solver account on Stellar.",
+  "solve.register.info.slash": "Minimum bond is 100 XLM — you can slash or withdraw it anytime.",
+  "solve.register.info.withdraw": "Your solver bond earns you exclusive rights to solve intents.",
+  "solve.register.button.registered": "Registered ✓",
+  "solve.register.button.connect": "Connect to Register",
+
+  "solve.leaderboard.title": "Active Solvers",
+  "solve.leaderboard.error": "Failed to load leaderboard.",
+  "solve.leaderboard.empty": "No active solvers yet.",
+  "solve.leaderboard.volume": "Volume",
+  "solve.leaderboard.fills": "Fills",
+  "solve.leaderboard.success": "Success %",
+
+  "solve.intents.title": "Open Intents",
+  "solve.intents.error": "Failed to load intents.",
+  "solve.intents.empty": "No open intents at the moment.",
+  "solve.intents.accepting": "Accepting fill…",
+  "solve.intents.accept": "Accept Intent",
 
   "home.hero.eyebrow": "Stellar Agentic Hackathon 2025",
   // The headline is split so the second line can keep its accent colour and the
@@ -84,11 +126,9 @@ export const en = {
   "home.chains.title": "Supported chains",
   "home.chains.stellarDestination": "Stellar (dest.)",
 
-  "activityFeed.status.live": "Live",
-  "activityFeed.status.polling": "Polling",
-  "activityFeed.error.unavailable": "Live feed unavailable right now.",
-  "activityFeed.empty": "No fills yet.",
-  "activityFeed.item.route": "{chain} · via {solver}",
+  "footer.copyright": "© 2025 Vortex Protocol · MIT License",
+  "footer.github": "GitHub",
+  "footer.discord": "Discord",
 
   "notFound.breadcrumb": "Not Found",
   "notFound.eyebrow": "404",
