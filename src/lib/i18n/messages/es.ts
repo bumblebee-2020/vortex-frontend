@@ -59,6 +59,10 @@ export const es = {
   "swap.submit.cta": "Intercambiar {amount} {srcToken} → {dstToken}",
   "swap.submit.retryCta": "Reintentar: Intercambiar {amount} {srcToken} → {dstToken}",
 
+  "swap.destination.label": "Dirección de destino",
+  "swap.destination.placeholder": "G...",
+  "swap.destination.invalidAddress": "Ingresa una dirección de Stellar válida (empieza con G).",
+
   "swap.disclaimer": "El swap se liquida directamente en Stellar · Sin tokens envueltos · Protegido por bonos de solver",
 
   "home.hero.eyebrow": "Stellar Agentic Hackathon 2025",

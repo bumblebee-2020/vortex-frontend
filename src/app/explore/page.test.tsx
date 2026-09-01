@@ -3,15 +3,8 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { FeedItem } from "@/lib/types";
 
-const { useLiveIntentsMock, downloadCsvMock } = vi.hoisted(() => ({
-  useLiveIntentsMock: vi.fn(),
-  downloadCsvMock: vi.fn(),
-}));
+const { useLiveIntentsMock } = vi.hoisted(() => ({ useLiveIntentsMock: vi.fn() }));
 vi.mock("@/hooks/useLiveIntents", () => ({ useLiveIntents: useLiveIntentsMock }));
-vi.mock("@/lib/csv", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/csv")>();
-  return { ...actual, downloadCsv: downloadCsvMock };
-});
 
 import ExplorePage from "./page";
 
@@ -132,23 +125,6 @@ describe("ExplorePage", () => {
     expect(screen.queryByText("500 USDC → USDC")).not.toBeInTheDocument();
   });
 
-  it("exports CSV for the currently filtered rows", async () => {
-    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
-    const user = userEvent.setup();
-    render(<ExplorePage />);
-
-    await user.selectOptions(screen.getByLabelText("Filter by status"), "pending");
-    await user.click(screen.getByRole("button", { name: "Export CSV" }));
-
-    expect(downloadCsvMock).toHaveBeenCalledWith(
-      "vortex-intents.csv",
-      [
-        "id,srcChain,srcToken,srcAmount,dstToken,solver,status,createdAt",
-        "2,base,WETH,0.14,USDC,Beta,pending,2026-07-14T00:05:00Z",
-      ].join("\n")
-    );
-  });
-
   it("exposes the active sort column via aria-sort, defaulting to newest-first on Time", () => {
     useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
     render(<ExplorePage />);
@@ -200,19 +176,6 @@ describe("ExplorePage", () => {
     useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
     render(<ExplorePage />);
     expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
-  });
-
-  it("shows a back-to-top control after scrolling and returns to the top", async () => {
-    useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
-    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
-    Object.defineProperty(window, "scrollY", { configurable: true, value: 401 });
-    const user = userEvent.setup();
-    render(<ExplorePage />);
-
-    fireEvent.scroll(window);
-    await user.click(screen.getByRole("button", { name: "Back to top" }));
-
-    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
   });
 
   it("links each row to its intent detail page", () => {

@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import freighterApi from "@stellar/freighter-api";
-import { DEFAULT_LOCALE, translate } from "@/lib/i18n";
 
 export type WalletErrorKey =
   | "wallet.error.freighterUnavailable"
@@ -19,6 +18,12 @@ export type WalletState = {
   wasSessionCleared: boolean;
   /** Generic connection error message (e.g. user declined access). */
   error: string | null;
+  errorKey: WalletErrorKey | null;
+  /**
+   * Stable i18n key for the connection error, when one applies (currently only
+   * the "Freighter not installed" case). `null` for generic/unknown failures,
+   * where `error` carries the raw message instead.
+   */
   errorKey: WalletErrorKey | null;
   /**
    * `true` when the wallet is connected but on a different network than the
@@ -119,6 +124,7 @@ export const useWalletStore = create<WalletState>()(
           error: null,
           errorKey: null,
           networkMismatch: false,
+          notInstalled: false,
         });
       },
 

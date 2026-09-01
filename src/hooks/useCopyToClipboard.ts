@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { useToastStore } from "@/store/toast";
 
+const RESET_DELAY_MS = 1500;
+
 export function useCopyToClipboard() {
   const addToast = useToastStore((s) => s.addToast);
   const [copied, setCopied] = useState(false);
@@ -11,9 +13,13 @@ export function useCopyToClipboard() {
         await navigator.clipboard.writeText(text);
         setCopied(true);
         addToast(successMessage, "success");
+        setCopied(true);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        timeoutRef.current = setTimeout(() => setCopied(false), RESET_DELAY_MS);
         return true;
       } catch {
         addToast("Couldn't copy to clipboard", "error");
+        setCopied(false);
         return false;
       }
     },

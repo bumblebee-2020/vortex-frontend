@@ -10,7 +10,6 @@ import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { formatTokenAmount } from "@/lib/format";
 import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { MessageKey } from "@/lib/i18n";
-import type { Quote, QuoteRequest } from "@/lib/types";
 
 export const DEFAULT_SLIPPAGE_PCT = 0.5;
 export const HIGH_PRICE_IMPACT_THRESHOLD_PCT = 3;
@@ -204,7 +203,6 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
             <button
               ref={chainToggleRef}
               type="button"
-              tabIndex={hiddenTabIndex}
               onClick={() => setShowChainPicker(true)}
               aria-haspopup="true"
               aria-expanded={showChainPicker}
@@ -224,15 +222,13 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
             <input
               id="src-amount"
               type="number"
-              tabIndex={hiddenTabIndex}
               value={srcAmount}
-              onChange={e => handleAmountChange(e.target.value)}
+              onChange={e => setSrcAmount(e.target.value)}
               placeholder={t("swap.from.amountPlaceholder")}
               className="input-swap flex-1"
             />
             <button
               type="button"
-              tabIndex={hiddenTabIndex}
               className="token-btn"
               onClick={() => setShowTokenPicker(!showTokenPicker)}
               aria-haspopup="true"
@@ -321,7 +317,6 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
                 <button
                   key={token.symbol}
                   type="button"
-                  tabIndex={hiddenTabIndex}
                   onClick={() => setDstToken(token)}
                   aria-pressed={dstToken.symbol === token.symbol}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
@@ -411,7 +406,6 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
 
         <button
           type="button"
-          tabIndex={hiddenTabIndex}
           className="btn-swap"
           disabled={!canSwap && submission.status !== "success"}
           aria-busy={isSubmitting}
@@ -422,7 +416,7 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
               <svg aria-hidden="true" className="w-4 h-4 animate-spin-slow" viewBox="0 0 16 16" fill="none">
                 <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" />
               </svg>
-              {t(SUBMISSION_LABEL_KEY[submission.status]!)}
+              {t(SUBMISSION_LABEL_KEY[submission.status] ?? "swap.submit.submitting")}
             </span>
           ) : submission.status === "success" ? (
             t("swap.submit.success")

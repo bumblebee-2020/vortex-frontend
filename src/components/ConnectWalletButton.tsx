@@ -2,7 +2,6 @@
 
 import { useWalletStore } from "@/store/wallet";
 import { useToastStore } from "@/store/toast";
-import { useTranslation } from "@/lib/i18n/I18nProvider";
 
 const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
 
@@ -28,9 +27,9 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
 
   const handleConnect = async () => {
     await connect();
-    const { error: latestError, errorKey: latestErrorKey } = useWalletStore.getState();
+    const { error: latestError } = useWalletStore.getState();
     if (latestError) {
-      useToastStore.getState().addToast(latestErrorKey ? t(latestErrorKey) : latestError, "error");
+      useToastStore.getState().addToast(latestError, "error");
     }
   };
 
@@ -93,12 +92,19 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
     );
   }
 
+  // After a persisted session could not be silently restored, prompt to
+  // reconnect and show which address we last saw.
+  const reconnectLabel =
+    !isConnected && wasSessionCleared && lastKnownAddress
+      ? `Reconnect ${truncateAddress(lastKnownAddress)}`
+      : null;
+
   return (
     <button
       type="button"
       onClick={handleConnect}
       disabled={isConnecting}
-      title={displayError ?? undefined}
+      title={error ?? undefined}
       className={`${baseClass} border-vx-border text-vx-muted hover:border-vx-sage/30 hover:text-vx-text disabled:opacity-60 disabled:cursor-wait`}
     >
       {isConnecting ? (
@@ -126,7 +132,7 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
               <path d="M8 5v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           )}
-          {error ? "Retry Connection" : "Connect Freighter"}
+          {reconnectLabel ?? (error ? "Retry Connection" : "Connect Freighter")}
         </>
       )}
     </button>

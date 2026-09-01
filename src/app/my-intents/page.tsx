@@ -11,6 +11,7 @@ import { useMyLiveIntents } from "@/hooks/useMyLiveIntents";
 import { CHAINS } from "@/lib/marketData";
 import { downloadCsv, buildIntentsCsv } from "@/lib/csv";
 import { SkeletonCard } from "@/components/Skeleton";
+import { buildIntentsCsv, downloadCsv } from "@/lib/csv";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
@@ -20,7 +21,7 @@ export default function MyIntentsPage() {
   const address = useWalletStore((s) => s.address);
   const isConnected = useWalletStore((s) => s.isConnected);
 
-  const { intents, isLoading, error, isLive } = useMyLiveIntents(address);
+  const { intents, isLoading, error, isLive, mutate } = useMyLiveIntents(address);
 
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
@@ -130,14 +131,24 @@ export default function MyIntentsPage() {
 
             {/* List */}
             {isLoading ? (
-              <div className="space-y-2" role="status" aria-label="Loading intents">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-                ))}
+              <div className="space-y-2">
+                <p role="status" className="sr-only">Loading your intents...</p>
+                <div aria-hidden="true" className="space-y-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
+                  ))}
+                </div>
               </div>
             ) : error ? (
               <div role="alert" className="card p-8 text-center text-sm text-vx-muted">
-                Couldn&apos;t load intents right now. Try again shortly.
+                <p className="mb-4">Couldn&apos;t load intents right now. Try again shortly.</p>
+                <button
+                  type="button"
+                  onClick={() => mutate()}
+                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink"
+                >
+                  Retry
+                </button>
               </div>
             ) : intents.length === 0 ? (
               <div role="status" className="card p-8 text-center text-sm text-vx-muted">

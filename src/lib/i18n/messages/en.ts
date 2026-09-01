@@ -45,6 +45,7 @@ export const en = {
   "swap.quote.noSolver": "No solver is available for this route right now.",
   "swap.quote.highPriceImpactWarning": "High price impact above {threshold}% — review before swapping.",
   "swap.quote.staleWarning": "Quote is stale. Please wait for a refresh before submitting.",
+  "swap.quote.highPriceImpactWarning": "High price impact above {threshold}% — review before swapping.",
 
   "swap.submit.connecting": "Connecting wallet…",
   "swap.submit.building": "Preparing swap…",

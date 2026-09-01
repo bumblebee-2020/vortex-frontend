@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { VortexLogo } from "./VortexLogo";
 import { ConnectWalletButton } from "./ConnectWalletButton";
 import { SettingsPanel } from "./SettingsPanel";
 import { getMessage } from "@/lib/i18n-legacy";
-import { useLocale, useSetLocale } from "@/lib/i18n/I18nProvider";
-import { LOCALES, type Locale } from "@/lib/i18n";
 import { useWalletStore } from "@/store/wallet";
 
 type NavProps = { variant: "home" } | { variant: "breadcrumb"; label: string };
@@ -71,18 +69,18 @@ export function Nav(props: NavProps) {
                 </Link>
               ))}
               {isConnected && (
-                <Link href="/my-intents" className={`transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "hover:text-vx-text active:text-vx-sage"}`}>
+                <Link href="/my-intents" className={`transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "hover:text-vx-text"}`}>
                   My Intents
                 </Link>
               )}
-              <a href="https://github.com/vortex-protocol" className="hover:text-vx-text active:text-vx-sage transition-colors">
+              <a href="https://github.com/vortex-protocol" className="hover:text-vx-text transition-colors">
                 {getMessage("nav.docs")}
               </a>
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 transition-opacity active:opacity-80">
+            <Link href="/" className="flex items-center gap-2">
               <VortexLogo className="w-5 h-5 text-vx-sage" />
               <span className="font-semibold text-sm text-vx-text">{getMessage("nav.branding")}</span>
             </Link>
@@ -96,11 +94,10 @@ export function Nav(props: NavProps) {
           <ConnectWalletButton compact={props.variant === "breadcrumb"} />
           {props.variant === "home" && (
             <button
-              ref={toggleRef}
-              onClick={() => (mobileOpen ? closeMobileMenu() : setMobileOpen(true))}
+              onClick={() => setMobileOpen((open) => !open)}
               aria-expanded={mobileOpen}
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
-              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text active:text-vx-sage transition-colors"
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
             >
               <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 16 16" fill="none">
                 {mobileOpen ? (
@@ -115,7 +112,7 @@ export function Nav(props: NavProps) {
       </div>
 
       {props.variant === "home" && mobileOpen && (
-        <div ref={panelRef} className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1">
+        <div className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
@@ -130,14 +127,14 @@ export function Nav(props: NavProps) {
             <Link
               href="/my-intents"
               onClick={() => setMobileOpen(false)}
-              className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text active:text-vx-sage"}`}
+              className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text"}`}
             >
               My Intents
             </Link>
           )}
           <a
             href="https://github.com/vortex-protocol"
-            onClick={closeMobileMenu}
+            onClick={() => setMobileOpen(false)}
             className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
           >
             {getMessage("nav.docs")}
