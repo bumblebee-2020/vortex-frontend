@@ -10,7 +10,7 @@ const VARIANT_STYLES: Record<ToastVariant, string> = {
 };
 
 export function ToastViewport() {
-  const { toasts, dismissToast } = useToastStore();
+  const { toasts, dismissToast, pauseToast, resumeToast } = useToastStore();
 
   if (toasts.length === 0) return null;
 
@@ -19,7 +19,15 @@ export function ToastViewport() {
       {toasts.map((toast) => (
         <div
           key={toast.id}
-          role="status"
+          role={toast.variant === "error" ? "alert" : "status"}
+          tabIndex={-1}
+          onMouseEnter={() => pauseToast(toast.id)}
+          onMouseLeave={() => resumeToast(toast.id)}
+          onFocus={() => pauseToast(toast.id)}
+          onBlur={() => resumeToast(toast.id)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") dismissToast(toast.id);
+          }}
           className={`flex items-start gap-3 px-4 py-3 rounded-lg border text-sm shadow-lg animate-fade-up ${VARIANT_STYLES[toast.variant]}`}
         >
           {toast.href ? (

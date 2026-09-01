@@ -8,9 +8,11 @@ import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { useWalletStore } from "@/store/wallet";
 import { useMyLiveIntents } from "@/hooks/useMyLiveIntents";
+import { useIntent } from "@/hooks/useIntent";
 import { CHAINS } from "@/lib/marketData";
+import { downloadCsv, buildIntentsCsv } from "@/lib/csv";
 import { SkeletonCard } from "@/components/Skeleton";
-import { buildIntentsCsv, downloadCsv, CSV_HEADERS } from "@/lib/csv";
+import { buildIntentsCsv, downloadCsv } from "@/lib/csv";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];
@@ -27,13 +29,15 @@ export default function MyIntentsPage() {
   const address = useWalletStore((s) => s.address);
   const isConnected = useWalletStore((s) => s.isConnected);
 
-  const { intents, isLoading, error, isLive } = useMyLiveIntents(address);
+  const { intents, isLoading, error, isLive, mutate } = useMyLiveIntents(address);
 
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [page, setPage] = useState(1);
-  const [selectedColumns, setSelectedColumns] = useState<string[]>([...CSV_HEADERS]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  const { intent: expandedIntent, isLoading: expandedLoading, error: expandedError } = useIntent(expandedId);
 
   const filtered = useMemo(() => {
     let result = intents;
@@ -182,14 +186,24 @@ export default function MyIntentsPage() {
 
             {/* List */}
             {isLoading ? (
-              <div className="space-y-2" role="status" aria-label="Loading intents">
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
-                ))}
+              <div className="space-y-2">
+                <p role="status" className="sr-only">Loading your intents...</p>
+                <div aria-hidden="true" className="space-y-2">
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="h-14 bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
+                  ))}
+                </div>
               </div>
             ) : error ? (
               <div role="alert" className="card p-8 text-center text-sm text-vx-muted">
-                Couldn&apos;t load intents right now. Try again shortly.
+                <p className="mb-4">Couldn&apos;t load intents right now. Try again shortly.</p>
+                <button
+                  type="button"
+                  onClick={() => mutate()}
+                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink"
+                >
+                  Retry
+                </button>
               </div>
             ) : intents.length === 0 ? (
               <div role="status" className="card p-8 text-center text-sm text-vx-muted">
@@ -207,25 +221,85 @@ export default function MyIntentsPage() {
               </div>
             ) : (
               <div data-address={address} data-testid="intents-list" className="space-y-2" role="list">
-                {filtered.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/explore/${item.id}`}
-                    className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 active:bg-vx-surface/60 transition-colors"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-vx-text truncate">
-                        {item.srcAmount} {item.srcToken} → {item.dstToken}
+                {filtered.map((item) => {
+                  const isExpanded = expandedId === item.id;
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-vx-surface/40 rounded-lg border border-vx-line hover:border-vx-sage/40 transition-colors"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-4 p-4">
+                        <Link
+                          href={`/explore/${item.id}`}
+                          className="flex-1 min-w-0 active:opacity-80 transition-opacity"
+                        >
+                          <div className="text-sm font-medium text-vx-text truncate">
+                            {item.srcAmount} {item.srcToken} → {item.dstToken}
+                          </div>
+                          <div className="text-xs text-vx-muted capitalize">
+                            {item.srcChain} · via {item.solver}
+                          </div>
+                          <IntentStatusBadge status={item.status} />
+                        </Link>
+                        <div className="self-start sm:self-center flex items-center gap-3">
+                          <IntentStatusBadge status={item.status} />
+                          <button
+                            type="button"
+                            onClick={() => setExpandedId(isExpanded ? null : item.id)}
+                            aria-expanded={isExpanded}
+                            aria-controls={`intent-details-${item.id}`}
+                            aria-label={isExpanded ? "Collapse details" : "Expand details"}
+                            className="p-1.5 rounded-md text-vx-muted hover:text-vx-text hover:bg-vx-surface transition-colors"
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={`inline-block transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                            >
+                              ▾
+                            </span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="text-xs text-vx-muted capitalize">
-                        {item.srcChain} · via {item.solver}
-                      </div>
+
+                      {isExpanded && (
+                        <div
+                          id={`intent-details-${item.id}`}
+                          className="px-4 pb-4 pt-0 border-t border-vx-line/60 text-sm space-y-3"
+                        >
+                          {expandedLoading ? (
+                            <div className="text-xs text-vx-muted pt-3">Loading details…</div>
+                          ) : expandedError ? (
+                            <div role="alert" className="text-xs text-vx-muted pt-3">
+                              Couldn&apos;t load details right now.
+                            </div>
+                          ) : expandedIntent ? (
+                            <div className="grid sm:grid-cols-2 gap-3 pt-3">
+                              <div className="bg-vx-surface/40 rounded-lg p-3">
+                                <div className="eyebrow mb-1">Minimum out</div>
+                                <div className="text-xs text-vx-text num">
+                                  {expandedIntent.minOut} {expandedIntent.dstToken}
+                                </div>
+                              </div>
+                              <div className="bg-vx-surface/40 rounded-lg p-3">
+                                <div className="eyebrow mb-1">Destination address</div>
+                                <div className="text-xs text-vx-text num truncate">{expandedIntent.dstAddress}</div>
+                              </div>
+                              {expandedIntent.txHash && (
+                                <div className="bg-vx-surface/40 rounded-lg p-3 sm:col-span-2">
+                                  <div className="eyebrow mb-1">Transaction hash</div>
+                                  <div className="text-xs text-vx-text num truncate">{expandedIntent.txHash}</div>
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+                          <Link href={`/explore/${item.id}`} className="inline-block text-xs text-vx-sage hover:underline">
+                            View full details →
+                          </Link>
+                        </div>
+                      )}
                     </div>
-                    <div className="self-start sm:self-center">
-                      <IntentStatusBadge status={item.status} />
-                    </div>
-                  </Link>
-                ))}
+                  );
+                })}
               </div>
             )}
           </>
