@@ -25,6 +25,21 @@ const DATE_RANGE_OPTIONS = [
 ] as const;
 type DateRange = (typeof DATE_RANGE_OPTIONS)[number]["value"];
 
+/**
+ * Build a homepage URL that pre-fills SwapCard with an intent's parameters.
+ * Destination address is intentionally NOT carried over (stale/unintended
+ * destination risk — the user must enter it fresh).
+ */
+function swapAgainHref(item: FeedItem): string {
+  const params = new URLSearchParams({
+    srcChain: item.srcChain,
+    srcToken: item.srcToken,
+    amount: item.srcAmount,
+    dstToken: item.dstToken,
+  });
+  return `/?${params.toString()}`;
+}
+
 export default function MyIntentsPage() {
   const address = useWalletStore((s) => s.address);
   const isConnected = useWalletStore((s) => s.isConnected);

@@ -24,6 +24,12 @@ const SUBMISSION_LABEL_KEY: Record<string, MessageKey> = {
 
 export type SwapCardProps = {
   initialAmount?: string;
+  /** Pre-select the source chain (must be a valid CHAINS id; falls back to "ethereum"). */
+  initialChain?: string;
+  /** Pre-select the source token symbol on the given chain (falls back to that chain's first token). */
+  initialSrcToken?: string;
+  /** Pre-select the destination token symbol (must be in DST_TOKENS; falls back to the first). */
+  initialDstToken?: string;
   previewQuote?: Quote;
   onPreviewSubmit?: (request: QuoteRequest) => void;
 };
