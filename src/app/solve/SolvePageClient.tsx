@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Nav } from "@/components/Nav";
 import { SkeletonCard } from "@/components/Skeleton";
 import { useSolvers } from "@/hooks/useSolvers";
 import { useOpenIntents } from "@/hooks/useOpenIntents";
 import { useAcceptIntent } from "@/hooks/useAcceptIntent";
 import { useSolverRegistration } from "@/hooks/useSolverRegistration";
+import { useLocalStorageDraft } from "@/hooks/useLocalStorageDraft";
+import { useWalletStore } from "@/store/wallet";
 import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { getMessage } from "@/i18n/messages";
 import { formatCurrency } from "@/lib/format";
+import { sanitizeDisplayText } from "@/lib/textSafety";
 import Link from "next/link";
 
 const usdCompact = (value: number) =>
@@ -21,31 +24,11 @@ const usdCompact = (value: number) =>
 
 const MIN_BOND_USD = 50;
 
-type SortKey = "fills" | "volumeUsd" | "avgFillTimeSeconds" | "successRatePct";
-type SortDir = "asc" | "desc" | "none";
-
-function SortIcon({ direction }: { direction: SortDir }) {
-  return (
-    <svg aria-hidden="true" className="w-3 h-3 flex-shrink-0" viewBox="0 0 12 12" fill="none">
-      {/* Up arrow */}
-      <path
-        d="M6 2L4 5h4L6 2z"
-        fill={direction === "asc" ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth={direction === "asc" ? 0 : 1}
-        opacity={direction === "asc" ? 1 : 0.3}
-      />
-      {/* Down arrow */}
-      <path
-        d="M6 10L4 7h4L6 10z"
-        fill={direction === "desc" ? "currentColor" : "none"}
-        stroke="currentColor"
-        strokeWidth={direction === "desc" ? 0 : 1}
-        opacity={direction === "desc" ? 1 : 0.3}
-      />
-    </svg>
-  );
-}
+/** Shape of the persisted registration draft. */
+type RegistrationDraft = {
+  address: string;
+  bond: string;
+};
 
 const REGISTRATION_LABEL: Record<string, string> = {
   connecting: getMessage("solve.register.states.connecting"),
@@ -60,13 +43,36 @@ export default function SolvePageClient() {
   const { intents: openIntents, isLoading: intentsLoading, error: intentsError } = useOpenIntents();
   const { accept, acceptingId, error: acceptError } = useAcceptIntent();
 
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("none");
+  // Draft persistence — scoped to the currently connected wallet so that
+  // switching wallets never silently restores the wrong address.
+  const connectedAddress = useWalletStore((s) => s.address);
+  const [draft, setDraft, clearDraft] = useLocalStorageDraft<RegistrationDraft>(
+    "vortex:solver-registration-draft",
+    connectedAddress ?? null,
+  );
 
-  const [address, setAddress] = useState("");
-  const [bond, setBond] = useState("");
+  const [address, setAddress] = useState(draft?.address ?? "");
+  const [bond, setBond] = useState(draft?.bond ?? "");
+
+  // Sync form fields into the draft whenever they change.
+  const handleAddressChange = (value: string) => {
+    setAddress(value);
+    setDraft({ address: value, bond });
+  };
+  const handleBondChange = (value: string) => {
+    setBond(value);
+    setDraft({ address, bond: value });
+  };
+
   const registration = useSolverRegistration();
   const isRegistering = registration.status in REGISTRATION_LABEL;
+
+  // Clear draft after successful submission.
+  useEffect(() => {
+    if (registration.status === "success") {
+      clearDraft();
+    }
+  }, [registration.status, clearDraft]);
 
   const addressError =
     address && !isValidStellarPublicKey(address)
@@ -109,6 +115,7 @@ export default function SolvePageClient() {
       registration.reset();
       setAddress("");
       setBond("");
+      clearDraft();
       return;
     }
     if (!canRegister) return;
@@ -294,7 +301,7 @@ export default function SolvePageClient() {
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-vx-text truncate">{s.name}</div>
+                          <div className="text-sm font-semibold text-vx-text truncate">{sanitizeDisplayText(s.name)}</div>
                           <div className="num text-xs text-vx-muted truncate">{s.address}</div>
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {s.chains.map((c) => (
@@ -454,7 +461,7 @@ export default function SolvePageClient() {
                   id="solver-address"
                   type="text"
                   value={address}
-                  onChange={(e) => setAddress(e.target.value.trim())}
+                  onChange={(e) => handleAddressChange(e.target.value.trim())}
                   placeholder={getMessage("solve.register.addressPlaceholder")}
                   aria-invalid={Boolean(addressError)}
                   aria-describedby={addressError ? "solver-address-error" : undefined}
@@ -477,7 +484,7 @@ export default function SolvePageClient() {
                   id="solver-bond"
                   type="number"
                   value={bond}
-                  onChange={(e) => setBond(e.target.value)}
+                  onChange={(e) => handleBondChange(e.target.value)}
                   placeholder={getMessage("solve.register.bondPlaceholder")}
                   aria-invalid={Boolean(bondError)}
                   aria-describedby={bondError ? "solver-bond-error" : undefined}
