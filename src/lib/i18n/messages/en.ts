@@ -126,6 +126,10 @@ export const en = {
   "home.chains.title": "Supported chains",
   "home.chains.stellarDestination": "Stellar (dest.)",
 
+  "footer.copyright": "© 2025 Vortex Protocol · MIT License",
+  "footer.github": "GitHub",
+  "footer.discord": "Discord",
+
   "notFound.breadcrumb": "Not Found",
   "notFound.eyebrow": "404",
   "notFound.title": "Page not found",

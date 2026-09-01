@@ -26,6 +26,14 @@ export type WalletState = {
    */
   errorKey: WalletErrorKey | null;
   /**
+   * Translation key for `error` when the failure is one we control the copy for
+   * (Freighter missing, generic connect failure). `null` when `error` is a
+   * pass-through message from the wallet/extension that has no translation.
+   * Consumers should prefer `t(errorKey)` when it is set, else fall back to the
+   * raw `error` string.
+   */
+  errorKey: WalletErrorKey | null;
+  /**
    * `true` when the wallet is connected but on a different network than the
    * one configured via NEXT_PUBLIC_NETWORK. The wallet is still treated as
    * connected so the address remains accessible, but the UI should surface a
@@ -98,6 +106,9 @@ export const useWalletStore = create<WalletState>()(
             notInstalled: false,
           });
         } catch (err) {
+          // A real Error from the extension carries a user-meaningful message
+          // (e.g. "User declined access") that we surface verbatim. Anything
+          // else is an opaque failure we describe with our own translated copy.
           const externalError = err instanceof Error ? err.message : null;
           const message = externalError ?? "Failed to connect wallet.";
           set({
@@ -135,6 +146,19 @@ export const useWalletStore = create<WalletState>()(
       hydrate: async () => {
         if (!get().isConnected) return;
         const previousAddress = get().address ?? get().lastKnownAddress;
+        // Shared shape for the two "session went away" paths below: keep the
+        // last address around and flag it so the UI can offer a reconnect.
+        const clearedSession: Partial<WalletState> = {
+          address: null,
+          network: null,
+          isConnected: false,
+          lastKnownAddress: previousAddress,
+          wasSessionCleared: Boolean(previousAddress),
+          error: null,
+          errorKey: null,
+          networkMismatch: false,
+          notInstalled: false,
+        };
         try {
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());

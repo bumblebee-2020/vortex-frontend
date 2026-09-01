@@ -12,11 +12,6 @@ import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 
-function truncateAddress(address: string) {
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-6)}`;
-}
-
 const usdCompact = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",

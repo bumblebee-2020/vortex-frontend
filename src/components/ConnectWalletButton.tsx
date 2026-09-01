@@ -5,10 +5,6 @@ import { useToastStore } from "@/store/toast";
 
 const FREIGHTER_INSTALL_URL = "https://www.freighter.app/";
 
-function truncateAddress(address: string) {
-  return `${address.slice(0, 4)}...${address.slice(-4)}`;
-}
-
 export function ConnectWalletButton({ compact = false }: { compact?: boolean }) {
   const { t } = useTranslation();
   const {
@@ -32,6 +28,10 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
       useToastStore.getState().addToast(latestError, "error");
     }
   };
+
+  // Tooltip carries the underlying failure text; the button label itself only
+  // switches between "Connect" and "Retry".
+  const displayError = errorKey ? t(errorKey) : error;
 
   const baseClass = compact
     ? "px-3 py-1.5 text-xs rounded-lg border transition-all"

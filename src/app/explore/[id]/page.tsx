@@ -10,13 +10,12 @@ import { SkeletonDetailCard } from "@/components/Skeleton";
 import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
 import { useIntent } from "@/hooks/useIntent";
 import { timeAgo } from "@/lib/time";
+import { truncateAddress } from "@/lib/stellarAddress";
 
 const NETWORK = process.env.NEXT_PUBLIC_NETWORK ?? "testnet";
 
-function truncateAddress(address: string) {
-  if (address.length <= 12) return address;
-  return `${address.slice(0, 6)}...${address.slice(-6)}`;
-}
+// This screen shows 6-and-6 truncation for full-width identifiers.
+const truncate = (value: string) => truncateAddress(value, { prefix: 6, suffix: 6 });
 
 function deadlineLabel(deadline: string) {
   const msRemaining = new Date(deadline).getTime() - Date.now();
@@ -89,7 +88,7 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
             {intent.txHash && (
               <div className="pt-2 border-t border-vx-line">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-xs text-vx-muted num">{truncateAddress(intent.txHash)}</span>
+                  <span className="text-xs text-vx-muted num">{truncate(intent.txHash)}</span>
                   <button
                     onClick={async () => {
                       const txHash = intent.txHash;
