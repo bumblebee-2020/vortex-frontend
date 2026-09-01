@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import freighterApi from "@stellar/freighter-api";
-import { DEFAULT_LOCALE, translate } from "@/lib/i18n";
 
 export type WalletErrorKey =
   | "wallet.error.freighterUnavailable"
@@ -16,14 +15,16 @@ export type WalletState = {
   network: string | null;
   isConnected: boolean;
   isConnecting: boolean;
-  /**
-   * `true` when a previously-connected session was cleared out from under the
-   * user (e.g. the Freighter permission was revoked). The UI uses this together
-   * with `lastKnownAddress` to offer a one-tap "Reconnect" affordance.
-   */
   wasSessionCleared: boolean;
   /** Generic connection error message (e.g. user declined access). */
   error: string | null;
+  errorKey: WalletErrorKey | null;
+  /**
+   * Stable i18n key for the connection error, when one applies (currently only
+   * the "Freighter not installed" case). `null` for generic/unknown failures,
+   * where `error` carries the raw message instead.
+   */
+  errorKey: WalletErrorKey | null;
   /**
    * Translation key for `error` when the failure is one we control the copy for
    * (Freighter missing, generic connect failure). `null` when `error` is a
@@ -69,7 +70,6 @@ export const useWalletStore = create<WalletState>()(
           isConnecting: true,
           error: null,
           errorKey: null,
-          wasSessionCleared: false,
           networkMismatch: false,
           notInstalled: false,
         });
@@ -81,6 +81,7 @@ export const useWalletStore = create<WalletState>()(
               network: null,
               isConnected: false,
               isConnecting: false,
+              wasSessionCleared: false,
               error: "Freighter extension is not installed or enabled.",
               errorKey: "wallet.error.freighterUnavailable",
               notInstalled: true,
@@ -109,13 +110,14 @@ export const useWalletStore = create<WalletState>()(
           // (e.g. "User declined access") that we surface verbatim. Anything
           // else is an opaque failure we describe with our own translated copy.
           const externalError = err instanceof Error ? err.message : null;
+          const message = externalError ?? "Failed to connect wallet.";
           set({
             address: null,
             network: null,
             isConnected: false,
             isConnecting: false,
             wasSessionCleared: false,
-            error: externalError ?? "Failed to connect wallet.",
+            error: message,
             errorKey: externalError ? null : "wallet.error.connectFailed",
             networkMismatch: false,
             notInstalled: false,
@@ -161,7 +163,16 @@ export const useWalletStore = create<WalletState>()(
           const isAppConnected = await freighterApi.isConnected();
           const allowed = isAppConnected && (await freighterApi.isAllowed());
           if (!allowed) {
-            set(clearedSession);
+            set({
+              address: null,
+              network: null,
+              isConnected: false,
+              wasSessionCleared: true,
+              error: null,
+              errorKey: null,
+              networkMismatch: false,
+              notInstalled: false,
+            });
             return;
           }
 
@@ -171,7 +182,6 @@ export const useWalletStore = create<WalletState>()(
 
           set({
             address,
-            lastKnownAddress: address,
             network,
             isConnected: true,
             wasSessionCleared: false,
@@ -181,7 +191,16 @@ export const useWalletStore = create<WalletState>()(
             notInstalled: false,
           });
         } catch {
-          set(clearedSession);
+          set({
+            address: null,
+            network: null,
+            isConnected: false,
+            wasSessionCleared: false,
+            error: null,
+            errorKey: null,
+            networkMismatch: false,
+            notInstalled: false,
+          });
         }
       },
     }),

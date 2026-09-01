@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
+import { FeedSkeleton } from "@/components/Skeleton";
 import { timeAgo } from "@/lib/time";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
@@ -13,9 +15,14 @@ const CHAIN_COLOR: Record<string, string> = {
 /** Maximum number of activity items shown in the feed. */
 const FEED_LIMIT = 6;
 
-export function ActivityFeed() {
+type ActivityFeedViewProps = ReturnType<typeof useIntentFeed>;
+
+export function ActivityFeedView({ items, isLoading, error, isLive }: ActivityFeedViewProps) {
   const { t } = useTranslation();
-  const { items, isLoading, error, isLive } = useIntentFeed();
+  const [announcement, setAnnouncement] = useState("");
+  const previousCount = useRef(items.length);
+  const pendingCount = useRef(0);
+  const announcementTimer = useRef<number | null>(null);
 
   /**
    * Memoized slice of the most recent feed items.
@@ -23,24 +30,48 @@ export function ActivityFeed() {
    */
   const visibleItems = useMemo(() => items.slice(0, FEED_LIMIT), [items]);
 
+  useEffect(() => {
+    if (items.length > previousCount.current && previousCount.current > 0) {
+      pendingCount.current += items.length - previousCount.current;
+      if (announcementTimer.current !== null) {
+        window.clearTimeout(announcementTimer.current);
+      }
+      announcementTimer.current = window.setTimeout(() => {
+        const newCount = pendingCount.current;
+        pendingCount.current = 0;
+        announcementTimer.current = null;
+        setAnnouncement(`${newCount} new fill${newCount === 1 ? "" : "s"}`);
+      }, 1500);
+      previousCount.current = items.length;
+      return undefined;
+    }
+    previousCount.current = items.length;
+    return undefined;
+  }, [items.length]);
+
   if (isLoading && items.length === 0) {
-    return <FeedSkeleton count={3} />;
+    return (
+      <div className="space-y-2">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-[52px] bg-vx-surface/40 rounded-lg border border-vx-line animate-pulse" />
+        ))}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-2">
-      <div role="status" className="sr-only">{announcement}</div>
       <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1">
         <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
-        {isLive ? t("activityFeed.status.live") : t("activityFeed.status.polling")}
+        {isLive ? "Live" : "Polling"}
       </div>
       {error && items.length === 0 ? (
         <div className="p-4 text-center text-xs text-vx-muted bg-vx-surface/40 rounded-lg border border-vx-line">
-          {t("activityFeed.error.unavailable")}
+          Live feed unavailable right now.
         </div>
       ) : items.length === 0 ? (
         <div className="p-4 text-center text-xs text-vx-muted bg-vx-surface/40 rounded-lg border border-vx-line">
-          {t("activityFeed.empty")}
+          No fills yet.
         </div>
       ) : null}
       {visibleItems.map((item) => {
@@ -57,10 +88,7 @@ export function ActivityFeed() {
                 {item.srcAmount} {item.srcToken} → {item.dstToken}
               </div>
               <div className="text-[10px] text-vx-muted capitalize">
-                {t("activityFeed.item.route", {
-                  chain: item.srcChain,
-                  solver: item.solver,
-                })}
+                {item.srcChain} · via {item.solver}
               </div>
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -78,8 +106,4 @@ export function ActivityFeed() {
       })}
     </div>
   );
-}
-
-export function ActivityFeed() {
-  return <ActivityFeedView {...useIntentFeed()} />;
 }
