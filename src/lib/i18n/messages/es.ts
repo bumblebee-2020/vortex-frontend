@@ -77,9 +77,5 @@ export const es = {
   "home.chains.title": "Cadenas soportadas",
   "home.chains.stellarDestination": "Stellar (dest.)",
 
-  "notFound.breadcrumb": "No Encontrado",
-  "notFound.eyebrow": "404",
-  "notFound.title": "Página no encontrada",
-  "notFound.body": "La página que buscas no existe o puede haber sido movida.",
   "notFound.backHome": "← Volver a Vortex",
 } as const;
