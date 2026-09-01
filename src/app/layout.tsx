@@ -93,6 +93,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <I18nProvider locale={DEFAULT_LOCALE}>
+          <GlobalErrorCapture />
           <WalletHydrator />
           <IntentStatusWatcher />
           {children}
