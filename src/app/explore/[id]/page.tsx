@@ -72,7 +72,7 @@ export default function IntentDetailPage({ params }: { params: { id: string } })
             <div className="grid sm:grid-cols-2 gap-4">
               {[
                 ["Source chain", intent.srcChain],
-                ["Solver", intent.solver],
+                ["Solver", sanitizeDisplayText(intent.solver)],
                 ["Minimum out", `${intent.minOut} ${intent.dstToken}`],
                 ["Submitted", timeAgo(intent.createdAt)],
                 ["Deadline", deadlineLabel(intent.deadline)],

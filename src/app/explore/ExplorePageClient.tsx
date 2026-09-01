@@ -11,6 +11,7 @@ import { SkeletonCard } from "@/components/Skeleton";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
+import { sanitizeDisplayText } from "@/lib/textSafety";
 import type { IntentStatus } from "@/lib/types";
 
 const STATUS_OPTIONS: Array<IntentStatus | "all"> = ["all", "pending", "accepted", "filled", "failed"];

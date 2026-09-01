@@ -11,6 +11,7 @@ import { timeRemaining } from "@/lib/time";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
 import { getMessage } from "@/i18n/messages";
 import { formatCurrency } from "@/lib/format";
+import { sanitizeDisplayText } from "@/lib/textSafety";
 import Link from "next/link";
 
 const usdCompact = (value: number) =>
@@ -170,7 +171,7 @@ export default function SolvePageClient() {
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-vx-text truncate">{s.name}</div>
+                          <div className="text-sm font-semibold text-vx-text truncate">{sanitizeDisplayText(s.name)}</div>
                           <div className="num text-xs text-vx-muted truncate">{s.address}</div>
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {s.chains.map((c) => (

@@ -61,7 +61,7 @@ export default function SolverDetailPage({ params }: { params: { address: string
                 <div>
                   <div className="eyebrow mb-1 sm:mb-2 text-xs">Solver</div>
                   <h1 className="text-lg sm:text-2xl font-bold text-vx-text break-words">
-                    {solver.name}
+                    {sanitizeDisplayText(solver.name)}
                   </h1>
                 </div>
                 <div 
