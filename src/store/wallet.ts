@@ -74,7 +74,7 @@ export const useWalletStore = create<WalletState>()(
           notInstalled: false,
         });
         try {
-          const isAppConnected = await freighterApi.isConnected();
+          const isAppConnected = await walletAdapter.isConnected();
           if (!isAppConnected) {
             set({
               address: null,
@@ -89,8 +89,8 @@ export const useWalletStore = create<WalletState>()(
             return;
           }
 
-          const address = await freighterApi.requestAccess();
-          const network = await freighterApi.getNetwork();
+          const address = await walletAdapter.connect();
+          const network = await walletAdapter.getNetwork();
           const mismatch = network.toUpperCase() !== EXPECTED_NETWORK;
 
           set({
@@ -160,8 +160,8 @@ export const useWalletStore = create<WalletState>()(
           notInstalled: false,
         };
         try {
-          const isAppConnected = await freighterApi.isConnected();
-          const allowed = isAppConnected && (await freighterApi.isAllowed());
+          const isAppConnected = await walletAdapter.isConnected();
+          const allowed = isAppConnected && (await walletAdapter.isAllowed());
           if (!allowed) {
             set({
               address: null,
@@ -176,8 +176,8 @@ export const useWalletStore = create<WalletState>()(
             return;
           }
 
-          const address = await freighterApi.getPublicKey();
-          const network = await freighterApi.getNetwork();
+          const address = await walletAdapter.getPublicKey();
+          const network = await walletAdapter.getNetwork();
           const mismatch = network.toUpperCase() !== EXPECTED_NETWORK;
 
           set({
