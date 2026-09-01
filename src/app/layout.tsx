@@ -98,6 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <IntentStatusWatcher />
           {children}
           <ToastViewport />
+          <ConnectivityBanner />
         </I18nProvider>
       </body>
     </html>

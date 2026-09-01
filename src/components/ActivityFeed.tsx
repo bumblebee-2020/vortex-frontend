@@ -9,8 +9,12 @@ import type { FeedItem } from "@/lib/types";
 import { SkeletonCard } from "./Skeleton";
 
 const CHAIN_COLOR: Record<string, string> = {
-  ethereum: "#627EEA", base: "#0052FF", polygon: "#8247E5",
-  arbitrum: "#12AAFF", optimism: "#FF0420", avalanche: "#E84142",
+  ethereum: "#627EEA",
+  base: "#0052FF",
+  polygon: "#8247E5",
+  arbitrum: "#12AAFF",
+  optimism: "#FF0420",
+  avalanche: "#E84142",
 };
 
 /** Maximum number of activity items shown in the feed. */
@@ -139,7 +143,6 @@ export function ActivityFeedView({ items, isLoading, error, isLive }: ActivityFe
               <span
                 className="text-[10px] text-vx-muted"
                 title={new Date(item.createdAt).toLocaleString()}
-                tabIndex={0}
               >
                 {timeAgo(item.createdAt)}
               </span>

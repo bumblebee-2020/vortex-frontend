@@ -97,4 +97,39 @@ export const es = {
   "home.chains.stellarDestination": "Stellar (dest.)",
 
   "notFound.backHome": "← Volver a Vortex",
+
+  // ── Estados vacíos ─────────────────────────────────────────────────────────
+
+  // /explore — filtros sin resultados
+  "explore.empty.title": "Ninguna intención coincide con tus filtros",
+  "explore.empty.message": "Intenta ajustar o borrar los filtros de estado y cadena para ver más resultados.",
+  "explore.empty.clearFilters": "Limpiar filtros",
+
+  // /explore — error al cargar
+  "explore.error.title": "No se pudieron cargar las intenciones",
+  "explore.error.message": "Algo salió mal al obtener las intenciones. Verifica tu conexión e inténtalo de nuevo.",
+
+  // /my-intents — sin intenciones aún
+  "myIntents.empty.title": "Sin swaps aún",
+  "myIntents.empty.message": "No has enviado ningún swap desde esta billetera. Haz tu primer swap para empezar.",
+  "myIntents.empty.cta": "Hacer mi primer swap →",
+
+  // /my-intents — filtros sin resultados
+  "myIntents.filterEmpty.title": "Ninguna intención coincide con tus filtros",
+  "myIntents.filterEmpty.message": "Prueba con un filtro de estado o cadena diferente, o limpia todos los filtros para ver todo.",
+  "myIntents.filterEmpty.clearFilters": "Limpiar filtros",
+
+  // ActivityFeed — vacío en despliegue nuevo
+  "activityFeed.empty.title": "Sin actividad aún",
+  "activityFeed.empty.message": "Esperando las primeras intenciones de swap. Envía un swap para comenzar.",
+  "activityFeed.empty.cta": "Hacer swap ahora →",
+
+  "activityFeed.status.live": "En vivo",
+  "activityFeed.status.polling": "Consultando",
+  "activityFeed.error.unavailable": "Feed en vivo no disponible ahora mismo.",
+  "activityFeed.item.route": "{chain} · vía {solver}",
+
+  // solve/[address] — historial de llenados vacío
+  "solverDetail.fillHistory.empty.title": "Sin llenados aún",
+  "solverDetail.fillHistory.empty.message": "Una vez que este solver empiece a aceptar y llenar intenciones, su historial aparecerá aquí.",
 } as const;

@@ -96,6 +96,7 @@ export function Nav(props: NavProps) {
             <button
               onClick={() => setMobileOpen((open) => !open)}
               aria-expanded={mobileOpen}
+              aria-controls="mobile-nav-panel"
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
               className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
             >

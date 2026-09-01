@@ -9,6 +9,7 @@ import { Footer } from "@/components/Footer";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { SkeletonCard } from "@/components/Skeleton";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
 import { sanitizeDisplayText } from "@/lib/textSafety";
@@ -32,6 +33,7 @@ function readSort(value: string | null): SortOption {
 }
 
 export default function ExplorePageClient() {
+  const { t } = useTranslation();
   const { intents, isLoading, error, isLive } = useLiveIntents();
   const router = useRouter();
   const pathname = usePathname();
@@ -54,6 +56,13 @@ export default function ExplorePageClient() {
   const setStatusFilter = (value: IntentStatus | "all") => updateQuery({ status: value });
   const setChainFilter = (value: string) => updateQuery({ chain: value });
   const setSort = (value: SortOption) => updateQuery({ sort: value });
+
+  const isFiltered = statusFilter !== "all" || chainFilter !== "all";
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setChainFilter("all");
+  };
 
   const filtered = useMemo(() => {
     let result = intents;
@@ -102,7 +111,7 @@ export default function ExplorePageClient() {
           </div>
           <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1 pt-1 flex-shrink-0">
             <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
-            {isLive ? "Live" : "Polling"}
+            {isLive ? t("activityFeed.status.live") : t("activityFeed.status.polling")}
           </div>
         </div>
 
@@ -149,7 +158,17 @@ export default function ExplorePageClient() {
             <option value="largest">Largest amount</option>
           </select>
 
-          <span className="text-xs text-vx-muted ml-auto">
+          {isFiltered && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="px-3 py-2 rounded-lg border border-vx-sage/40 text-xs font-semibold text-vx-sage hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink"
+            >
+              {t("explore.empty.clearFilters")}
+            </button>
+          )}
+
+          <span className="text-xs text-vx-muted ml-auto" aria-live="polite" aria-atomic="true">
             {filtered.length} intent{filtered.length === 1 ? "" : "s"}
           </span>
         </div>
@@ -158,12 +177,23 @@ export default function ExplorePageClient() {
         {isLoading && intents.length === 0 ? (
           <SkeletonCard rows={4} rowHeight="h-14" />
         ) : error ? (
-          <div className="card p-8 text-center text-sm text-vx-muted">
-            Couldn&apos;t load intents right now. Try again shortly.
+          <div className="card p-8 text-center">
+            <p className="text-sm font-medium text-vx-text mb-1">{t("explore.error.title")}</p>
+            <p className="text-xs text-vx-muted max-w-xs mx-auto">{t("explore.error.message")}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="card p-8 text-center text-sm text-vx-muted">
-            No intents match your filters.
+          <div className="card p-8 text-center">
+            <p className="text-sm font-medium text-vx-text mb-1">{t("explore.empty.title")}</p>
+            <p className="text-xs text-vx-muted max-w-xs mx-auto mb-4">{t("explore.empty.message")}</p>
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink"
+              >
+                {t("explore.empty.clearFilters")}
+              </button>
+            )}
           </div>
         ) : (
           <div

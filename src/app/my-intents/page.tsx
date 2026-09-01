@@ -41,6 +41,7 @@ function swapAgainHref(item: FeedItem): string {
 }
 
 export default function MyIntentsPage() {
+  const { t } = useTranslation();
   const address = useWalletStore((s) => s.address);
   const isConnected = useWalletStore((s) => s.isConnected);
 
@@ -53,6 +54,13 @@ export default function MyIntentsPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { intent: expandedIntent, isLoading: expandedLoading, error: expandedError } = useIntent(expandedId);
+
+  const isFiltered = statusFilter !== "all" || chainFilter !== "all";
+
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setChainFilter("all");
+  };
 
   const filtered = useMemo(() => {
     let result = intents;
@@ -104,7 +112,7 @@ export default function MyIntentsPage() {
           {isConnected && (
             <div className="flex items-center gap-1.5 text-[10px] text-vx-muted px-1 pt-1 flex-shrink-0">
               <span aria-hidden="true" className={`state-dot ${isLive ? "bg-vx-sage" : "bg-vx-dim"}`} />
-              {isLive ? "Live" : "Polling"}
+              {isLive ? t("activityFeed.status.live") : t("activityFeed.status.polling")}
             </div>
           )}
         </div>
@@ -178,7 +186,7 @@ export default function MyIntentsPage() {
                 Export CSV
               </button>
 
-              <span className="text-xs text-vx-muted" aria-live="polite" aria-atomic="true">
+              <span className="text-xs text-vx-muted ml-auto" aria-live="polite" aria-atomic="true">
                 {filtered.length} intent{filtered.length === 1 ? "" : "s"}
               </span>
             </fieldset>
@@ -221,18 +229,37 @@ export default function MyIntentsPage() {
                 </button>
               </div>
             ) : intents.length === 0 ? (
-              <div role="status" className="card p-8 text-center text-sm text-vx-muted">
-                <p className="mb-4">You haven&apos;t submitted any swaps yet.</p>
+              /* Wallet is connected but no swaps have been submitted at all */
+              <div role="status" className="card p-8 text-center">
+                <p className="text-sm font-medium text-vx-text mb-2">
+                  {t("myIntents.empty.title")}
+                </p>
+                <p className="text-xs text-vx-muted max-w-xs mx-auto mb-4">
+                  {t("myIntents.empty.message")}
+                </p>
                 <Link
                   href="/"
-                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink rounded"
+                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink"
                 >
-                  Make your first swap
+                  {t("myIntents.empty.cta")}
                 </Link>
               </div>
             ) : filtered.length === 0 ? (
-              <div role="status" className="card p-8 text-center text-sm text-vx-muted">
-                No intents match your filters.
+              /* Intents exist but the active filter combination matches nothing */
+              <div role="status" className="card p-8 text-center">
+                <p className="text-sm font-medium text-vx-text mb-2">
+                  {t("myIntents.filterEmpty.title")}
+                </p>
+                <p className="text-xs text-vx-muted max-w-xs mx-auto mb-4">
+                  {t("myIntents.filterEmpty.message")}
+                </p>
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-block px-4 py-2 rounded-lg border border-vx-sage/40 text-vx-text text-sm hover:border-vx-sage/70 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-ink"
+                >
+                  {t("myIntents.filterEmpty.clearFilters")}
+                </button>
               </div>
             ) : (
               <div data-address={address} data-testid="intents-list" className="space-y-2" role="list">
@@ -315,6 +342,33 @@ export default function MyIntentsPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* Pagination */}
+            {pageCount > 1 && filtered.length > 0 && (
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-vx-border text-vx-muted
+                             hover:text-vx-text hover:border-vx-sage/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Previous
+                </button>
+                <span className="text-xs text-vx-muted num">
+                  Page {page} of {pageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                  disabled={page === pageCount}
+                  className="px-3 py-1.5 text-xs rounded-lg border border-vx-border text-vx-muted
+                             hover:text-vx-text hover:border-vx-sage/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                </button>
               </div>
             )}
           </>

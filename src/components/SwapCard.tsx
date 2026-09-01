@@ -48,9 +48,12 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
 
   const chainToggleRef = useRef<HTMLButtonElement>(null);
   const chainPickerRef = useRef<HTMLDivElement>(null);
+  const tokenToggleRef = useRef<HTMLButtonElement>(null);
+  const tokenPickerRef = useRef<HTMLDivElement>(null);
 
   const chain = CHAINS.find(c => c.id === srcChain) ?? CHAINS[0]!;
 
+  // ── Chain picker helpers ───────────────────────────────────────────────────
   const closeChainPicker = () => {
     setShowChainPicker(false);
     chainToggleRef.current?.focus();
@@ -97,6 +100,7 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
 
   const dstAddressError = dstAddress && !isValidStellarPublicKey(dstAddress) ? t("swap.destination.invalidAddress") : null;
 
+  // ── Derived display values ─────────────────────────────────────────────────
   const dstAmount = quote
     ? parseFloat(quote.dstAmount)
     : srcAmount
@@ -118,6 +122,9 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
     return { kind: "generic" as const };
   })();
 
+  const quoteErrorType = quoteError as { kind?: string } | null | undefined;
+
+  // ── Submission ─────────────────────────────────────────────────────────────
   const submission = useSwapSubmission();
   const isSubmitting = submission.status in SUBMISSION_LABEL_KEY;
   const canSwap = Boolean(srcAmount) && parseFloat(srcAmount) > 0 && !quoting && !isSubmitting && !dstAddressError;
@@ -210,7 +217,7 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
               ref={chainToggleRef}
               type="button"
               onClick={() => setShowChainPicker(true)}
-              aria-haspopup="true"
+              aria-haspopup="dialog"
               aria-expanded={showChainPicker}
               aria-label={t("swap.from.selectChain", { name: chain.name })}
               className="chain-badge cursor-pointer hover:bg-vx-lav/15 transition-colors"
@@ -233,11 +240,13 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
               placeholder={t("swap.from.amountPlaceholder")}
               className="input-swap flex-1"
             />
+            {/* ── Token picker toggle ── */}
             <button
+              ref={tokenToggleRef}
               type="button"
               className="token-btn"
-              onClick={() => setShowTokenPicker(!showTokenPicker)}
-              aria-haspopup="true"
+              onClick={() => setShowTokenPicker(prev => !prev)}
+              aria-haspopup="listbox"
               aria-expanded={showTokenPicker}
               aria-label={t("swap.from.selectToken", { symbol: srcToken.symbol })}
             >
@@ -251,8 +260,15 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
             </button>
           </div>
 
+          {/* ── Token picker inline overlay ── */}
           {showTokenPicker && (
-            <div className="pt-2 border-t border-vx-line space-y-1">
+            <div
+              ref={tokenPickerRef}
+              role="listbox"
+              aria-label={t("swap.from.selectToken", { symbol: srcToken.symbol })}
+              onKeyDown={handleTokenPickerKeyDown}
+              className="pt-2 border-t border-vx-line space-y-1"
+            >
               {(SRC_TOKENS[srcChain] ?? []).map(token => (
                 <button
                   key={token.symbol}
@@ -362,6 +378,7 @@ export function SwapCard({ initialAmount = "", previewQuote, onPreviewSubmit }: 
           <input
             id="dst-address"
             type="text"
+            tabIndex={hiddenTabIndex}
             value={dstAddress}
             onChange={e => setDstAddress(e.target.value.trim())}
             placeholder={t("swap.destination.placeholder")}

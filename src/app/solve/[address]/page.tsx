@@ -8,6 +8,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { SkeletonCard } from "@/components/Skeleton";
 import { useSolver } from "@/hooks/useSolver";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
@@ -20,6 +21,7 @@ const usdCompact = new Intl.NumberFormat("en-US", {
 });
 
 export default function SolverDetailPage({ params }: { params: { address: string } }) {
+  const { t } = useTranslation();
   const isValidAddress = isValidStellarPublicKey(params.address);
   const { solver, isLoading, error } = useSolver(isValidAddress ? params.address : null);
   const { items: fillHistory, isLoading: historyLoading, error: historyError } = useIntentFeed();
@@ -64,7 +66,7 @@ export default function SolverDetailPage({ params }: { params: { address: string
                     {sanitizeDisplayText(solver.name)}
                   </h1>
                 </div>
-                <div 
+                <div
                   className={`flex-shrink-0 px-2 sm:px-3 py-1 rounded-lg text-xs font-semibold border whitespace-nowrap ${
                     solver.status === "active"
                       ? "bg-vx-sage-bg text-vx-sage border-vx-sage/30"
@@ -117,7 +119,16 @@ export default function SolverDetailPage({ params }: { params: { address: string
               </div>
             </div>
 
-            {/* Fill history section */}
+            {/* ── Solver Timeline ─────────────────────────────────────────── */}
+            <div className="mb-6">
+              <SolverTimeline
+                solverAddress={solver.address}
+                fills={fillHistory}
+                isLoading={historyLoading && fillHistory.length === 0}
+              />
+            </div>
+
+            {/* ── Fill history table ──────────────────────────────────────── */}
             <div className="card overflow-hidden">
               <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30">
                 <h2 className="text-sm font-semibold text-vx-text">Recent Fills by Solver</h2>
@@ -134,8 +145,13 @@ export default function SolverDetailPage({ params }: { params: { address: string
                   Couldn&apos;t load fill history right now.
                 </div>
               ) : fillHistory.filter(item => item.solver === solver.address).length === 0 ? (
-                <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
-                  No fills from this solver in the history.
+                <div className="p-6 sm:p-8 text-center">
+                  <p className="text-sm font-medium text-vx-text mb-1">
+                    {t("solverDetail.fillHistory.empty.title")}
+                  </p>
+                  <p className="text-xs text-vx-muted max-w-xs mx-auto">
+                    {t("solverDetail.fillHistory.empty.message")}
+                  </p>
                 </div>
               ) : (
                 <div className="divide-y divide-vx-line">
@@ -143,8 +159,8 @@ export default function SolverDetailPage({ params }: { params: { address: string
                     .filter(item => item.solver === solver.address)
                     .slice(0, 10)
                     .map(fill => (
-                      <div 
-                        key={fill.id} 
+                      <div
+                        key={fill.id}
                         className="px-4 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors"
                       >
                         <div className="flex flex-col gap-2">
