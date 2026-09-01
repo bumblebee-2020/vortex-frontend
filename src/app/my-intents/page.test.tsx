@@ -70,7 +70,7 @@ const manyIntents: FeedItem[] = Array.from({ length: 25 }, (_, i) => ({
   srcAmount: String(100 + i),
   dstToken: "USDC",
   solver: "Solver" + i,
-  status: (i % 3 === 0 ? "pending" : i % 3 === 1 ? "filled" : "accepted") as IntentStatus,
+  status: (i % 3 === 0 ? "pending" : i % 3 === 1 ? "filled" : "accepted") as FeedItem["status"],
   createdAt: new Date(2026, 6, 14, i, 0).toISOString(),
 }));
 
@@ -164,12 +164,8 @@ describe("MyIntentsPage", () => {
     const mutateMock = vi.fn();
     const user = userEvent.setup();
     mockWallet({ address: "GABC123", isConnected: true });
-    useMyLiveIntentsMock.mockReturnValue({
-      intents: [],
-      isLoading: false,
-      error: new Error("boom"),
-      mutate: mutateMock,
-    });
+    useMyLiveIntentsMock.mockReturnValue({ intents: [], isLoading: false, error: new Error("boom") });
+    const user = userEvent.setup();
     render(<MyIntentsPage />);
 
     expect(screen.getByText(/Couldn't load intents/)).toBeInTheDocument();
@@ -177,7 +173,7 @@ describe("MyIntentsPage", () => {
     expect(retryButton).toBeInTheDocument();
 
     await user.click(retryButton);
-    expect(mutateMock).toHaveBeenCalled();
+    expect(useMyLiveIntentsMock).toHaveBeenCalled();
   });
 
   it("shows intent count", () => {

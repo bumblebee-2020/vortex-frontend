@@ -13,14 +13,41 @@ type NavProps = { variant: "home" } | { variant: "breadcrumb"; label: string };
 
 const NAV_LINKS = [
   { href: "/explore", label: "explore" as const },
+  { href: "/analytics", label: "analytics" as const },
   { href: "/solve", label: "becomeSolver" as const },
 ];
+
+const LOCALE_LABELS: Record<Locale, string> = {
+  en: "English",
+  es: "Español",
+};
 
 export function Nav(props: NavProps) {
   const maxWidth = props.variant === "home" ? "max-w-6xl" : "max-w-5xl";
   const [mobileOpen, setMobileOpen] = useState(false);
   const isConnected = useWalletStore((s) => s.isConnected);
   const pathname = usePathname();
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const locale = useLocale();
+  const setLocale = useSetLocale();
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (!panelRef.current || !toggleRef.current) return;
+      if (!panelRef.current.contains(event.target as Node) && !toggleRef.current.contains(event.target as Node)) {
+        setMobileOpen(false);
+      }
+    }
+
+    if (mobileOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return undefined;
+  }, [mobileOpen]);
+
+  const closeMobileMenu = () => setMobileOpen(false);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-vx-border bg-vx-ink/80 backdrop-blur-md">
@@ -33,7 +60,11 @@ export function Nav(props: NavProps) {
             </div>
             <div className="hidden md:flex items-center gap-5 text-sm text-vx-muted">
               {NAV_LINKS.map((link) => (
-                <Link key={link.href} href={link.href} className="hover:text-vx-text transition-colors">
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`transition-colors ${pathname === link.href ? "text-vx-text" : "hover:text-vx-text active:text-vx-sage"}`}
+                >
                   {getMessage(`nav.${link.label}`)}
                 </Link>
               ))}
@@ -86,8 +117,8 @@ export function Nav(props: NavProps) {
             <Link
               key={link.href}
               href={link.href}
-              onClick={() => setMobileOpen(false)}
-              className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
+              onClick={closeMobileMenu}
+              className={`py-2 text-sm transition-colors ${pathname === link.href ? "text-vx-text" : "text-vx-muted hover:text-vx-text active:text-vx-sage"}`}
             >
               {getMessage(`nav.${link.label}`)}
             </Link>

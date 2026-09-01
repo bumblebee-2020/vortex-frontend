@@ -15,15 +15,10 @@ export type WalletState = {
   network: string | null;
   isConnected: boolean;
   isConnecting: boolean;
-  /**
-   * `true` when a previously-persisted session could not be silently restored
-   * on load (the extension no longer recognises this site). The UI uses it to
-   * show a "reconnect" prompt with the last-known address rather than a plain
-   * connect CTA.
-   */
   wasSessionCleared: boolean;
   /** Generic connection error message (e.g. user declined access). */
   error: string | null;
+  errorKey: WalletErrorKey | null;
   /**
    * Stable i18n key for the connection error, when one applies (currently only
    * the "Freighter not installed" case). `null` for generic/unknown failures,
@@ -63,7 +58,13 @@ export const useWalletStore = create<WalletState>()(
       notInstalled: false,
 
       connect: async () => {
-        set({ isConnecting: true, error: null, errorKey: null, networkMismatch: false, notInstalled: false });
+        set({
+          isConnecting: true,
+          error: null,
+          errorKey: null,
+          networkMismatch: false,
+          notInstalled: false,
+        });
         try {
           const isAppConnected = await freighterApi.isConnected();
           if (!isAppConnected) {
@@ -72,6 +73,7 @@ export const useWalletStore = create<WalletState>()(
               network: null,
               isConnected: false,
               isConnecting: false,
+              wasSessionCleared: false,
               error: "Freighter extension is not installed or enabled.",
               errorKey: "wallet.error.freighterUnavailable",
               notInstalled: true,
@@ -96,14 +98,16 @@ export const useWalletStore = create<WalletState>()(
             notInstalled: false,
           });
         } catch (err) {
+          const externalError = err instanceof Error ? err.message : null;
+          const message = externalError ?? "Failed to connect wallet.";
           set({
             address: null,
             network: null,
             isConnected: false,
             isConnecting: false,
             wasSessionCleared: false,
-            error: err instanceof Error ? err.message : "Failed to connect wallet.",
-            errorKey: null,
+            error: message,
+            errorKey: externalError ? null : "wallet.error.connectFailed",
             networkMismatch: false,
             notInstalled: false,
           });
@@ -137,10 +141,9 @@ export const useWalletStore = create<WalletState>()(
           if (!allowed) {
             set({
               address: null,
-              lastKnownAddress: previousAddress,
               network: null,
               isConnected: false,
-              wasSessionCleared: Boolean(previousAddress),
+              wasSessionCleared: true,
               error: null,
               errorKey: null,
               networkMismatch: false,
@@ -155,7 +158,6 @@ export const useWalletStore = create<WalletState>()(
 
           set({
             address,
-            lastKnownAddress: address,
             network,
             isConnected: true,
             wasSessionCleared: false,
@@ -167,10 +169,9 @@ export const useWalletStore = create<WalletState>()(
         } catch {
           set({
             address: null,
-            lastKnownAddress: previousAddress,
             network: null,
             isConnected: false,
-            wasSessionCleared: Boolean(previousAddress),
+            wasSessionCleared: false,
             error: null,
             errorKey: null,
             networkMismatch: false,

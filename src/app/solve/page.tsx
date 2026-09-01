@@ -1,5 +1,3 @@
-"use client";
-
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
@@ -34,13 +32,18 @@ export default function SolvePage() {
   const [solverSort, setSolverSort] = useState<SolverSort>("volumeUsd");
   const [solverSortAscending, setSolverSortAscending] = useState(false);
   const { solvers, isLoading: solversLoading, error: solversError } = useSolvers();
-  const { intents: openIntents, isLoading: intentsLoading, error: intentsError } = useOpenIntents();
+  const {
+    intents: openIntents,
+    isLoading: intentsLoading,
+    error: intentsError,
+  } = useOpenIntents();
   const { accept, acceptingId, error: acceptError } = useAcceptIntent();
 
   const [address, setAddress] = useState("");
   const [bond, setBond] = useState("");
   const registration = useSolverRegistration();
   const isRegistering = registration.status in REGISTRATION_LABEL;
+
   const sortedSolvers = useMemo(
     () =>
       [...solvers].sort((a, b) => {
@@ -56,20 +59,23 @@ export default function SolvePage() {
   const handleSolverSort = (column: SolverSort) => {
     if (solverSort === column) {
       setSolverSortAscending((ascending) => !ascending);
-    } else {
-      setSolverSort(column);
-      setSolverSortAscending(column === "name");
+      return;
     }
+
+    setSolverSort(column);
+    setSolverSortAscending(column === "name");
   };
 
   const addressError =
     address && !isValidStellarPublicKey(address)
       ? getMessage("solve.register.validation.invalidAddress")
       : null;
+
   const bondError =
-    bond && (isNaN(parseFloat(bond)) || parseFloat(bond) < MIN_BOND_USD)
+    bond && (Number.isNaN(Number.parseFloat(bond)) || Number.parseFloat(bond) < MIN_BOND_USD)
       ? getMessage("solve.register.validation.minimumBond", { minBond: MIN_BOND_USD })
       : null;
+
   const canRegister =
     Boolean(address) && Boolean(bond) && !addressError && !bondError && !isRegistering;
 
@@ -80,8 +86,9 @@ export default function SolvePage() {
       setBond("");
       return;
     }
+
     if (!canRegister) return;
-    registration.register(address, parseFloat(bond));
+    registration.register(address, Number.parseFloat(bond));
   };
 
   return (
@@ -89,7 +96,6 @@ export default function SolvePage() {
       <Nav variant="breadcrumb" label={getMessage("solve.nav.label")} />
 
       <main id="main-content" className="max-w-5xl mx-auto px-3 sm:px-5 py-8 sm:py-12">
-        {/* ── Hero ── */}
         <div className="mb-8 sm:mb-10">
           <div className="eyebrow mb-2 sm:mb-3 text-xs">{getMessage("solve.hero.eyebrow")}</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-vx-text mb-2 sm:mb-3">
@@ -100,7 +106,6 @@ export default function SolvePage() {
           </p>
         </div>
 
-        {/* How solver earns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-10">
           {[
             {
@@ -127,45 +132,35 @@ export default function SolvePage() {
           ))}
         </div>
 
-        {/* Tabs */}
         <div
           role="tablist"
           aria-label={getMessage("solve.tabs.ariaLabel")}
           className="flex gap-1 mb-6 bg-vx-surface/50 p-1 rounded-lg w-fit overflow-x-auto"
         >
-          {(["leaderboard", "intents", "register"] as const).map((t) => (
+          {(["leaderboard", "intents", "register"] as const).map((entry) => (
             <button
-              key={t}
+              key={entry}
               type="button"
               role="tab"
-              id={`tab-${t}`}
-              aria-selected={tab === t}
-              aria-controls={`panel-${t}`}
-              onClick={() => setTab(t)}
-              className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium capitalize transition-all whitespace-nowrap
-                ${tab === t
-                  ? "bg-vx-card text-vx-text border border-vx-border"
-                  : "text-vx-muted hover:text-vx-text"
-                }`}
+              id={`tab-${entry}`}
+              aria-selected={tab === entry}
+              aria-controls={`panel-${entry}`}
+              onClick={() => setTab(entry)}
+              className={`px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium capitalize transition-all whitespace-nowrap ${
+                tab === entry ? "bg-vx-card text-vx-text border border-vx-border" : "text-vx-muted hover:text-vx-text"
+              }`}
             >
-              {getMessage(`solve.tabs.${t}`)}
+              {getMessage(`solve.tabs.${entry}`)}
             </button>
           ))}
         </div>
 
-        {/* ── Leaderboard panel ── */}
         {tab === "leaderboard" && (
-          <div
-            id="panel-leaderboard"
-            role="tabpanel"
-            aria-labelledby="tab-leaderboard"
-            className="card overflow-hidden"
-          >
+          <div id="panel-leaderboard" role="tabpanel" aria-labelledby="tab-leaderboard" className="card overflow-hidden">
             <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30">
-              <span className="text-sm font-semibold text-vx-text">
-                {getMessage("solve.leaderboard.title")}
-              </span>
+              <span className="text-sm font-semibold text-vx-text">{getMessage("solve.leaderboard.title")}</span>
             </div>
+
             {solversLoading && solvers.length === 0 ? (
               <div className="p-4 sm:p-5 space-y-3">
                 {[0, 1, 2].map((i) => (
@@ -173,13 +168,9 @@ export default function SolvePage() {
                 ))}
               </div>
             ) : solversError ? (
-              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
-                {getMessage("solve.leaderboard.error")}
-              </div>
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">{getMessage("solve.leaderboard.error")}</div>
             ) : solvers.length === 0 ? (
-              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
-                {getMessage("solve.leaderboard.empty")}
-              </div>
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">{getMessage("solve.leaderboard.empty")}</div>
             ) : (
               <>
                 <div role="row" className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-3 sm:px-5 py-2 border-b border-vx-line">
@@ -205,92 +196,65 @@ export default function SolvePage() {
                     </div>
                   ))}
                 </div>
+
                 <div className="divide-y divide-vx-line">
-                {sortedSolvers.map((s, i) => (
-                  <Link
-                    key={s.address}
-                    href={`/solve/${s.address}`}
-                    className="block px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors focus:outline-none focus:ring-2 focus:ring-vx-sage focus:ring-inset"
-                  >
-                    <div className="flex flex-col gap-3">
-                      <div className="flex items-start gap-3 min-w-0">
-                        <span className="num text-base sm:text-lg font-bold text-vx-dim flex-shrink-0">
-                          {String(i + 1).padStart(2, "0")}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-vx-text truncate">{s.name}</div>
-                          <div className="num text-xs text-vx-muted truncate">{s.address}</div>
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {s.chains.map((c) => (
-                              <span
-                                key={c}
-                                className="text-[10px] px-1.5 py-0.5 bg-vx-surface rounded text-vx-muted"
-                              >
-                                {c}
-                              </span>
-                            ))}
+                  {sortedSolvers.map((solver, index) => (
+                    <Link
+                      key={solver.address}
+                      href={`/solve/${solver.address}`}
+                      className="block px-3 sm:px-5 py-4 hover:bg-vx-surface/30 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-vx-sage"
+                    >
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <span className="num text-base sm:text-lg font-bold text-vx-dim flex-shrink-0">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-vx-text truncate">{solver.name}</div>
+                            <div className="num text-xs text-vx-muted truncate">{solver.address}</div>
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {solver.chains.map((chain) => (
+                                <span key={chain} className="text-[10px] px-1.5 py-0.5 bg-vx-surface rounded text-vx-muted">
+                                  {chain}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-6">
+                          <div>
+                            <div className="num text-xs sm:text-sm font-semibold text-vx-text">{solver.fills}</div>
+                            <div className="eyebrow text-[10px] sm:text-xs">{getMessage("solve.leaderboard.fills")}</div>
+                          </div>
+                          <div>
+                            <div className="num text-xs sm:text-sm font-semibold text-vx-text">{usdCompact(solver.volumeUsd)}</div>
+                            <div className="eyebrow text-[10px] sm:text-xs">{getMessage("solve.leaderboard.volume")}</div>
+                          </div>
+                          <div>
+                            <div className="num text-xs sm:text-sm font-semibold text-vx-text">{solver.avgFillTimeSeconds}s</div>
+                            <div className="eyebrow text-[10px] sm:text-xs">{getMessage("solve.leaderboard.avgTime")}</div>
+                          </div>
+                          <div>
+                            <div className={`num text-xs sm:text-sm font-semibold ${solver.successRatePct > 99 ? "text-vx-sage" : "text-vx-amber"}`}>
+                              {solver.successRatePct}%
+                            </div>
+                            <div className="eyebrow text-[10px] sm:text-xs">{getMessage("solve.leaderboard.success")}</div>
                           </div>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-6">
-                        <div>
-                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">
-                            {s.fills}
-                          </div>
-                          <div className="eyebrow text-[10px] sm:text-xs">
-                            {getMessage("solve.leaderboard.fills")}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">
-                            {usdCompact(s.volumeUsd)}
-                          </div>
-                          <div className="eyebrow text-[10px] sm:text-xs">
-                            {getMessage("solve.leaderboard.volume")}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="num text-xs sm:text-sm font-semibold text-vx-text">
-                            {s.avgFillTimeSeconds}s
-                          </div>
-                          <div className="eyebrow text-[10px] sm:text-xs">
-                            {getMessage("solve.leaderboard.avgTime")}
-                          </div>
-                        </div>
-                        <div>
-                          <div
-                            className={`num text-xs sm:text-sm font-semibold ${
-                              s.successRatePct > 99 ? "text-vx-sage" : "text-vx-amber"
-                            }`}
-                          >
-                            {s.successRatePct}%
-                          </div>
-                          <div className="eyebrow text-[10px] sm:text-xs">
-                            {getMessage("solve.leaderboard.success")}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+                    </Link>
+                  ))}
                 </div>
               </>
             )}
           </div>
         )}
 
-        {/* ── Open intents panel ── */}
         {tab === "intents" && (
-          <div
-            id="panel-intents"
-            role="tabpanel"
-            aria-labelledby="tab-intents"
-            className="card overflow-hidden"
-          >
+          <div id="panel-intents" role="tabpanel" aria-labelledby="tab-intents" className="card overflow-hidden">
             <div className="px-4 sm:px-5 py-3 sm:py-3.5 border-b border-vx-border bg-vx-surface/30 flex items-center justify-between">
-              <span className="text-sm font-semibold text-vx-text">
-                {getMessage("solve.intents.title")}
-              </span>
+              <span className="text-sm font-semibold text-vx-text">{getMessage("solve.intents.title")}</span>
               <span className="chip bg-vx-sage-bg text-vx-sage text-[10px]">
                 <span className="w-1.5 h-1.5 rounded-full bg-vx-sage animate-pulse" />
                 {getMessage("solve.intents.available", { count: openIntents.length })}
@@ -305,18 +269,14 @@ export default function SolvePage() {
 
             {intentsLoading && openIntents.length === 0 ? (
               <div className="p-4 sm:p-5 space-y-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="h-14 bg-vx-surface/40 rounded-lg animate-pulse" />
+                {[0, 1, 2].map((index) => (
+                  <div key={index} className="h-14 bg-vx-surface/40 rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : intentsError ? (
-              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
-                {getMessage("solve.intents.error")}
-              </div>
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">{getMessage("solve.intents.error")}</div>
             ) : openIntents.length === 0 ? (
-              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">
-                {getMessage("solve.intents.empty")}
-              </div>
+              <div className="p-6 sm:p-8 text-center text-sm text-vx-muted">{getMessage("solve.intents.empty")}</div>
             ) : (
               <div className="divide-y divide-vx-line">
                 {openIntents.map((intent) => (
@@ -339,18 +299,15 @@ export default function SolvePage() {
                         })}
                       </div>
                     </div>
+
                     <button
                       type="button"
                       onClick={() => accept(intent.id)}
                       disabled={acceptingId === intent.id}
                       aria-busy={acceptingId === intent.id}
-                      className="px-3 sm:px-4 py-2 bg-vx-sage-bg text-vx-sage text-xs font-semibold rounded-lg
-                                 border border-vx-sage/30 hover:bg-vx-sage/15 transition-colors flex-shrink-0 w-full sm:w-auto
-                                 disabled:opacity-60 disabled:cursor-wait"
+                      className="px-3 sm:px-4 py-2 bg-vx-sage-bg text-vx-sage text-xs font-semibold rounded-lg border border-vx-sage/30 hover:bg-vx-sage/15 transition-colors flex-shrink-0 w-full sm:w-auto disabled:opacity-60 disabled:cursor-wait"
                     >
-                      {acceptingId === intent.id
-                        ? getMessage("solve.intents.accepting")
-                        : getMessage("solve.intents.accept")}
+                      {acceptingId === intent.id ? getMessage("solve.intents.accepting") : getMessage("solve.intents.accept")}
                     </button>
                   </div>
                 ))}
@@ -359,19 +316,11 @@ export default function SolvePage() {
           </div>
         )}
 
-        {/* ── Register panel ── */}
         {tab === "register" && (
-          <div
-            id="panel-register"
-            role="tabpanel"
-            aria-labelledby="tab-register"
-            className="max-w-md"
-          >
+          <div id="panel-register" role="tabpanel" aria-labelledby="tab-register" className="max-w-md">
             <div className="card p-4 sm:p-6 space-y-4 sm:space-y-5">
               <div>
-                <h3 className="text-base font-semibold text-vx-text mb-1">
-                  {getMessage("solve.register.title")}
-                </h3>
+                <h3 className="text-base font-semibold text-vx-text mb-1">{getMessage("solve.register.title")}</h3>
                 <p className="text-xs text-vx-muted">{getMessage("solve.register.description")}</p>
               </div>
 
@@ -387,9 +336,7 @@ export default function SolvePage() {
                   placeholder={getMessage("solve.register.addressPlaceholder")}
                   aria-invalid={Boolean(addressError)}
                   aria-describedby={addressError ? "solver-address-error" : undefined}
-                  className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
-                             text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none
-                             focus:border-vx-sage/50 transition-colors"
+                  className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5 text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none focus:border-vx-sage/50 focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-card transition-colors"
                 />
                 {addressError && (
                   <p id="solver-address-error" role="alert" className="text-xs text-red-400 mt-1.5">
@@ -410,9 +357,7 @@ export default function SolvePage() {
                   placeholder={getMessage("solve.register.bondPlaceholder")}
                   aria-invalid={Boolean(bondError)}
                   aria-describedby={bondError ? "solver-bond-error" : undefined}
-                  className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5
-                             text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none
-                             focus:border-vx-sage/50 transition-colors"
+                  className="w-full bg-vx-surface border border-vx-border rounded-lg px-3 py-2.5 text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none focus:border-vx-sage/50 focus:ring-2 focus:ring-vx-sage focus:ring-offset-2 focus:ring-offset-vx-card transition-colors"
                 />
                 {bondError && (
                   <p id="solver-bond-error" role="alert" className="text-xs text-red-400 mt-1.5">
@@ -443,8 +388,8 @@ export default function SolvePage() {
                 {isRegistering
                   ? REGISTRATION_LABEL[registration.status]
                   : registration.status === "success"
-                  ? getMessage("solve.register.button.registered")
-                  : getMessage("solve.register.button.connect")}
+                    ? getMessage("solve.register.button.registered")
+                    : getMessage("solve.register.button.connect")}
               </button>
             </div>
           </div>

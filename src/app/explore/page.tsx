@@ -4,9 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/Nav";
 import { Footer } from "@/components/Footer";
+import { EmptyState } from "@/components/EmptyState";
 import { IntentStatusBadge } from "@/components/IntentStatusBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { useLiveIntents } from "@/hooks/useLiveIntents";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { downloadCsv, buildIntentsCsv } from "@/lib/csv";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
 import type { IntentStatus } from "@/lib/types";
@@ -16,54 +19,88 @@ const SORT_OPTIONS = ["newest", "oldest", "largest"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
 
 const PAGE_SIZE = 10;
+const SEARCH_DEBOUNCE_MS = 180;
 
 export default function ExplorePage() {
-  const { intents, isLoading, error, isLive } = useLiveIntents();
+  const { intents, isLoading, error } = useLiveIntents();
+  const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<IntentStatus | "all">("all");
   const [chainFilter, setChainFilter] = useState<string>("all");
   const [sort, setSort] = useState<SortOption>("newest");
   const [page, setPage] = useState(1);
 
-  /**
-   * Stable callbacks for filter controls. Prevents unnecessary re-renders of
-   * child components that receive these as props (e.g. if selects were extracted).
-   */
+  const updateUrl = useCallback((key: string, value: string, defaultValue: string) => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (value === defaultValue) {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+    const next = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`;
+    window.history.replaceState({}, "", next);
+  }, []);
+
   const handleStatusChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) =>
       setStatusFilter(e.target.value as IntentStatus | "all"),
     [],
   );
+
   const handleChainChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => setChainFilter(e.target.value),
     [],
   );
+
   const handleSortChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => setSort(e.target.value as SortOption),
     [],
   );
 
   const filtered = useMemo(() => {
+    const query = debouncedSearch.trim().toLowerCase();
     let result = intents;
 
-    if (statusFilter !== "all") {
-      result = result.filter((i) => i.status === statusFilter);
+    if (query) {
+      result = result.filter((item) => {
+        const haystack = [
+          item.id,
+          item.srcToken,
+          item.dstToken,
+          item.srcChain,
+          item.solver,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return haystack.includes(query);
+      });
     }
+
+    if (statusFilter !== "all") {
+      result = result.filter((item) => item.status === statusFilter);
+    }
+
     if (chainFilter !== "all") {
-      result = result.filter((i) => i.srcChain === chainFilter);
+      result = result.filter((item) => item.srcChain === chainFilter);
     }
 
     result = [...result].sort((a, b) => {
       if (sort === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       if (sort === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      return parseFloat(b.srcAmount) - parseFloat(a.srcAmount);
+      return Number.parseFloat(b.srcAmount) - Number.parseFloat(a.srcAmount);
     });
 
     return result;
-  }, [intents, statusFilter, chainFilter, sort]);
+  }, [chainFilter, debouncedSearch, intents, sort, statusFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, chainFilter, sort]);
+  }, [statusFilter, chainFilter, sort, debouncedSearch]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -89,6 +126,16 @@ export default function ExplorePage() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
+          <label htmlFor="intent-search" className="sr-only">Search intents</label>
+          <input
+            id="intent-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by id, token, chain or solver"
+            className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text placeholder-vx-dim/60 focus:outline-none focus:border-vx-sage/50 transition-colors"
+          />
+
           <label htmlFor="status-filter" className="sr-only">Filter by status</label>
           <select
             id="status-filter"
@@ -96,9 +143,9 @@ export default function ExplorePage() {
             onChange={handleStatusChange}
             className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
           >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s === "all" ? "All statuses" : s.charAt(0).toUpperCase() + s.slice(1)}
+            {STATUS_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {status === "all" ? "All statuses" : status.charAt(0).toUpperCase() + status.slice(1)}
               </option>
             ))}
           </select>
@@ -111,9 +158,9 @@ export default function ExplorePage() {
             className="bg-vx-surface border border-vx-border rounded-lg px-3 py-2 text-sm text-vx-text"
           >
             <option value="all">All chains</option>
-            {CHAINS.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+            {CHAINS.map((chain) => (
+              <option key={chain.id} value={chain.id}>
+                {chain.name}
               </option>
             ))}
           </select>
@@ -225,7 +272,6 @@ export default function ExplorePage() {
           </>
         )}
       </main>
-
       <Footer />
     </div>
   );

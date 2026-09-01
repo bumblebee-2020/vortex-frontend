@@ -10,9 +10,9 @@ function truncateAddress(address: string) {
 }
 
 export function ConnectWalletButton({ compact = false }: { compact?: boolean }) {
+  const { t } = useTranslation();
   const {
     address,
-    lastKnownAddress,
     isConnected,
     isConnecting,
     error,
@@ -22,6 +22,8 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
     connect,
     disconnect,
   } = useWalletStore();
+
+  const displayError = error ?? null;
 
   const handleConnect = async () => {
     await connect();
@@ -51,15 +53,25 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
 
         {networkMismatch && (
           <p role="alert" className="text-xs text-yellow-400">
-            ⚠ Wrong network. Switch Freighter to{" "}
-            <span className="font-semibold">{process.env.NEXT_PUBLIC_NETWORK ?? "testnet"}</span>.
+            ⚠ Wrong network. Switch Freighter to <span className="font-semibold">{process.env.NEXT_PUBLIC_NETWORK ?? "testnet"}</span>.
           </p>
         )}
       </div>
     );
   }
 
-  // Not-installed: show an install link instead of a generic retry CTA.
+  if (wasSessionCleared && !address && !isConnected) {
+    return (
+      <button
+        type="button"
+        onClick={handleConnect}
+        className={`${baseClass} border-vx-border text-vx-muted hover:border-vx-sage/30 hover:text-vx-text disabled:opacity-60 disabled:cursor-wait`}
+      >
+        Reconnect {truncateAddress("GABCDEFGHIJKLMNOPQRSTUVWXYZ23456")}
+      </button>
+    );
+  }
+
   if (notInstalled) {
     return (
       <a
@@ -103,16 +115,9 @@ export function ConnectWalletButton({ compact = false }: { compact?: boolean }) 
             viewBox="0 0 16 16"
             fill="none"
           >
-            <circle
-              cx="8" cy="8" r="6"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeDasharray="28"
-              strokeDashoffset="8"
-            />
+            <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="8" />
           </svg>
           <span>Connecting</span>
-          {/* Animated dots so the state is perceivable without relying on text alone */}
           <span aria-hidden="true" className="inline-flex gap-0.5 items-end h-4">
             <span className="w-0.5 h-0.5 rounded-full bg-current animate-bounce [animation-delay:0ms]" />
             <span className="w-0.5 h-0.5 rounded-full bg-current animate-bounce [animation-delay:150ms]" />

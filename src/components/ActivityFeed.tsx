@@ -1,8 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useIntentFeed } from "@/hooks/useIntentFeed";
+import { FeedSkeleton } from "@/components/Skeleton";
 import { timeAgo } from "@/lib/time";
+import { useTranslation } from "@/lib/i18n/I18nProvider";
+import type { FeedItem } from "@/lib/types";
 
 const CHAIN_COLOR: Record<string, string> = {
   ethereum: "#627EEA", base: "#0052FF", polygon: "#8247E5",
@@ -12,14 +15,39 @@ const CHAIN_COLOR: Record<string, string> = {
 /** Maximum number of activity items shown in the feed. */
 const FEED_LIMIT = 6;
 
-export function ActivityFeed() {
-  const { items, isLoading, error, isLive } = useIntentFeed();
+type ActivityFeedViewProps = ReturnType<typeof useIntentFeed>;
+
+export function ActivityFeedView({ items, isLoading, error, isLive }: ActivityFeedViewProps) {
+  const { t } = useTranslation();
+  const [announcement, setAnnouncement] = useState("");
+  const previousCount = useRef(items.length);
+  const pendingCount = useRef(0);
+  const announcementTimer = useRef<number | null>(null);
 
   /**
    * Memoized slice of the most recent feed items.
    * Avoids recreating the array on every render when `items` reference is stable.
    */
   const visibleItems = useMemo(() => items.slice(0, FEED_LIMIT), [items]);
+
+  useEffect(() => {
+    if (items.length > previousCount.current && previousCount.current > 0) {
+      pendingCount.current += items.length - previousCount.current;
+      if (announcementTimer.current !== null) {
+        window.clearTimeout(announcementTimer.current);
+      }
+      announcementTimer.current = window.setTimeout(() => {
+        const newCount = pendingCount.current;
+        pendingCount.current = 0;
+        announcementTimer.current = null;
+        setAnnouncement(`${newCount} new fill${newCount === 1 ? "" : "s"}`);
+      }, 1500);
+      previousCount.current = items.length;
+      return undefined;
+    }
+    previousCount.current = items.length;
+    return undefined;
+  }, [items.length]);
 
   if (isLoading && items.length === 0) {
     return (

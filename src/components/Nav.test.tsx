@@ -10,9 +10,7 @@ const initialWalletState = useWalletStore.getState();
 
 /** Wrap Nav in I18nProvider so locale context is available. */
 function renderNav(props: Parameters<typeof Nav>[0]) {
-  return render(
-    createElement(I18nProvider, { locale: "en" }, createElement(Nav, props))
-  );
+  return render(<I18nProvider locale="en"><Nav {...props} /></I18nProvider>);
 }
 
 describe("Nav", () => {
