@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, screen } from "@testing-library/react";
 import type { FeedItem } from "@/lib/types";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";

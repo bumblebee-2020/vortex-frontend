@@ -10,6 +10,15 @@ export const es = {
   "wallet.error.connectFailed": "No se pudo conectar la billetera.",
 
   "swap.chainPicker.title": "Seleccionar cadena origen",
+  "swap.destination.label": "Dirección de destino",
+  "swap.destination.placeholder": "G...",
+  "swap.destination.invalidAddress": "Ingresa una dirección Stellar válida (comienza con G).",
+
+  "activityFeed.status.live": "En vivo",
+  "activityFeed.status.polling": "Actualizando",
+  "activityFeed.error.unavailable": "El feed en vivo no está disponible ahora.",
+  "activityFeed.empty": "Aún no hay llenados.",
+  "activityFeed.item.route": "{chain} · vía {solver}",
 
   "swap.from.label": "De",
   "swap.from.amountLabel": "Cantidad a intercambiar",
@@ -36,7 +45,9 @@ export const es = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Tasa",
   "swap.quote.unavailable": "Cotización en tiempo real no disponible — mostrando tasa estimada.",
+  "swap.quote.noSolver": "No hay solvers disponibles para esta ruta en este momento.",
   "swap.quote.highPriceImpactWarning": "Impacto de precio alto por encima de {threshold}% — revisa antes de intercambiar.",
+  "swap.quote.staleWarning": "La cotización está desactualizada. Espera a que se recargue antes de enviar.",
 
   "swap.submit.connecting": "Conectando billetera…",
   "swap.submit.building": "Preparando swap…",

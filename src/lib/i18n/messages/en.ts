@@ -11,6 +11,12 @@ export const en = {
 
   "swap.chainPicker.title": "Select source chain",
 
+  "activityFeed.status.live": "Live",
+  "activityFeed.status.polling": "Polling",
+  "activityFeed.error.unavailable": "Live feed unavailable right now.",
+  "activityFeed.empty": "No fills yet.",
+  "activityFeed.item.route": "{chain} · via {solver}",
+
   "swap.from.label": "From",
   "swap.from.amountLabel": "Amount to swap",
   "swap.from.amountPlaceholder": "0",
@@ -36,6 +42,8 @@ export const en = {
   "swap.quote.protocolFeeValue": "{percent}%",
   "swap.quote.rate": "Rate",
   "swap.quote.unavailable": "Live quote unavailable — showing an estimated rate.",
+  "swap.quote.noSolver": "No solver is available for this route right now.",
+  "swap.quote.highPriceImpactWarning": "High price impact above {threshold}% — review before swapping.",
   "swap.quote.staleWarning": "Quote is stale. Please wait for a refresh before submitting.",
 
   "swap.submit.connecting": "Connecting wallet…",

@@ -136,14 +136,14 @@ describe("SolvePage", () => {
 
     it("sorts the leaderboard by name, volume, fills, and success rate", async () => {
       const otherSolver: Solver = {
-        ...solvers[0],
+        ...solvers[0]!,
         name: "Zulu Solver",
         address: "GDEF...5678",
         fills: 900,
         volumeUsd: 5_000_000,
         successRatePct: 99.9,
       };
-      useSolversMock.mockReturnValue({ solvers: [otherSolver, solvers[0]], isLoading: false, error: undefined });
+      useSolversMock.mockReturnValue({ solvers: [otherSolver, solvers[0]!], isLoading: false, error: undefined });
       const user = userEvent.setup();
       render(<SolvePage />);
 
@@ -165,7 +165,7 @@ describe("SolvePage", () => {
 
       const solverLinks = screen.getAllByRole("link");
       const detailLink = solverLinks.find(link =>
-        link.getAttribute("href") === `/solve/${solvers[0].address}`
+        link.getAttribute("href") === `/solve/${solvers[0]!.address}`
       );
 
       expect(detailLink).toBeInTheDocument();
@@ -178,7 +178,7 @@ describe("SolvePage", () => {
 
       const links = screen.getAllByRole("link");
       const detailLink = links.find(link =>
-        link.getAttribute("href") === `/solve/${solvers[0].address}`
+        link.getAttribute("href") === `/solve/${solvers[0]!.address}`
       );
 
       expect(detailLink).toHaveFocus() || expect(detailLink).toBeInTheDocument();
@@ -190,7 +190,7 @@ describe("SolvePage", () => {
       render(<SolvePage />);
 
       const detailLink = screen.getByRole("link", { name: /Alpha Market Making/ });
-      expect(detailLink).toHaveAttribute("href", `/solve/${solvers[0].address}`);
+      expect(detailLink).toHaveAttribute("href", `/solve/${solvers[0]!.address}`);
     });
 
     it("maintains row hover and focus states for accessibility", () => {
@@ -199,7 +199,7 @@ describe("SolvePage", () => {
 
       const links = screen.getAllByRole("link");
       const detailLink = links.find(link =>
-        link.getAttribute("href") === `/solve/${solvers[0].address}`
+        link.getAttribute("href") === `/solve/${solvers[0]!.address}`
       );
 
       expect(detailLink).toHaveClass("focus:outline-none") ||

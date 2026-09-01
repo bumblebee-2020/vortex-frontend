@@ -1,8 +1,24 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type { Solver } from "@/lib/types";
 import SolverDetailPage from "./page";
 import { useToastStore } from "@/store/toast";
+
+const useSolverMock = vi.hoisted(() => vi.fn());
+const solverData: Solver = {
+  name: "AlphaMax",
+  address: "GBRPYHIL2CI3WHZDTOOQFC6EB4CGQOFN4QO5JTJVSXBLEDSOMETHING",
+  bondUsd: 500,
+  fills: 42,
+  failed: 1,
+  volumeUsd: 125000,
+  avgFillTimeSeconds: 12,
+  successRatePct: 97.67,
+  chains: ["ethereum", "polygon"],
+  status: "active",
+};
+vi.mock("@/hooks/useSolver", () => ({ useSolver: useSolverMock }));
 
 // Mock the hooks
 vi.mock("@/hooks/useSolvers", () => ({
@@ -495,6 +511,8 @@ describe("SolverDetailPage", () => {
       expect(statusBadge).toHaveClass("flex-shrink-0");
       expect(statusBadge).toHaveClass("whitespace-nowrap");
     });
+  });
+
   // Issue #45: Loading skeleton
   it("renders loading skeleton while fetching solver details", () => {
     const { useSolversModule } = vi.hoisted(() => ({

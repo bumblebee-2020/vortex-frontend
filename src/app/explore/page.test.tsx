@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import { act, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { FeedItem } from "@/lib/types";
 
@@ -53,8 +53,6 @@ function makeIntents(count: number): FeedItem[] {
 
 describe("ExplorePage", () => {
   beforeEach(() => {
-    useSearchParamsMock.mockReturnValue(new URLSearchParams());
-    routerReplaceMock.mockClear();
     Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
   });
 
@@ -104,7 +102,7 @@ describe("ExplorePage", () => {
   });
 
   it("initializes filters from URL query parameters", () => {
-    useSearchParamsMock.mockReturnValue(new URLSearchParams("status=pending&chain=base&sort=oldest"));
+    window.history.replaceState({}, "", "/explore?status=pending&chain=base&sort=oldest");
     useLiveIntentsMock.mockReturnValue({ intents, isLoading: false, error: undefined, isLive: false });
     render(<ExplorePage />);
 
@@ -120,7 +118,7 @@ describe("ExplorePage", () => {
 
     await user.selectOptions(screen.getByLabelText("Filter by status"), "pending");
 
-    expect(routerReplaceMock).toHaveBeenCalledWith("?status=pending", { scroll: false });
+    expect(window.location.search).toBe("?status=pending");
   });
 
   it("filters by chain, via its accessible label", async () => {
