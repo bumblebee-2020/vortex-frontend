@@ -11,13 +11,6 @@ import { useIntentFeed } from "@/hooks/useIntentFeed";
 import { timeAgo } from "@/lib/time";
 import { CHAINS } from "@/lib/marketData";
 import { isValidStellarPublicKey } from "@/lib/stellarAddress";
-import { sanitizeDisplayText } from "@/lib/textSafety";
-
-function truncateAddress(address: string) {
-  const safe = sanitizeDisplayText(address);
-  if (safe.length <= 12) return safe;
-  return `${safe.slice(0, 6)}...${safe.slice(-6)}`;
-}
 
 const usdCompact = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -83,9 +76,8 @@ export default function SolverDetailPage({ params }: { params: { address: string
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-vx-muted font-mono break-all">
-                <span>Address: {params.address}</span>
-                <CopyButton value={params.address} label="Copy solver address" />
+              <div className="text-xs sm:text-sm text-vx-muted font-mono break-all">
+                Address: {params.address}
               </div>
 
               {/* Metrics grid */}
@@ -110,23 +102,14 @@ export default function SolverDetailPage({ params }: { params: { address: string
                 <h2 className="eyebrow text-xs mb-2">Supported Chains</h2>
                 <div className="flex flex-wrap gap-2">
                   {solver.chains.length > 0 ? (
-                    solver.chains.map(chainId => {
-                      const chainMeta = CHAINS.find(c => c.id === chainId);
-                      const chainName = chainMeta?.name ?? chainId;
-                      const chainColor = chainMeta?.color ?? "#6B7280";
-                      return (
-                        <span 
-                          key={chainId} 
-                          className="text-xs px-2 py-1 rounded text-white border font-medium"
-                          style={{ 
-                            backgroundColor: chainColor,
-                            borderColor: chainColor,
-                          }}
-                        >
-                          {chainName}
-                        </span>
-                      );
-                    })
+                    solver.chains.map(chain => (
+                      <span 
+                        key={chain} 
+                        className="text-xs px-2 py-1 bg-vx-surface rounded text-vx-text border border-vx-border"
+                      >
+                        {chain}
+                      </span>
+                    ))
                   ) : (
                     <span className="text-xs text-vx-muted">No chains supported yet</span>
                   )}
@@ -141,8 +124,10 @@ export default function SolverDetailPage({ params }: { params: { address: string
               </div>
 
               {historyLoading && fillHistory.length === 0 ? (
-                <div className="p-4 sm:p-5">
-                  <SkeletonCard rows={3} rowHeight="h-16" />
+                <div className="p-4 sm:p-5 space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-16 bg-vx-surface/40 rounded-lg animate-pulse" />
+                  ))}
                 </div>
               ) : historyError ? (
                 <div role="alert" className="p-6 sm:p-8 text-center text-sm text-vx-muted">

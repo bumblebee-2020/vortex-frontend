@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import freighterApi from "@stellar/freighter-api";
+import { walletAdapter } from "@/lib/wallet";
 import { createIntent, submitIntent } from "@/lib/api";
 import { useWalletStore } from "@/store/wallet";
 import { useToastStore } from "@/store/toast";
@@ -68,7 +68,7 @@ export function useSwapSubmission() {
       // ──────────────────────────────────────────────────────────────────────
 
       setStatus("awaiting-signature");
-      const signedXdr = await freighterApi.signTransaction(unsignedXdr, {
+      const signedXdr = await walletAdapter.signTransaction(unsignedXdr, {
         network: wallet.network ?? undefined,
       });
 
