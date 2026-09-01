@@ -28,6 +28,10 @@ export function useQuote(params: QuoteRequest | null) {
   const [quoteFetchedAt, setQuoteFetchedAt] = useState<number | null>(null);
   const { data, error, isLoading } = useSWR<Quote>(quoteKey(params), fetcher, {
     revalidateOnFocus: false,
+    onSuccess(data) {
+      setQuoteFetchedAt(Date.now());
+      return data;
+    },
     onErrorRetry(error, _key, _config, revalidate, { retryCount }) {
       // Do not retry on 4xx client errors — they won't self-heal.
       if (error?.status >= 400 && error?.status < 500) return;

@@ -1,26 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { VortexLogo } from "./VortexLogo";
 import { ConnectWalletButton } from "./ConnectWalletButton";
 import { SettingsPanel } from "./SettingsPanel";
 import { getMessage } from "@/lib/i18n-legacy";
-import { useLocale, useSetLocale } from "@/lib/i18n/I18nProvider";
-import { LOCALES, type Locale } from "@/lib/i18n";
 import { useWalletStore } from "@/store/wallet";
 
 type NavProps = { variant: "home" } | { variant: "breadcrumb"; label: string };
 
 const NAV_LINKS = [
   { href: "/explore", label: "explore" as const },
+  { href: "/analytics", label: "analytics" as const },
   { href: "/solve", label: "becomeSolver" as const },
 ];
 
 const LOCALE_LABELS: Record<Locale, string> = {
-  en: "EN",
-  es: "ES",
+  en: "English",
+  es: "Español",
 };
 
 export function Nav(props: NavProps) {
@@ -28,50 +27,27 @@ export function Nav(props: NavProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const isConnected = useWalletStore((s) => s.isConnected);
   const pathname = usePathname();
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   const locale = useLocale();
   const setLocale = useSetLocale();
 
-  // Refs for focus management in the mobile menu
-  const toggleRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  // Move focus into the mobile menu panel when it opens.
   useEffect(() => {
-    if (!mobileOpen) return;
-    // Focus the first focusable element inside the panel.
-    const firstFocusable = panelRef.current?.querySelector<HTMLElement>(
-      "a, button, [tabindex]:not([tabindex='-1'])"
-    );
-    firstFocusable?.focus();
+    function handleClickOutside(event: MouseEvent) {
+      if (!panelRef.current || !toggleRef.current) return;
+      if (!panelRef.current.contains(event.target as Node) && !toggleRef.current.contains(event.target as Node)) {
+        setMobileOpen(false);
+      }
+    }
+
+    if (mobileOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return undefined;
   }, [mobileOpen]);
 
-  const closeMobileMenu = () => {
-    setMobileOpen(false);
-    toggleRef.current?.focus();
-  };
-
-  // Trap Tab focus inside mobile menu; Escape closes it.
-  const handleMobilePanelKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      closeMobileMenu();
-      return;
-    }
-    if (e.key !== "Tab") return;
-    const focusable = panelRef.current?.querySelectorAll<HTMLElement>(
-      "a, button, [tabindex]:not([tabindex='-1'])"
-    );
-    if (!focusable || focusable.length === 0) return;
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  };
+  const closeMobileMenu = () => setMobileOpen(false);
 
   return (
     <nav className="sticky top-0 z-50 border-b border-vx-border bg-vx-ink/80 backdrop-blur-md">
@@ -84,23 +60,27 @@ export function Nav(props: NavProps) {
             </div>
             <div className="hidden md:flex items-center gap-5 text-sm text-vx-muted">
               {NAV_LINKS.map((link) => (
-                <Link key={link.href} href={link.href} className="hover:text-vx-text active:text-vx-sage transition-colors">
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`transition-colors ${pathname === link.href ? "text-vx-text" : "hover:text-vx-text active:text-vx-sage"}`}
+                >
                   {getMessage(`nav.${link.label}`)}
                 </Link>
               ))}
               {isConnected && (
-                <Link href="/my-intents" className={`transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "hover:text-vx-text active:text-vx-sage"}`}>
+                <Link href="/my-intents" className={`transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "hover:text-vx-text"}`}>
                   My Intents
                 </Link>
               )}
-              <a href="https://github.com/vortex-protocol" className="hover:text-vx-text active:text-vx-sage transition-colors">
+              <a href="https://github.com/vortex-protocol" className="hover:text-vx-text transition-colors">
                 {getMessage("nav.docs")}
               </a>
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center gap-2 transition-opacity active:opacity-80">
+            <Link href="/" className="flex items-center gap-2">
               <VortexLogo className="w-5 h-5 text-vx-sage" />
               <span className="font-semibold text-sm text-vx-text">{getMessage("nav.branding")}</span>
             </Link>
@@ -114,12 +94,11 @@ export function Nav(props: NavProps) {
           <ConnectWalletButton compact={props.variant === "breadcrumb"} />
           {props.variant === "home" && (
             <button
-              ref={toggleRef}
-              onClick={() => (mobileOpen ? closeMobileMenu() : setMobileOpen(true))}
+              onClick={() => setMobileOpen((open) => !open)}
               aria-expanded={mobileOpen}
               aria-controls="mobile-nav-panel"
               aria-label={mobileOpen ? getMessage("nav.closeMenu") : getMessage("nav.openMenu")}
-              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text active:text-vx-sage transition-colors"
+              className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg border border-vx-border text-vx-muted hover:text-vx-text transition-colors"
             >
               <svg aria-hidden="true" className="w-4 h-4" viewBox="0 0 16 16" fill="none">
                 {mobileOpen ? (
@@ -134,21 +113,13 @@ export function Nav(props: NavProps) {
       </div>
 
       {props.variant === "home" && mobileOpen && (
-        <div
-          id="mobile-nav-panel"
-          ref={panelRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-          onKeyDown={handleMobilePanelKeyDown}
-          className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1"
-        >
+        <div className="md:hidden border-t border-vx-border bg-vx-ink/95 backdrop-blur-md px-5 py-3 flex flex-col gap-1">
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={closeMobileMenu}
-              className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
+              className={`py-2 text-sm transition-colors ${pathname === link.href ? "text-vx-text" : "text-vx-muted hover:text-vx-text active:text-vx-sage"}`}
             >
               {getMessage(`nav.${link.label}`)}
             </Link>
@@ -156,15 +127,15 @@ export function Nav(props: NavProps) {
           {isConnected && (
             <Link
               href="/my-intents"
-              onClick={closeMobileMenu}
-              className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text active:text-vx-sage"}`}
+              onClick={() => setMobileOpen(false)}
+              className={`py-2 text-sm transition-colors ${pathname === "/my-intents" ? "text-vx-text" : "text-vx-muted hover:text-vx-text"}`}
             >
               My Intents
             </Link>
           )}
           <a
             href="https://github.com/vortex-protocol"
-            onClick={closeMobileMenu}
+            onClick={() => setMobileOpen(false)}
             className="py-2 text-sm text-vx-muted hover:text-vx-text transition-colors"
           >
             {getMessage("nav.docs")}
